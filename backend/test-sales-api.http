@@ -1,0 +1,167 @@
+### Test Sales Order API
+
+# First, test the validation endpoint
+POST http://localhost:5000/api/sales/orders/validate
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "agentId": null,
+  "orderDate": "2025-07-11T10:00:00Z",
+  "dueDate": "2025-08-11T10:00:00Z",
+  "status": "Draft",
+  "currency": "ILS",
+  "notes": "Test order validation",
+  "lines": [
+    {
+      "itemId": 1,
+      "description": "Test item",
+      "quantity": 2,
+      "unitPrice": 100.00,
+      "discountPercent": 0,
+      "taxRate": 17
+    }
+  ]
+}
+
+###
+
+# Test creating a sales order
+POST http://localhost:5000/api/sales/orders
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "agentId": null,
+  "orderDate": "2025-07-11T10:00:00Z",
+  "dueDate": "2025-08-11T10:00:00Z",
+  "status": "Draft",
+  "currency": "ILS",
+  "notes": "Test sales order",
+  "lines": [
+    {
+      "itemId": 1,
+      "description": "Test item",
+      "quantity": 2,
+      "unitPrice": 100.00,
+      "discountPercent": 0,
+      "taxRate": 17
+    }
+  ]
+}
+
+###
+
+# Test with status as integer (should also work)
+POST http://localhost:5000/api/sales/orders
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "agentId": null,
+  "orderDate": "2025-07-11T10:00:00Z",
+  "dueDate": "2025-08-11T10:00:00Z",
+  "status": 1,
+  "currency": "ILS",
+  "notes": "Test with integer status",
+  "lines": [
+    {
+      "itemId": 1,
+      "description": "Test item",
+      "quantity": 1,
+      "unitPrice": 50.00,
+      "discountPercent": 0,
+      "taxRate": 17
+    }
+  ]
+}
+
+###
+
+# Test minimal required fields only
+POST http://localhost:5000/api/sales/orders
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "lines": [
+    {
+      "itemId": 1,
+      "quantity": 1,
+      "unitPrice": 25.00
+    }
+  ]
+}
+
+###
+
+# Get all sales orders
+GET http://localhost:5000/api/sales/orders
+
+###
+
+# Get specific sales order
+GET http://localhost:5000/api/sales/orders/1
+
+###
+
+# Test processing a payment for a sales order
+POST http://localhost:5000/api/sales/orders/1/payment
+Content-Type: application/json
+
+{
+  "amount": 50.00,
+  "paymentMethod": "Credit Card",
+  "notes": "First partial payment"
+}
+
+###
+
+# Test processing another payment
+POST http://localhost:5000/api/sales/orders/1/payment
+Content-Type: application/json
+
+{
+  "amount": 50.00,
+  "paymentMethod": "Cash",
+  "notes": "Second partial payment"
+}
+
+###
+
+# Get sales order to verify PaidAmount is updated
+GET http://localhost:5000/api/sales/orders/1
+
+###
+
+# Test recalculating PaidAmount for a specific order
+POST http://localhost:5000/api/sales/orders/1/recalculate-paid-amount
+
+###
+
+# Test recalculating PaidAmount for all orders
+POST http://localhost:5000/api/sales/recalculate-all-paid-amounts
+
+###
+
+# Test processing payment that exceeds total amount (should fail)
+POST http://localhost:5000/api/sales/orders/1/payment
+Content-Type: application/json
+
+{
+  "amount": 1000.00,
+  "paymentMethod": "Cash",
+  "notes": "Payment exceeding total"
+}
+
+###
+
+# Test processing payment with invalid amount (should fail)
+POST http://localhost:5000/api/sales/orders/1/payment
+Content-Type: application/json
+
+{
+  "amount": -10.00,
+  "paymentMethod": "Cash",
+  "notes": "Negative payment"
+}
