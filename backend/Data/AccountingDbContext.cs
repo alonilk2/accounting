@@ -38,6 +38,8 @@ public class AccountingDbContext : DbContext
     public DbSet<Agent> Agents { get; set; } = null!;
     public DbSet<SalesOrder> SalesOrders { get; set; } = null!;
     public DbSet<SalesOrderLine> SalesOrderLines { get; set; } = null!;
+    public DbSet<Invoice> Invoices { get; set; } = null!;
+    public DbSet<InvoiceLine> InvoiceLines { get; set; } = null!;
     public DbSet<Receipt> Receipts { get; set; } = null!;
     public DbSet<StandingOrder> StandingOrders { get; set; } = null!;
 
@@ -102,6 +104,8 @@ public class AccountingDbContext : DbContext
         modelBuilder.Entity<Agent>().ToTable("Agents");
         modelBuilder.Entity<SalesOrder>().ToTable("SalesOrders");
         modelBuilder.Entity<SalesOrderLine>().ToTable("SalesOrderLines");
+        modelBuilder.Entity<Invoice>().ToTable("Invoices");
+        modelBuilder.Entity<InvoiceLine>().ToTable("InvoiceLines");
         modelBuilder.Entity<Receipt>().ToTable("Receipts");
         modelBuilder.Entity<StandingOrder>().ToTable("StandingOrders");
 
@@ -216,11 +220,37 @@ public class AccountingDbContext : DbContext
             .HasForeignKey(sol => sol.ItemId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Invoices
+        modelBuilder.Entity<Invoice>()
+            .HasOne(i => i.Customer)
+            .WithMany(c => c.Invoices)
+            .HasForeignKey(i => i.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Invoice>()
+            .HasOne(i => i.SalesOrder)
+            .WithMany(so => so.Invoices)
+            .HasForeignKey(i => i.SalesOrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Invoice Lines
+        modelBuilder.Entity<InvoiceLine>()
+            .HasOne(il => il.Invoice)
+            .WithMany(i => i.Lines)
+            .HasForeignKey(il => il.InvoiceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<InvoiceLine>()
+            .HasOne(il => il.Item)
+            .WithMany(i => i.InvoiceLines)
+            .HasForeignKey(il => il.ItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Receipts
         modelBuilder.Entity<Receipt>()
-            .HasOne(r => r.SalesOrder)
-            .WithMany(so => so.Receipts)
-            .HasForeignKey(r => r.SalesOrderId)
+            .HasOne(r => r.Invoice)
+            .WithMany(i => i.Receipts)
+            .HasForeignKey(r => r.InvoiceId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Standing Orders
@@ -233,6 +263,10 @@ public class AccountingDbContext : DbContext
         // Unique constraints
         modelBuilder.Entity<SalesOrder>()
             .HasIndex(so => new { so.CompanyId, so.OrderNumber })
+            .IsUnique();
+
+        modelBuilder.Entity<Invoice>()
+            .HasIndex(i => new { i.CompanyId, i.InvoiceNumber })
             .IsUnique();
     }
 
@@ -393,6 +427,8 @@ public class AccountingDbContext : DbContext
         modelBuilder.Entity<Agent>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<SalesOrder>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<SalesOrderLine>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<Invoice>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<InvoiceLine>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Receipt>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<StandingOrder>().HasQueryFilter(e => !e.IsDeleted);
 
@@ -454,6 +490,12 @@ public class AccountingDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<SalesOrderLine>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Invoice>()
             .HasOne(e => e.Company)
             .WithMany()
             .HasForeignKey(e => e.CompanyId)

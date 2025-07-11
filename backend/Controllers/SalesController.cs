@@ -104,7 +104,7 @@ public class SalesController : ControllerBase
                         SalesOrderId = l.SalesOrderId,
                         ItemId = l.ItemId,
                         ItemName = l.Item.Name,
-                        ItemSku = l.Item.Sku,
+                        ItemSku = l.Item.SKU,
                         LineNumber = l.LineNumber,
                         Description = l.Description,
                         Quantity = l.Quantity,
@@ -177,7 +177,7 @@ public class SalesController : ControllerBase
                         SalesOrderId = l.SalesOrderId,
                         ItemId = l.ItemId,
                         ItemName = l.Item.Name,
-                        ItemSku = l.Item.Sku,
+                        ItemSku = l.Item.SKU,
                         LineNumber = l.LineNumber,
                         Description = l.Description,
                         Quantity = l.Quantity,
@@ -247,7 +247,7 @@ public class SalesController : ControllerBase
                 OrderDate = request.OrderDate ?? DateTime.UtcNow,
                 DueDate = request.DueDate,
                 DeliveryDate = request.DeliveryDate,
-                Status = request.Status ?? SalesOrderStatus.Draft,
+                Status = request.Status ?? SalesOrderStatus.Quote,
                 Currency = request.Currency ?? "ILS",
                 Notes = request.Notes,
                 Lines = request.Lines.Select((line, index) => new SalesOrderLine
@@ -328,117 +328,6 @@ public class SalesController : ControllerBase
     }
 
     /// <summary>
-    /// Process payment for a sales order
-    /// </summary>
-    /// <param name="id">Sales order ID</param>
-    /// <param name="request">Payment processing request</param>
-    /// <param name="companyId">Company ID for multi-tenant filtering</param>
-    /// <returns>Payment receipt</returns>
-    [HttpPost("orders/{id:int}/payment")]
-    [ProducesResponseType<ReceiptDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ReceiptDto>> ProcessPayment(
-        int id,
-        [FromBody] ProcessPaymentRequest request,
-        [FromQuery] int? companyId = null)
-    {
-        try
-        {
-            var currentCompanyId = companyId ?? 1;
-            var userId = "system"; // In real app, get from authenticated user
-
-            _logger.LogInformation("Processing payment of {Amount:C} for sales order {OrderId}", 
-                request.Amount, id);
-
-            var receipt = await _salesOrderService.ProcessPaymentAsync(
-                id, request.Amount, request.PaymentMethod, currentCompanyId, userId);
-
-            var receiptDto = new ReceiptDto
-            {
-                Id = receipt.Id,
-                SalesOrderId = receipt.SalesOrderId,
-                ReceiptNumber = receipt.ReceiptNumber,
-                PaymentDate = receipt.PaymentDate,
-                Amount = receipt.Amount,
-                PaymentMethod = receipt.PaymentMethod,
-                Notes = receipt.Notes,
-                CreatedAt = receipt.CreatedAt
-            };
-
-            return Ok(receiptDto);
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Invalid operation processing payment for sales order {OrderId}", id);
-            return BadRequest(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing payment for sales order {OrderId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
-        }
-    }
-
-    /// <summary>
-    /// Gets all receipts/payments for a specific sales order
-    /// </summary>
-    /// <param name="id">Sales order ID</param>
-    /// <param name="companyId">Company ID for multi-tenant filtering</param>
-    /// <returns>List of receipts for the order</returns>
-    [HttpGet("orders/{id:int}/receipts")]
-    [ProducesResponseType<IEnumerable<ReceiptDto>>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<ReceiptDto>>> GetOrderReceipts(
-        int id,
-        [FromQuery] int? companyId = null)
-    {
-        try
-        {
-            var currentCompanyId = companyId ?? 1;
-
-            _logger.LogInformation("Getting receipts for sales order {OrderId}", id);
-
-            // First check if the order exists and belongs to the company
-            var order = await _context.SalesOrders
-                .Where(o => o.Id == id && o.CompanyId == currentCompanyId)
-                .FirstOrDefaultAsync();
-
-            if (order == null)
-            {
-                return NotFound($"Sales order with ID {id} not found");
-            }
-
-            // Get all receipts for this order
-            var receipts = await _context.Receipts
-                .Where(r => r.SalesOrderId == id && r.CompanyId == currentCompanyId)
-                .OrderByDescending(r => r.PaymentDate)
-                .ToListAsync();
-
-            var receiptDtos = receipts.Select(receipt => new ReceiptDto
-            {
-                Id = receipt.Id,
-                SalesOrderId = receipt.SalesOrderId,
-                ReceiptNumber = receipt.ReceiptNumber,
-                PaymentDate = receipt.PaymentDate,
-                Amount = receipt.Amount,
-                PaymentMethod = receipt.PaymentMethod,
-                Notes = receipt.Notes,
-                CreatedAt = receipt.CreatedAt
-            }).ToList();
-
-            return Ok(receiptDtos);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting receipts for sales order {OrderId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
-        }
-    }
-
-    /// <summary>
     /// Gets sales summary for a date range
     /// </summary>
     /// <param name="fromDate">Start date</param>
@@ -512,111 +401,14 @@ public class SalesController : ControllerBase
             message = "Request is valid", 
             request = request,
             statusMapping = new {
-                Draft = SalesOrderStatus.Draft,
+                Quote = SalesOrderStatus.Quote,
                 Confirmed = SalesOrderStatus.Confirmed,
                 Shipped = SalesOrderStatus.Shipped,
-                Invoiced = SalesOrderStatus.Invoiced,
-                Paid = SalesOrderStatus.Paid,
+                Completed = SalesOrderStatus.Completed,
                 Cancelled = SalesOrderStatus.Cancelled
             }
         });
     }
-
-    /// <summary>
-    /// Recalculate PaidAmount for a specific sales order
-    /// </summary>
-    /// <param name="id">Sales order ID</param>
-    /// <param name="companyId">Company ID for multi-tenant filtering</param>
-    /// <returns>Updated sales order</returns>
-    [HttpPost("orders/{id:int}/recalculate-paid-amount")]
-    [ProducesResponseType<SalesOrderDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<SalesOrderDto>> RecalculatePaidAmount(
-        int id,
-        [FromQuery] int? companyId = null)
-    {
-        try
-        {
-            var currentCompanyId = companyId ?? 1;
-            var userId = "system"; // In real app, get from authenticated user
-
-            _logger.LogInformation("Recalculating PaidAmount for sales order {OrderId}", id);
-
-            var salesOrder = await _salesOrderService.RecalculatePaidAmountAsync(id, currentCompanyId, userId);
-
-            var salesOrderDto = new SalesOrderDto
-            {
-                Id = salesOrder.Id,
-                CompanyId = salesOrder.CompanyId,
-                CustomerId = salesOrder.CustomerId,
-                CustomerName = salesOrder.Customer?.Name ?? "",
-                AgentId = salesOrder.AgentId,
-                AgentName = salesOrder.Agent?.Name,
-                OrderNumber = salesOrder.OrderNumber,
-                OrderDate = salesOrder.OrderDate,
-                DueDate = salesOrder.DueDate,
-                DeliveryDate = salesOrder.DeliveryDate,
-                Status = salesOrder.Status,
-                SubtotalAmount = salesOrder.SubtotalAmount,
-                TaxAmount = salesOrder.TaxAmount,
-                TotalAmount = salesOrder.TotalAmount,
-                PaidAmount = salesOrder.PaidAmount,
-                Currency = salesOrder.Currency,
-                Notes = salesOrder.Notes,
-                Lines = new List<SalesOrderLineDto>(), // Not needed for this response
-                CreatedAt = salesOrder.CreatedAt,
-                UpdatedAt = salesOrder.UpdatedAt
-            };
-
-            return Ok(salesOrderDto);
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Sales order {OrderId} not found", id);
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error recalculating PaidAmount for sales order {OrderId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
-        }
-    }
-
-    /// <summary>
-    /// Recalculate PaidAmount for all sales orders in the company
-    /// </summary>
-    /// <param name="companyId">Company ID for multi-tenant filtering</param>
-    /// <returns>Number of orders updated</returns>
-    [HttpPost("recalculate-all-paid-amounts")]
-    [ProducesResponseType<RecalculateResult>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<RecalculateResult>> RecalculateAllPaidAmounts(
-        [FromQuery] int? companyId = null)
-    {
-        try
-        {
-            var currentCompanyId = companyId ?? 1;
-            var userId = "system"; // In real app, get from authenticated user
-
-            _logger.LogInformation("Recalculating PaidAmount for all sales orders in company {CompanyId}", currentCompanyId);
-
-            var updatedCount = await _salesOrderService.RecalculateAllPaidAmountsAsync(currentCompanyId, userId);
-
-            return Ok(new RecalculateResult 
-            { 
-                UpdatedOrdersCount = updatedCount,
-                Message = $"Successfully recalculated PaidAmount for {updatedCount} sales orders"
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error recalculating PaidAmounts for company {CompanyId}", companyId);
-            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
-        }
-    }
-
-    // ...existing code...
 }
 
 // DTOs for API responses
@@ -661,18 +453,6 @@ public class SalesOrderLineDto
     public decimal LineTotal { get; set; }
 }
 
-public class ReceiptDto
-{
-    public int Id { get; set; }
-    public int SalesOrderId { get; set; }
-    public string ReceiptNumber { get; set; } = string.Empty;
-    public DateTime PaymentDate { get; set; }
-    public decimal Amount { get; set; }
-    public string PaymentMethod { get; set; } = string.Empty;
-    public string? Notes { get; set; }
-    public DateTime CreatedAt { get; set; }
-}
-
 public class SalesSummaryDto
 {
     public DateTime FromDate { get; set; }
@@ -694,7 +474,7 @@ public class SalesSummaryDto
 ///   "agentId": null,
 ///   "orderDate": "2025-07-11T10:00:00Z",
 ///   "dueDate": "2025-08-11T10:00:00Z",
-///   "status": "Draft",
+///   "status": "Quote",
 ///   "currency": "ILS",
 ///   "notes": "Test order",
 ///   "lines": [
@@ -772,10 +552,4 @@ public class ProcessPaymentRequest
     
     [MaxLength(500)]
     public string? Notes { get; set; }
-}
-
-public class RecalculateResult
-{
-    public int UpdatedOrdersCount { get; set; }
-    public string Message { get; set; } = string.Empty;
 }

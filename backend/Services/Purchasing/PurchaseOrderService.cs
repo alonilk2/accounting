@@ -469,7 +469,7 @@ public class PurchaseOrderService : BaseService<PurchaseOrder>, IPurchaseOrderSe
                     {
                         ItemId = item.Id,
                         ItemName = item.Name,
-                        Sku = item.Sku,
+                        Sku = item.SKU,
                         CurrentStock = item.CurrentStockQty,
                         ReorderPoint = item.ReorderPoint,
                         SuggestedQuantity = suggestedQty,

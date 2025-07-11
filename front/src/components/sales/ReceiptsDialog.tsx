@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -17,113 +17,200 @@ import {
   Chip,
   Alert,
   CircularProgress,
-} from '@mui/material';
-import { Receipt as ReceiptIcon } from '@mui/icons-material';
-import { salesAPI } from '../../services/api';
-import type { Receipt } from '../../types/entities';
+} from "@mui/material";
+import { Receipt as ReceiptIcon } from "@mui/icons-material";
+import { invoiceService } from "../../services/invoiceService";
+import { useUIStore } from "../../stores";
+import type {
+  Receipt,
+  Customer,
+  Company,
+  Invoice,
+} from "../../types/entities";
+import { PrintButton, PrintableReceipt } from "../print";
 
 interface ReceiptsDialogProps {
   open: boolean;
   onClose: () => void;
-  orderId: number;
-  orderNumber: string;
+  invoiceId: number;
+  invoiceNumber: string;
   totalAmount: number;
   paidAmount: number;
+  invoice?: Invoice;
+  customer?: Customer;
+  company?: Company;
 }
 
-const ReceiptsDialog = ({ 
-  open, 
-  onClose, 
-  orderId, 
-  orderNumber, 
-  totalAmount, 
-  paidAmount 
+const ReceiptsDialog = ({
+  open,
+  onClose,
+  invoiceId,
+  invoiceNumber,
+  totalAmount,
+  paidAmount,
+  invoice,
+  customer,
+  company,
 }: ReceiptsDialogProps) => {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useUIStore();
+
+  // Translations
+  const t = {
+    title: language === "he" ? "קבלות ותשלומים" : "Receipts & Payments",
+    invoice: language === "he" ? "חשבונית מס׳" : "Invoice #",
+    paymentSummary: language === "he" ? "סיכום תשלומים" : "Payment Summary",
+    totalAmount: language === "he" ? "סכום כולל" : "Total Amount",
+    paidAmount: language === "he" ? "סכום ששולם" : "Paid Amount",
+    balanceRemaining: language === "he" ? "יתרה לתשלום" : "Balance Remaining",
+    receiptNumber: language === "he" ? "מס׳ קבלה" : "Receipt #",
+    date: language === "he" ? "תאריך" : "Date",
+    amount: language === "he" ? "סכום" : "Amount",
+    paymentMethod: language === "he" ? "אמצעי תשלום" : "Payment Method",
+    notes: language === "he" ? "הערות" : "Notes",
+    noPayments:
+      language === "he"
+        ? "עדיין לא נרשמו תשלומים עבור חשבונית זו."
+        : "No payments have been recorded for this invoice yet.",
+    totalPayments: language === "he" ? "סה״כ" : "Total",
+    paymentsRecorded: language === "he" ? "תשלומים נרשמו" : "payments recorded",
+    paymentRecorded: language === "he" ? "תשלום נרשם" : "payment recorded",
+    close: language === "he" ? "סגור" : "Close",
+    errorLoading:
+      language === "he" ? "שגיאה בטעינת הקבלות" : "Failed to load receipts",
+    cash: language === "he" ? "מזומן" : "Cash",
+    creditCard: language === "he" ? "כרטיס אשראי" : "Credit Card",
+    bankTransfer: language === "he" ? "העברה בנקאית" : "Bank Transfer",
+    check: language === "he" ? "צ׳ק" : "Check",
+  };
 
   const loadReceipts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const receiptsData = await salesAPI.getOrderReceipts(orderId);
+      const receiptsData = await invoiceService.getInvoiceReceipts(invoiceId);
       setReceipts(receiptsData);
     } catch (err) {
-      console.error('Error loading receipts:', err);
-      setError('Failed to load receipts');
+      console.error("Error loading receipts:", err);
+      setError(
+        language === "he" ? "שגיאה בטעינת הקבלות" : "Failed to load receipts"
+      );
     } finally {
       setLoading(false);
     }
-  }, [orderId]);
+  }, [invoiceId, language]);
 
   useEffect(() => {
-    if (open && orderId) {
+    if (open && invoiceId) {
       loadReceipts();
     }
-  }, [open, orderId, loadReceipts]);
+  }, [open, invoiceId, loadReceipts]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'ILS',
+    return new Intl.NumberFormat("he-IL", {
+      style: "currency",
+      currency: "ILS",
     }).format(amount);
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('he-IL', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Intl.DateTimeFormat("he-IL", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(date);
   };
 
-  const getPaymentMethodChipColor = (method: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+  const getPaymentMethodChipColor = (
+    method: string
+  ):
+    | "default"
+    | "primary"
+    | "secondary"
+    | "error"
+    | "info"
+    | "success"
+    | "warning" => {
     switch (method.toLowerCase()) {
-      case 'cash':
-        return 'success';
-      case 'credit card':
-        return 'primary';
-      case 'bank transfer':
-        return 'info';
-      case 'check':
-        return 'warning';
+      case "cash":
+      case "מזומן":
+        return "success";
+      case "credit card":
+      case "כרטיס אשראי":
+        return "primary";
+      case "bank transfer":
+      case "העברה בנקאית":
+        return "info";
+      case "check":
+      case "צ׳ק":
+        return "warning";
       default:
-        return 'default';
+        return "default";
     }
   };
 
+  const getPaymentMethodDisplay = (method: string): string => {
+    if (language === "he") {
+      switch (method.toLowerCase()) {
+        case "cash":
+          return "מזומן";
+        case "credit card":
+          return "כרטיס אשראי";
+        case "bank transfer":
+          return "העברה בנקאית";
+        case "check":
+          return "צ׳ק";
+        default:
+          return method;
+      }
+    }
+    return method;
+  };
+
   const balanceRemaining = totalAmount - paidAmount;
+  const isRTL = language === "he";
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="md" 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { minHeight: '400px' }
+        sx: {
+          minHeight: "400px",
+          direction: isRTL ? "rtl" : "ltr",
+        },
       }}
     >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <ReceiptIcon />
         <Typography variant="h6" component="span">
-          Receipts & Payments - Order #{orderNumber}
+          {t.title} - {t.invoice}
+          {invoiceNumber}
         </Typography>
       </DialogTitle>
 
       <DialogContent>
         {/* Summary Section */}
-        <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+        <Box sx={{ mb: 3, p: 2, bgcolor: "grey.50", borderRadius: 1 }}>
           <Typography variant="h6" gutterBottom>
-            Payment Summary
+            {t.paymentSummary}
           </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 2,
+            }}
+          >
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Total Amount
+                {t.totalAmount}
               </Typography>
               <Typography variant="h6">
                 {formatCurrency(totalAmount)}
@@ -131,7 +218,7 @@ const ReceiptsDialog = ({
             </Box>
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Paid Amount
+                {t.paidAmount}
               </Typography>
               <Typography variant="h6" color="success.main">
                 {formatCurrency(paidAmount)}
@@ -139,11 +226,11 @@ const ReceiptsDialog = ({
             </Box>
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Balance Remaining
+                {t.balanceRemaining}
               </Typography>
-              <Typography 
-                variant="h6" 
-                color={balanceRemaining > 0 ? 'warning.main' : 'success.main'}
+              <Typography
+                variant="h6"
+                color={balanceRemaining > 0 ? "warning.main" : "success.main"}
               >
                 {formatCurrency(balanceRemaining)}
               </Typography>
@@ -153,7 +240,7 @@ const ReceiptsDialog = ({
 
         {/* Loading State */}
         {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
           </Box>
         )}
@@ -169,53 +256,88 @@ const ReceiptsDialog = ({
         {!loading && !error && (
           <>
             {receipts.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Box sx={{ textAlign: "center", py: 4 }}>
                 <Typography variant="body1" color="text.secondary">
-                  No payments have been recorded for this order yet.
+                  {t.noPayments}
                 </Typography>
               </Box>
             ) : (
               <TableContainer component={Paper} variant="outlined">
-                <Table>
+                <Table sx={{ direction: isRTL ? "rtl" : "ltr" }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Receipt #</TableCell>
-                      <TableCell>Date</TableCell>
-                      <TableCell>Amount</TableCell>
-                      <TableCell>Payment Method</TableCell>
-                      <TableCell>Notes</TableCell>
+                      <TableCell sx={{ textAlign: isRTL ? "right" : "left" }}>
+                        {t.receiptNumber}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: isRTL ? "right" : "left" }}>
+                        {t.date}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: isRTL ? "right" : "left" }}>
+                        {t.amount}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: isRTL ? "right" : "left" }}>
+                        {t.paymentMethod}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: isRTL ? "right" : "left" }}>
+                        {t.notes}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: "center", width: 60 }}>
+                        {language === "he" ? "הדפסה" : "Print"}
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {receipts.map((receipt) => (
                       <TableRow key={receipt.id} hover>
-                        <TableCell>
+                        <TableCell sx={{ textAlign: isRTL ? "right" : "left" }}>
                           <Typography variant="body2" fontWeight="medium">
                             {receipt.receiptNumber}
                           </Typography>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ textAlign: isRTL ? "right" : "left" }}>
                           <Typography variant="body2">
                             {formatDate(receipt.paymentDate)}
                           </Typography>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ textAlign: isRTL ? "right" : "left" }}>
                           <Typography variant="body2" fontWeight="medium">
                             {formatCurrency(receipt.amount)}
                           </Typography>
                         </TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={receipt.paymentMethod}
+                        <TableCell sx={{ textAlign: isRTL ? "right" : "left" }}>
+                          <Chip
+                            label={getPaymentMethodDisplay(
+                              receipt.paymentMethod
+                            )}
                             size="small"
-                            color={getPaymentMethodChipColor(receipt.paymentMethod)}
+                            color={getPaymentMethodChipColor(
+                              receipt.paymentMethod
+                            )}
                             variant="outlined"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ textAlign: isRTL ? "right" : "left" }}>
                           <Typography variant="body2" color="text.secondary">
-                            {receipt.notes || '-'}
+                            {receipt.notes || "-"}
                           </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: "center", padding: "8px" }}>
+                          {invoice && customer && company && (
+                            <PrintButton
+                              variant="outlined"
+                              size="small"
+                              iconOnly
+                              printableContent={() => (
+                                <PrintableReceipt
+                                  receipt={receipt}
+                                  invoice={invoice}
+                                  customer={customer}
+                                  company={company}
+                                />
+                              )}
+                              documentTitle={`קבלה-${receipt.receiptNumber}`}
+                            />
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -225,9 +347,14 @@ const ReceiptsDialog = ({
             )}
 
             {receipts.length > 0 && (
-              <Box sx={{ mt: 2, textAlign: 'right' }}>
+              <Box
+                sx={{ mt: 2, textAlign: language === "he" ? "left" : "right" }}
+              >
                 <Typography variant="body2" color="text.secondary">
-                  Total {receipts.length} payment{receipts.length !== 1 ? 's' : ''} recorded
+                  {t.totalPayments} {receipts.length}{" "}
+                  {receipts.length !== 1
+                    ? t.paymentsRecorded
+                    : t.paymentRecorded}
                 </Typography>
               </Box>
             )}
@@ -236,9 +363,7 @@ const ReceiptsDialog = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>
-          Close
-        </Button>
+        <Button onClick={onClose}>{t.close}</Button>
       </DialogActions>
     </Dialog>
   );

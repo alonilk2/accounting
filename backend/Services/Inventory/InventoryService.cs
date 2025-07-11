@@ -35,7 +35,7 @@ public class InventoryService : BaseService<Item>, IInventoryService
     {
         return query.Where(i => 
             i.Name.Contains(searchTerm) ||
-            i.Sku.Contains(searchTerm) ||
+            i.SKU.Contains(searchTerm) ||
             (i.Description != null && i.Description.Contains(searchTerm)));
     }
 
@@ -47,7 +47,7 @@ public class InventoryService : BaseService<Item>, IInventoryService
 
             return await _context.Items
                 .AsNoTracking()
-                .Where(i => i.CompanyId == companyId && !i.IsDeleted && i.Sku == sku)
+                .Where(i => i.CompanyId == companyId && !i.IsDeleted && i.SKU == sku)
                 .FirstOrDefaultAsync(cancellationToken);
         }
         catch (Exception ex)
@@ -200,7 +200,7 @@ public class InventoryService : BaseService<Item>, IInventoryService
                 {
                     ItemId = item.Id,
                     ItemName = item.Name,
-                    Sku = item.Sku,
+                    Sku = item.SKU,
                     Quantity = item.CurrentStockQty,
                     UnitCost = unitCost,
                     TotalValue = totalValue
@@ -321,7 +321,7 @@ public class InventoryService : BaseService<Item>, IInventoryService
                 {
                     ItemId = item.Id,
                     Name = item.Name,
-                    Sku = item.Sku,
+                    Sku = item.SKU,
                     CurrentStock = item.CurrentStockQty,
                     ReorderPoint = item.ReorderPoint,
                     UnitCost = unitCost,

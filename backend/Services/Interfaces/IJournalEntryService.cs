@@ -9,9 +9,9 @@ namespace backend.Services.Interfaces;
 public interface IJournalEntryService
 {
     /// <summary>
-    /// Create journal entries for a sales transaction
+    /// Create journal entries for an invoice transaction
     /// </summary>
-    Task CreateSalesJournalEntriesAsync(int salesOrderId, int companyId, string userId, CancellationToken cancellationToken = default);
+    Task CreateSalesJournalEntriesAsync(int invoiceId, int companyId, string userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create journal entries for a payment receipt

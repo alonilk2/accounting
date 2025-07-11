@@ -20,14 +20,19 @@ import {
   Payment as PaymentIcon,
   Edit as EditIcon,
   Receipt as ReceiptIcon,
+  Print as PrintIcon,
+  Assignment as QuoteIcon,
+  CheckCircle as ConfirmedIcon,
+  LocalShipping as ShippedIcon,
 } from '@mui/icons-material';
-import { DataGrid, GridActionsCellItem, type GridColDef } from '@mui/x-data-grid';
+import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useUIStore } from '../stores';
-import { salesAPI } from '../services/api';
-import type { SalesOrder, SalesOrderStatus } from '../types/entities';
+import { salesAPI, customersAPI } from '../services/api';
+import type { SalesOrder, SalesOrderStatus, Customer, Company } from '../types/entities';
 import SalesOrderForm from '../components/sales/SalesOrderForm';
-import ReceiptsDialog from '../components/sales/ReceiptsDialog';
+import SalesOrderReceiptsDialog from '../components/sales/SalesOrderReceiptsDialog';
+import { PrintButton, PrintableSalesOrder } from '../components/print';
 import { ModernButton, ModernFab } from '../components/ui';
 
 const Sales = () => {
@@ -36,11 +41,15 @@ const Sales = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [selectedDocumentType, setSelectedDocumentType] = useState<SalesOrderStatus>('Quote');
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [company, setCompany] = useState<Company | null>(null);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<SalesOrderStatus | ''>('');
@@ -51,21 +60,50 @@ const Sales = () => {
     try {
       setLoading(true);
       setError(null);
-      const ordersData = await salesAPI.getOrders({
-        status: statusFilter || undefined,
-      });
+      const [ordersData, customersData] = await Promise.all([
+        salesAPI.getOrders({
+          status: statusFilter || undefined,
+        }),
+        customersAPI.getAll(),
+      ]);
       setOrders(ordersData);
+      setCustomers(customersData);
+      
+      // Load company data if not already loaded
+      if (!company) {
+        try {
+          const companyData = {
+            id: '1',
+            name: 'החברה שלי',
+            address: 'רחוב הראשי 123, תל אביב',
+            israelTaxId: '123456789',
+            phone: '03-1234567',
+            email: 'info@mycompany.co.il',
+            currency: 'ILS',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          } as Company;
+          setCompany(companyData);
+        } catch (err) {
+          console.warn('Could not load company data:', err);
+        }
+      }
     } catch (err) {
       setError('Failed to load sales orders');
       console.error('Error loading orders:', err);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, company]);
 
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
+
+  const handleNewDocument = (documentType: SalesOrderStatus) => {
+    setSelectedDocumentType(documentType);
+    setShowForm(true);
+  };
 
   const handleStatusChange = async (orderId: number, newStatus: SalesOrderStatus) => {
     try {
@@ -98,21 +136,40 @@ const Sales = () => {
     }
   };
 
+  const getPrintableOrderComponent = (order: SalesOrder) => {
+    const customer = customers.find(c => c.id === order.customerId);
+    if (!customer || !company) {
+      return null;
+    }
+
+    return () => (
+      <PrintableSalesOrder
+        salesOrder={order}
+        customer={customer}
+        company={company}
+      />
+    );
+  };
+
   const columns: GridColDef[] = [
     {
       field: 'orderNumber',
       headerName: 'מספר הזמנה',
       width: 150,
+      minWidth: 120,
     },
     {
       field: 'customerName',
       headerName: 'לקוח',
       width: 200,
+      minWidth: 150,
+      flex: 1,
     },
     {
       field: 'orderDate',
       headerName: 'תאריך',
       width: 120,
+      minWidth: 100,
       valueFormatter: (value: unknown) => {
         if (value instanceof Date) {
           return value.toLocaleDateString('he-IL');
@@ -127,6 +184,7 @@ const Sales = () => {
       field: 'dueDate',
       headerName: 'תאריך יעד',
       width: 120,
+      minWidth: 100,
       valueFormatter: (value: unknown) => {
         if (!value) return '-';
         if (value instanceof Date) {
@@ -142,6 +200,7 @@ const Sales = () => {
       field: 'status',
       headerName: 'סטטוס',
       width: 180,
+      minWidth: 140,
       renderCell: (params) => {
         const order = params.row as SalesOrder;
         return (
@@ -151,13 +210,12 @@ const Sales = () => {
             onChange={(e) => handleStatusChange(order.id, e.target.value as SalesOrderStatus)}
             size="small"
             variant="outlined"
-            sx={{ minWidth: 120 }}
+            sx={{ minWidth: 120, width: '100%' }}
           >
-            <MenuItem value="Draft">טיוטה</MenuItem>
-            <MenuItem value="Confirmed">מאושר</MenuItem>
-            <MenuItem value="Shipped">נשלח</MenuItem>
-            <MenuItem value="Invoiced">חשבונית</MenuItem>
-            <MenuItem value="Paid">שולם</MenuItem>
+            <MenuItem value="Quote">הצעת מחיר</MenuItem>
+            <MenuItem value="Confirmed">הזמנה</MenuItem>
+            <MenuItem value="Shipped">תעודת משלוח</MenuItem>
+            <MenuItem value="Completed">הושלם</MenuItem>
             <MenuItem value="Cancelled">בוטל</MenuItem>
           </TextField>
         );
@@ -167,6 +225,7 @@ const Sales = () => {
       field: 'totalAmount',
       headerName: 'סכום כולל',
       width: 120,
+      minWidth: 100,
       type: 'number',
       valueFormatter: (value: unknown) => `₪${Number(value).toLocaleString()}`,
     },
@@ -174,6 +233,7 @@ const Sales = () => {
       field: 'paidAmount',
       headerName: 'שולם',
       width: 120,
+      minWidth: 100,
       type: 'number',
       valueFormatter: (value: unknown) => `₪${Number(value).toLocaleString()}`,
     },
@@ -181,62 +241,130 @@ const Sales = () => {
       field: 'actions',
       type: 'actions',
       headerName: 'פעולות',
-      width: 120,
-      getActions: (params) => {
+      width: 260,
+      minWidth: 240,
+      renderCell: (params) => {
         const order = params.row as SalesOrder;
         const actions = [];
 
-        if (order.status !== 'Paid' && order.status !== 'Cancelled') {
-          actions.push(
-            <GridActionsCellItem
-              icon={<PaymentIcon />}
-              label="תשלום"
-              onClick={() => {
-                setSelectedOrder(order);
-                setPaymentAmount((order.totalAmount - order.paidAmount).toString());
-                setShowPaymentDialog(true);
-              }}
-            />
-          );
+        if (order.status !== 'Completed' && order.status !== 'Cancelled') {
+          actions.push({
+            icon: <PaymentIcon />,
+            label: "תשלום",
+            onClick: () => {
+              setSelectedOrder(order);
+              setPaymentAmount((order.totalAmount - order.paidAmount).toString());
+              setShowPaymentDialog(true);
+            }
+          });
         }
 
         // Always show receipts button if there are any payments
         if (order.paidAmount > 0) {
-          actions.push(
-            <GridActionsCellItem
-              icon={<ReceiptIcon />}
-              label="קבלות"
-              onClick={() => {
-                setSelectedOrder(order);
-                setShowReceiptsDialog(true);
-              }}
-            />
-          );
+          actions.push({
+            icon: <ReceiptIcon />,
+            label: "קבלות",
+            onClick: () => {
+              setSelectedOrder(order);
+              setShowReceiptsDialog(true);
+            }
+          });
         }
 
-        actions.push(
-          <GridActionsCellItem
-            icon={<EditIcon />}
-            label="עריכה"
-            onClick={() => {
-              // TODO: Implement edit functionality
-              console.log('Edit order:', order.id);
-            }}
-          />
-        );
+        actions.push({
+          icon: <EditIcon />,
+          label: "עריכה",
+          onClick: () => {
+            // TODO: Implement edit functionality
+            console.log('Edit order:', order.id);
+          }
+        });
 
-        return actions;
+        // Add print button
+        const PrintableComponent = getPrintableOrderComponent(order);
+        if (PrintableComponent) {
+          actions.push({
+            icon: <PrintIcon />,
+            label: "הדפס",
+            onClick: () => {
+              setSelectedOrder(order);
+              setShowPrintDialog(true);
+            }
+          });
+        }
+
+        return (
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 0.5, 
+            alignItems: 'center',
+            height: '100%',
+            py: 0.5
+          }}>
+            {actions.map((action, index) => (
+              <Box
+                key={index}
+                onClick={action.onClick}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  padding: '4px 6px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
+                  minWidth: '48px',
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  },
+                  '&:active': {
+                    transform: 'translateY(0)',
+                  }
+                }}
+              >
+                <Box sx={{ 
+                  color: 'primary.main',
+                  mb: 0.25,
+                  fontSize: '16px',
+                  transition: 'color 0.2s ease',
+                  '&:hover': {
+                    color: 'primary.dark',
+                  }
+                }}>
+                  {action.icon}
+                </Box>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    textAlign: 'center',
+                    lineHeight: 1,
+                    color: 'text.secondary',
+                    transition: 'color 0.2s ease',
+                    '&:hover': {
+                      color: 'text.primary',
+                    }
+                  }}
+                >
+                  {action.label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        );
       },
     },
   ];
 
   const statusOptions = [
     { value: '', label: 'כל הסטטוסים' },
-    { value: 'Draft', label: 'טיוטה' },
-    { value: 'Confirmed', label: 'מאושר' },
-    { value: 'Shipped', label: 'נשלח' },
-    { value: 'Invoiced', label: 'חשבונית' },
-    { value: 'Paid', label: 'שולם' },
+    { value: 'Quote', label: 'הצעת מחיר' },
+    { value: 'Confirmed', label: 'הזמנה' },
+    { value: 'Shipped', label: 'תעודת משלוח' },
+    { value: 'Completed', label: 'הושלם' },
     { value: 'Cancelled', label: 'בוטל' },
   ];
 
@@ -252,9 +380,14 @@ const Sales = () => {
       <SalesOrderForm
         onSave={() => {
           setShowForm(false);
+          setSelectedDocumentType('Quote'); // Reset to default
           loadOrders();
         }}
-        onCancel={() => setShowForm(false)}
+        onCancel={() => {
+          setShowForm(false);
+          setSelectedDocumentType('Quote'); // Reset to default
+        }}
+        initialDocumentType={selectedDocumentType}
       />
     );
   }
@@ -269,7 +402,7 @@ const Sales = () => {
 
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
-          {language === 'he' ? 'מכירות והזמנות' : 'Sales & Orders'}
+          {language === 'he' ? 'מכירות' : 'Sales'}
         </Typography>
         <Box display="flex" gap={1}>
           <ModernButton
@@ -280,14 +413,45 @@ const Sales = () => {
           >
             {language === 'he' ? 'רענן' : 'Refresh'}
           </ModernButton>
-          <ModernButton
-            variant="primary"
-            icon={<AddIcon />}
-            onClick={() => setShowForm(true)}
-            glow
-          >
-            {language === 'he' ? 'הזמנה חדשה' : 'New Order'}
-          </ModernButton>
+          
+          {/* Document Type Buttons */}
+          <Box display="flex" gap={1} sx={{ ml: 2 }}>
+            <ModernButton
+              variant="primary"
+              icon={<QuoteIcon />}
+              onClick={() => handleNewDocument('Quote')}
+              sx={{ 
+                backgroundColor: '#2196f3',
+                '&:hover': { backgroundColor: '#1976d2' }
+              }}
+            >
+              {language === 'he' ? 'הצעת מחיר' : 'Quote'}
+            </ModernButton>
+            
+            <ModernButton
+              variant="primary"
+              icon={<ConfirmedIcon />}
+              onClick={() => handleNewDocument('Confirmed')}
+              sx={{ 
+                backgroundColor: '#4caf50',
+                '&:hover': { backgroundColor: '#388e3c' }
+              }}
+            >
+              {language === 'he' ? 'הזמנה' : 'Confirmed'}
+            </ModernButton>
+            
+            <ModernButton
+              variant="primary"
+              icon={<ShippedIcon />}
+              onClick={() => handleNewDocument('Shipped')}
+              sx={{ 
+                backgroundColor: '#ff9800',
+                '&:hover': { backgroundColor: '#f57c00' }
+              }}
+            >
+              {language === 'he' ? 'תעודת משלוח' : 'Shipped'}
+            </ModernButton>
+          </Box>
         </Box>
       </Box>
 
@@ -366,6 +530,21 @@ const Sales = () => {
                 backgroundColor: 'background.paper',
                 fontWeight: 'bold',
               },
+              '& .MuiDataGrid-actionsCell': {
+                gap: '4px',
+                justifyContent: 'flex-start',
+                paddingLeft: '8px',
+                paddingRight: '8px',
+              },
+              '& .MuiDataGrid-cell': {
+                display: 'flex',
+                alignItems: 'center',
+              },
+              '& .MuiDataGrid-actionsCell .MuiButtonBase-root': {
+                minWidth: '32px',
+                minHeight: '32px',
+                padding: '4px',
+              },
             }}
           />
         </CardContent>
@@ -435,14 +614,77 @@ const Sales = () => {
 
       {/* Receipts Dialog */}
       {selectedOrder && (
-        <ReceiptsDialog
+        <SalesOrderReceiptsDialog
           open={showReceiptsDialog}
           onClose={() => setShowReceiptsDialog(false)}
-          orderId={selectedOrder.id}
-          orderNumber={selectedOrder.orderNumber}
-          totalAmount={selectedOrder.totalAmount}
-          paidAmount={selectedOrder.paidAmount}
+          salesOrder={selectedOrder}
+          customer={customers.find(c => c.id === selectedOrder.customerId)}
+          company={company || undefined}
         />
+      )}
+
+      {/* Print Dialog */}
+      {selectedOrder && (
+        <Dialog
+          open={showPrintDialog}
+          onClose={() => {
+            setShowPrintDialog(false);
+            setSelectedOrder(null);
+          }}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            הדפסת מסמך - הזמנה {selectedOrder.orderNumber}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ textAlign: 'center', py: 2 }}>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                בחר את פעולת ההדפסה הרצויה:
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {(() => {
+                  const PrintableComponent = getPrintableOrderComponent(selectedOrder);
+                  if (!PrintableComponent) {
+                    return (
+                      <Typography color="error">
+                        לא ניתן להדפיס את המסמך - חסרים נתונים
+                      </Typography>
+                    );
+                  }
+
+                  return (
+                    <>
+                      <PrintButton
+                        variant="contained"
+                        size="large"
+                        printableContent={PrintableComponent}
+                        documentTitle={`הזמנה-${selectedOrder.orderNumber}`}
+                        onAfterPrint={() => {
+                          setShowPrintDialog(false);
+                          setSelectedOrder(null);
+                        }}
+                      >
+                        הדפס הזמנה
+                      </PrintButton>
+                    </>
+                  );
+                })()}
+              </Box>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <ModernButton 
+              variant="ghost" 
+              onClick={() => {
+                setShowPrintDialog(false);
+                setSelectedOrder(null);
+              }}
+            >
+              סגור
+            </ModernButton>
+          </DialogActions>
+        </Dialog>
       )}
 
       {/* Floating Action Button for Quick Add */}

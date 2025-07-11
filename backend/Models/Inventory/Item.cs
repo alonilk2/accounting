@@ -131,12 +131,6 @@ public class Item : TenantEntity
 
     // Backward compatibility aliases
     /// <summary>
-    /// Alias for SKU property (backward compatibility)
-    /// </summary>
-    [NotMapped]
-    public string Sku => SKU;
-
-    /// <summary>
     /// Alias for CostPrice property (backward compatibility)
     /// </summary>
     [NotMapped]
@@ -157,6 +151,7 @@ public class Item : TenantEntity
     public virtual ICollection<InventoryBOM> ComponentBOMs { get; set; } = new List<InventoryBOM>();
     public virtual ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
     public virtual ICollection<SalesOrderLine> SalesOrderLines { get; set; } = new List<SalesOrderLine>();
+    public virtual ICollection<InvoiceLine> InvoiceLines { get; set; } = new List<InvoiceLine>();
     public virtual ICollection<PurchaseOrderLine> PurchaseOrderLines { get; set; } = new List<PurchaseOrderLine>();
     public virtual ICollection<POSSaleLine> POSSaleLines { get; set; } = new List<POSSaleLine>();
 }

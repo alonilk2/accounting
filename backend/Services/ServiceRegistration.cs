@@ -4,6 +4,7 @@ using backend.Services.Sales;
 using backend.Services.Purchasing;
 using backend.Services.Inventory;
 using backend.Services.Accounting;
+using backend.Services.Printing;
 
 namespace backend.Services;
 
@@ -26,6 +27,8 @@ public static class ServiceRegistration
         
         // Sales services
         services.AddScoped<ISalesOrderService, SalesOrderService>();
+        services.AddScoped<ICustomerDocumentService, CustomerDocumentService>();
+        services.AddScoped<IInvoiceService, InvoiceService>();
         
         // Purchasing services
         services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
@@ -36,6 +39,9 @@ public static class ServiceRegistration
         // Accounting services
         services.AddScoped<IChartOfAccountsService, ChartOfAccountsService>();
         services.AddScoped<IJournalEntryService, JournalEntryService>();
+        
+        // Print services
+        services.AddScoped<IPrintService, PrintService>();
         
         return services;
     }

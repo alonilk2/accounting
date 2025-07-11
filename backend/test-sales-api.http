@@ -9,7 +9,7 @@ Content-Type: application/json
   "agentId": null,
   "orderDate": "2025-07-11T10:00:00Z",
   "dueDate": "2025-08-11T10:00:00Z",
-  "status": "Draft",
+  "status": "Quote",
   "currency": "ILS",
   "notes": "Test order validation",
   "lines": [
@@ -35,7 +35,7 @@ Content-Type: application/json
   "agentId": null,
   "orderDate": "2025-07-11T10:00:00Z",
   "dueDate": "2025-08-11T10:00:00Z",
-  "status": "Draft",
+  "status": "Quote",
   "currency": "ILS",
   "notes": "Test sales order",
   "lines": [

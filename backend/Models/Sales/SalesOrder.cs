@@ -7,21 +7,20 @@ using backend.Models.Inventory;
 namespace backend.Models.Sales;
 
 /// <summary>
-/// Document status for sales orders and invoices
+/// Document status for sales orders (NOT invoices)
 /// </summary>
 public enum SalesOrderStatus
 {
-    Draft = 1,
+    Quote = 1,
     Confirmed = 2,
     Shipped = 3,
-    Invoiced = 4,
-    Paid = 5,
-    Cancelled = 6
+    Completed = 4,
+    Cancelled = 5
 }
 
 /// <summary>
-/// Sales orders and invoices
-/// Represents customer orders and billing documents
+/// Sales orders - represents customer orders and quotations
+/// Separate from invoices which are billing documents
 /// </summary>
 public class SalesOrder : TenantEntity
 {
@@ -51,7 +50,7 @@ public class SalesOrder : TenantEntity
     public DateTime? DeliveryDate { get; set; }
 
     [Required]
-    public SalesOrderStatus Status { get; set; } = SalesOrderStatus.Draft;
+    public SalesOrderStatus Status { get; set; } = SalesOrderStatus.Quote;
 
     /// <summary>
     /// Subtotal before tax and discounts
@@ -120,7 +119,7 @@ public class SalesOrder : TenantEntity
     public virtual Customer Customer { get; set; } = null!;
     public virtual Agent? Agent { get; set; }
     public virtual ICollection<SalesOrderLine> Lines { get; set; } = new List<SalesOrderLine>();
-    public virtual ICollection<Receipt> Receipts { get; set; } = new List<Receipt>();
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }
 
 /// <summary>
@@ -185,44 +184,4 @@ public class SalesOrderLine : TenantEntity
     public virtual Item Item { get; set; } = null!;
 }
 
-/// <summary>
-/// Customer payments and receipts
-/// </summary>
-public class Receipt : TenantEntity
-{
-    [Required]
-    public int SalesOrderId { get; set; }
 
-    /// <summary>
-    /// Receipt number
-    /// </summary>
-    [Required]
-    [MaxLength(50)]
-    public string ReceiptNumber { get; set; } = string.Empty;
-
-    [Required]
-    public DateTime PaymentDate { get; set; }
-
-    [Required]
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal Amount { get; set; }
-
-    /// <summary>
-    /// Payment method (Cash, Check, Credit Card, Bank Transfer, etc.)
-    /// </summary>
-    [Required]
-    [MaxLength(50)]
-    public string PaymentMethod { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Reference number (check number, transaction ID, etc.)
-    /// </summary>
-    [MaxLength(100)]
-    public string? ReferenceNumber { get; set; }
-
-    [MaxLength(500)]
-    public string? Notes { get; set; }
-
-    // Navigation properties
-    public virtual SalesOrder SalesOrder { get; set; } = null!;
-}

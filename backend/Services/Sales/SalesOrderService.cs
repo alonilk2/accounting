@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using backend.Data;
 using backend.Models.Sales;
 using backend.Models.Inventory;
+using backend.Models.Audit;
 using backend.Services.Interfaces;
 using backend.Services.Core;
 using backend.Services.Accounting;
@@ -78,7 +79,7 @@ public class SalesOrderService : BaseService<SalesOrder>, ISalesOrderService
             salesOrder.IsDeleted = false;
 
             // Set default status if not provided
-            if (salesOrder.Status == SalesOrderStatus.Draft)
+            if (salesOrder.Status == SalesOrderStatus.Quote)
             {
                 salesOrder.Status = SalesOrderStatus.Confirmed;
             }
@@ -149,82 +150,6 @@ public class SalesOrderService : BaseService<SalesOrder>, ISalesOrderService
         }
     }
 
-    public async Task<Receipt> ProcessPaymentAsync(int salesOrderId, decimal paymentAmount, string paymentMethod, int companyId, string userId, CancellationToken cancellationToken = default)
-    {
-        return await TransactionHelper.ExecuteInTransactionAsync(_context, async (transaction, ct) =>
-        {
-            var salesOrder = await _context.SalesOrders
-                .Where(so => so.Id == salesOrderId && so.CompanyId == companyId && !so.IsDeleted)
-                .FirstOrDefaultAsync(ct);
-
-            if (salesOrder == null)
-            {
-                throw new InvalidOperationException($"Sales order {salesOrderId} not found");
-            }
-
-            if (paymentAmount <= 0)
-            {
-                throw new InvalidOperationException("Payment amount must be greater than zero");
-            }
-
-            if (paymentAmount > salesOrder.TotalAmount)
-            {
-                throw new InvalidOperationException("Payment amount cannot exceed order total");
-            }
-
-            // Create receipt
-            var receipt = new Receipt
-            {
-                CompanyId = companyId,
-                SalesOrderId = salesOrderId,
-                PaymentDate = DateTime.UtcNow,
-                Amount = paymentAmount,
-                PaymentMethod = paymentMethod,
-                ReceiptNumber = await GenerateReceiptNumberAsync(companyId, ct),
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                CreatedBy = userId,
-                UpdatedBy = userId,
-                IsDeleted = false
-            };
-
-            _context.Receipts.Add(receipt);
-
-            // Update sales order status and paid amount based on payment
-            var totalPaid = await _context.Receipts
-                .Where(r => r.SalesOrderId == salesOrderId && !r.IsDeleted)
-                .SumAsync(r => r.Amount, ct) + paymentAmount;
-
-            // Update the PaidAmount field with the total amount paid
-            salesOrder.PaidAmount = totalPaid;
-
-            if (totalPaid >= salesOrder.TotalAmount)
-            {
-                salesOrder.Status = SalesOrderStatus.Paid;
-            }
-            else
-            {
-                salesOrder.Status = SalesOrderStatus.Invoiced; // Partially paid
-            }
-
-            salesOrder.UpdatedAt = DateTime.UtcNow;
-            salesOrder.UpdatedBy = userId;
-
-            await _context.SaveChangesAsync(ct);
-
-            // Create accounting entries for payment
-            await CreatePaymentAccountingEntriesAsync(receipt, salesOrder, userId, ct);
-
-            await LogAuditAsync(salesOrderId, companyId, userId, "PAYMENT", 
-                $"Processed payment of {paymentAmount:C} via {paymentMethod}", ct);
-
-            _logger.LogInformation("Processed payment of {Amount:C} for sales order {OrderId}", 
-                paymentAmount, salesOrderId);
-
-            return receipt;
-        }, cancellationToken);
-    }
-
     public async Task<IEnumerable<SalesOrder>> GetByCustomerAsync(int customerId, int companyId, CancellationToken cancellationToken = default)
     {
         return await _context.SalesOrders
@@ -244,7 +169,7 @@ public class SalesOrderService : BaseService<SalesOrder>, ISalesOrderService
             .Include(so => so.Customer)
             .Where(so => so.CompanyId == companyId && 
                         !so.IsDeleted &&
-                        so.Status == SalesOrderStatus.Invoiced &&
+                        so.Status == SalesOrderStatus.Shipped &&
                         so.DueDate < DateTime.Today)
             .OrderBy(so => so.DueDate)
             .ToListAsync(cancellationToken);
@@ -319,33 +244,6 @@ public class SalesOrderService : BaseService<SalesOrder>, ISalesOrderService
         if (!string.IsNullOrEmpty(lastOrderNumber))
         {
             var numberPart = lastOrderNumber.Substring(prefix.Length);
-            if (int.TryParse(numberPart, out int lastNumber))
-            {
-                nextNumber = lastNumber + 1;
-            }
-        }
-
-        return $"{prefix}{nextNumber:D4}";
-    }
-
-    /// <summary>
-    /// Generate unique receipt number for the company
-    /// </summary>
-    private async Task<string> GenerateReceiptNumberAsync(int companyId, CancellationToken cancellationToken)
-    {
-        var year = DateTime.Now.Year;
-        var prefix = $"REC-{year}-";
-        
-        var lastReceiptNumber = await _context.Receipts
-            .Where(r => r.CompanyId == companyId && r.ReceiptNumber.StartsWith(prefix))
-            .OrderByDescending(r => r.ReceiptNumber)
-            .Select(r => r.ReceiptNumber)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        int nextNumber = 1;
-        if (!string.IsNullOrEmpty(lastReceiptNumber))
-        {
-            var numberPart = lastReceiptNumber.Substring(prefix.Length);
             if (int.TryParse(numberPart, out int lastNumber))
             {
                 nextNumber = lastNumber + 1;
@@ -452,151 +350,21 @@ public class SalesOrderService : BaseService<SalesOrder>, ISalesOrderService
     }
 
     /// <summary>
-    /// Create accounting entries for payment receipt
+    /// Helper method to log audit trail
     /// </summary>
-    private async Task CreatePaymentAccountingEntriesAsync(Receipt receipt, SalesOrder salesOrder, string userId, CancellationToken cancellationToken)
+    private new async Task LogAuditAsync(int entityId, int companyId, string userId, string action, string description, CancellationToken cancellationToken)
     {
-        try
+        var auditLog = new AuditLog
         {
-            await _journalEntryService.CreatePaymentReceiptJournalEntriesAsync(
-                receipt.Id, 
-                receipt.CompanyId, 
-                userId, 
-                cancellationToken);
+            CompanyId = companyId,
+            EntityType = "SalesOrder",
+            EntityId = entityId,
+            UserId = int.TryParse(userId, out int userIdInt) ? userIdInt : 1, // Default to 1 if parsing fails
+            Action = action,
+            Details = description
+        };
 
-            _logger.LogInformation("Successfully created payment accounting entries for receipt {ReceiptId}", receipt.Id);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to create payment accounting entries for receipt {ReceiptId}", receipt.Id);
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Recalculate and update the PaidAmount for a sales order based on its receipts
-    /// This method can be used to fix data inconsistencies
-    /// </summary>
-    /// <param name="salesOrderId">Sales order ID</param>
-    /// <param name="companyId">Company ID</param>
-    /// <param name="userId">User ID for audit</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Updated sales order</returns>
-    public async Task<SalesOrder> RecalculatePaidAmountAsync(int salesOrderId, int companyId, string userId, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var salesOrder = await _context.SalesOrders
-                .Where(so => so.Id == salesOrderId && so.CompanyId == companyId && !so.IsDeleted)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (salesOrder == null)
-            {
-                throw new InvalidOperationException($"Sales order {salesOrderId} not found");
-            }
-
-            // Calculate total paid amount from all receipts
-            var totalPaid = await _context.Receipts
-                .Where(r => r.SalesOrderId == salesOrderId && !r.IsDeleted)
-                .SumAsync(r => r.Amount, cancellationToken);
-
-            // Update the PaidAmount field
-            salesOrder.PaidAmount = totalPaid;
-
-            // Update status based on payment amount
-            if (totalPaid >= salesOrder.TotalAmount)
-            {
-                salesOrder.Status = SalesOrderStatus.Paid;
-            }
-            else if (totalPaid > 0)
-            {
-                salesOrder.Status = SalesOrderStatus.Invoiced; // Partially paid
-            }
-
-            salesOrder.UpdatedAt = DateTime.UtcNow;
-            salesOrder.UpdatedBy = userId;
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            await LogAuditAsync(salesOrderId, companyId, userId, "RECALCULATE", 
-                $"Recalculated PaidAmount to {totalPaid:C}", cancellationToken);
-
-            _logger.LogInformation("Recalculated PaidAmount for sales order {OrderId} to {PaidAmount:C}", 
-                salesOrderId, totalPaid);
-
-            return salesOrder;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error recalculating PaidAmount for sales order {OrderId}", salesOrderId);
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Recalculate PaidAmount for all sales orders in a company
-    /// Useful for data migration or fixing inconsistencies
-    /// </summary>
-    /// <param name="companyId">Company ID</param>
-    /// <param name="userId">User ID for audit</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Number of orders updated</returns>
-    public async Task<int> RecalculateAllPaidAmountsAsync(int companyId, string userId, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var salesOrders = await _context.SalesOrders
-                .Where(so => so.CompanyId == companyId && !so.IsDeleted)
-                .ToListAsync(cancellationToken);
-
-            int updatedCount = 0;
-
-            foreach (var salesOrder in salesOrders)
-            {
-                // Calculate total paid amount from all receipts
-                var totalPaid = await _context.Receipts
-                    .Where(r => r.SalesOrderId == salesOrder.Id && !r.IsDeleted)
-                    .SumAsync(r => r.Amount, cancellationToken);
-
-                // Only update if the PaidAmount is different
-                if (salesOrder.PaidAmount != totalPaid)
-                {
-                    salesOrder.PaidAmount = totalPaid;
-
-                    // Update status based on payment amount
-                    if (totalPaid >= salesOrder.TotalAmount)
-                    {
-                        salesOrder.Status = SalesOrderStatus.Paid;
-                    }
-                    else if (totalPaid > 0)
-                    {
-                        salesOrder.Status = SalesOrderStatus.Invoiced; // Partially paid
-                    }
-
-                    salesOrder.UpdatedAt = DateTime.UtcNow;
-                    salesOrder.UpdatedBy = userId;
-
-                    updatedCount++;
-                }
-            }
-
-            if (updatedCount > 0)
-            {
-                await _context.SaveChangesAsync(cancellationToken);
-
-                await LogAuditAsync(0, companyId, userId, "BULK_RECALCULATE", 
-                    $"Recalculated PaidAmount for {updatedCount} sales orders", cancellationToken);
-
-                _logger.LogInformation("Recalculated PaidAmount for {UpdatedCount} sales orders in company {CompanyId}", 
-                    updatedCount, companyId);
-            }
-
-            return updatedCount;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error recalculating PaidAmounts for company {CompanyId}", companyId);
-            throw;
-        }
+        _context.AuditLogs.Add(auditLog);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

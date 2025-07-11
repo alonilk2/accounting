@@ -39,10 +39,10 @@ import {
   TrendingUp,
   Insights,
   SmartToy,
+  Description,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, useUIStore } from '../stores';
-import { AccessibilityButton } from './accessibility';
 
 // Inject global styles for animations
 if (typeof document !== 'undefined') {
@@ -74,7 +74,8 @@ const navigationItems: NavItem[] = [
   { text: 'AI Insights', textHe: 'תובנות AI', icon: <Insights />, path: '/ai-insights', section: 'AI Analytics', isAI: true, badge: 'AI' },
   { text: 'Smart Analytics', textHe: 'אנליטיקה חכמה', icon: <TrendingUp />, path: '/smart-analytics', section: 'AI Analytics', isAI: true, badge: 'AI' },
   { text: 'Customers', textHe: 'לקוחות', icon: <People />, path: '/customers', section: 'Sales' },
-  { text: 'Sales Orders', textHe: 'הזמנות מכירה', icon: <Receipt />, path: '/sales', section: 'Sales' },
+  { text: 'Sales Orders', textHe: 'מכירות', icon: <Receipt />, path: '/sales', section: 'Sales' },
+  { text: 'Invoices', textHe: 'חשבוניות', icon: <Description />, path: '/invoices', section: 'Sales' },
   { text: 'Suppliers', textHe: 'ספקים', icon: <Business />, path: '/suppliers', section: 'Purchasing' },
   { text: 'Purchase Orders', textHe: 'הזמנות רכש', icon: <ShoppingCart />, path: '/purchases', section: 'Purchasing' },
   { text: 'Inventory', textHe: 'מלאי', icon: <Inventory />, path: '/inventory', section: 'Inventory' },
@@ -657,8 +658,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         component="main"
         sx={{
           flexGrow: 1,
-          width: `100%`,
-
+          width: '100%',
           transition: theme.transitions.create(['width', 'margin'], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
@@ -694,9 +694,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
           </Box>
         </Box>
       </Box>
-
-      {/* Accessibility Button - Always visible floating button */}
-      <AccessibilityButton position="bottom-right" size="medium" />
     </Box>
   );
 };

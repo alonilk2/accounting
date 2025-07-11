@@ -1,4 +1,5 @@
-AI-First SaaS Accounting Platform for Israeli Businesses – Technical Documentation
+# AI-First SaaS Accounting Platform for Israeli Businesses – Technical Documentation
+
 System Overview and Goals
 This platform is a cloud-native, AI-first SaaS accounting system targeting small-to-medium Israeli businesses. It covers end-to-end financial operations (sales, purchasing, inventory, banking) plus POS and recurring billing. The system automates tedious workflows—invoice processing, data entry, reconciliations—improving efficiency, accuracy and compliance
 sage.com
@@ -22,8 +23,8 @@ Suppliers: (id PK, company_id FK, name, address, contact, tax_id, etc.). For pro
 Items (Products): (id PK, company_id FK, sku, name, unit, cost, price, current_stock_qty, reorder_point). Defines sellable/buyable inventory items.
 InventoryBOM: (parent_item_id, component_item_id, quantity). (Optional) Bill of Materials for manufacturing-type items.
 InventoryTransactions: (id PK, company_id FK, item_id FK, date, qty_change, transaction_type (sale, purchase, adjustment, production), ref_id FK). Records all stock movements (sales shipments, receipts, production, adjustments). Maintains current stock via summing qty_change.
-SalesOrders/Invoices: (id PK, company_id FK, customer_id FK, agent_id FK, date, due_date, total_amount, status). A sales document (quote or invoice).
-SalesOrderLines: (id PK, order_id FK, item_id FK, quantity, unit_price, tax_rate, line_total). Line items for SalesOrders.
+Saless/Invoices: (id PK, company_id FK, customer_id FK, agent_id FK, date, due_date, total_amount, status). A sales document (quote or invoice).
+SalesLines: (id PK, order_id FK, item_id FK, quantity, unit_price, tax_rate, line_total). Line items for Saless.
 Receipts/Payments Received: (id PK, company_id FK, invoice_id FK, date, amount, payment_method). Tracks customer payments.
 PurchaseOrders/Bills: (id PK, company_id FK, supplier_id FK, date, total_amount, status). A purchase document or vendor bill.
 PurchaseOrderLines: (id PK, purchase_id FK, item_id FK, quantity, unit_cost, line_total).
@@ -112,25 +113,27 @@ Bookkeeper (Maya, 30): Handles day-to-day entries. Story: “As a bookkeeper, I 
 Accountant (Yossi, 50): External CPA reviewing client books. Story: “As an accountant, I want to verify the general ledger and export data for audit, ensuring tax compliance.” Yossi appreciates the compliance module (מבנה אחיד) – he can quickly get the INI/BKMV files and confirm all transactions are captured. He also uses the API to pull data into his analysis tools.
 AI Assistant (Virtual Persona): A built-in helper chatbot. Story: “As an AI assistant, I want to answer user queries and execute simple tasks (like scheduling a report), to streamline their workflow.” This persona interfaces via chat: for example, a user types “Show me last month’s sales by product,” and the assistant fetches data from the database, aggregates it, and replies in natural language, possibly with an attached chart. The assistant also reminds users of deadlines (e.g. VAT payment) based on calendar and alert rules.
 Developer Backlog (Feature List)
-Feature	Priority	Effort	Dependencies
-User authentication & roles	High (1)	Medium	-
-Multi-tenant company support	High (1)	Medium	User auth
-Chart of Accounts (GL)	High (1)	High	Basic schema
-Customers & Sales Invoicing	High (1)	High	Accounts
-Suppliers & Purchase Orders	High (1)	High	Accounts
-Inventory management	High (1)	High	Items table; link to Sales/Purchase
-POS (Point of Sale) module	Medium(2)	High	Items, Inventory
-Recurring invoices (Standing)	Medium(2)	Medium	Customers, Sales
-Payments & Banking interface	Medium(2)	Medium	Sales Invoices, GL (A/R), Banking API
-Financial reports (P&L, BS)	High (1)	High	GL, Sales, Purchase
-Compliance export (INI/BKMV)	High (1)	Medium	All financial data; config (TA format)
-API endpoints (REST)	High (1)	Medium	Auth, core modules
-UI/UX for each module	High (1)	High	Backend APIs
-Audit logging & monitoring	Medium(2)	Medium	User actions, data changes
-Azure Deployment & CI/CD	High (1)	Medium	Infrastructure setup
-AI – Receipt OCR (Form Recognizer)	Medium(2)	High	Inventory, Purchase; Azure service integration
-AI – Chatbot interface (GPT)	Low(3)	High	API, database, authentication
-Analytics & Forecasting (AI)	Low(3)	High	Sales/Financial data; ML training
+
+| Feature | Priority | Effort | Dependencies |
+|---------|----------|--------|--------------|
+| User authentication & roles | High (1) | Medium | - |
+| Multi-tenant company support | High (1) | Medium | User auth |
+| Chart of Accounts (GL) | High (1) | High | Basic schema |
+| Customers & Sales Invoicing | High (1) | High | Accounts |
+| Suppliers & Purchase Orders | High (1) | High | Accounts |
+| Inventory management | High (1) | High | Items table; link to Sales/Purchase |
+| POS (Point of Sale) module | Medium (2) | High | Items, Inventory |
+| Recurring invoices (Standing) | Medium (2) | Medium | Customers, Sales |
+| Payments & Banking interface | Medium (2) | Medium | Sales Invoices, GL (A/R), Banking API |
+| Financial reports (P&L, BS) | High (1) | High | GL, Sales, Purchase |
+| Compliance export (INI/BKMV) | High (1) | Medium | All financial data; config (TA format) |
+| API endpoints (REST) | High (1) | Medium | Auth, core modules |
+| UI/UX for each module | High (1) | High | Backend APIs |
+| Audit logging & monitoring | Medium (2) | Medium | User actions, data changes |
+| Azure Deployment & CI/CD | High (1) | Medium | Infrastructure setup |
+| AI – Receipt OCR (Form Recognizer) | Medium (2) | High | Inventory, Purchase; Azure service integration |
+| AI – Chatbot interface (GPT) | Low (3) | High | API, database, authentication |
+| Analytics & Forecasting (AI) | Low (3) | High | Sales/Financial data; ML training |
 
 Priority: (1=Must-have for MVP, 2=Next-phase, 3=Future). Effort: Rough relative (Low/Medium/High). This backlog organizes the release plan. Core accounting (accounts, AR/AP, inventory) and compliance are MVP features. POS, AI features, and advanced analytics come later. Dependencies are noted (e.g. reporting needs complete ledger data).
 Milestones and Timeline

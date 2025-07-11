@@ -100,7 +100,7 @@ Companies (Multi-tenant root)
 
 #### `SalesOrders` & `SalesOrderLines`
 - Complete sales document lifecycle
-- Order status tracking (Draft → Confirmed → Shipped → Invoiced → Paid)
+- Order status tracking (Draft → Order → Delivery → Invoiced → Paid)
 - Multi-currency support with exchange rates
 - Line-level pricing, discounts, and tax calculations
 - Integration with inventory and accounting

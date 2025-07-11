@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using backend.Models.Core;
 using backend.Models.Identity;
 
@@ -73,12 +74,6 @@ public class AuditLog : TenantEntity
     /// </summary>
     [NotMapped]
     public DateTime Timestamp => CreatedAt;
-
-    /// <summary>
-    /// User's IP address (backward compatibility)
-    /// </summary>
-    [NotMapped]
-    public string? IpAddress => IPAddress;
 
     // Navigation properties
     public virtual User User { get; set; } = null!;

@@ -1,0 +1,126 @@
+/* Print styles */
+@media print {
+  body {
+    font-family: 'Arial', sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    color: black !important;
+    background: white !important;
+    direction: rtl !important;
+  }
+
+  /* Hide everything except print content */
+  body * {
+    visibility: hidden;
+  }
+
+  .print-content,
+  .print-content * {
+    visibility: visible !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 1cm;
+    direction: rtl;
+  }
+
+  /* Remove shadows and borders */
+  .print-content {
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+    direction: rtl !important;
+  }
+
+  /* Tables */
+  .print-content table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    direction: rtl !important;
+  }
+
+  .print-content table,
+  .print-content th,
+  .print-content td {
+    border: 1px solid #333 !important;
+  }
+
+  .print-content th,
+  .print-content td {
+    padding: 6px !important;
+    font-size: 10px !important;
+    text-align: right !important;
+  }
+
+  .print-content th {
+    background-color: #f5f5f5 !important;
+    font-weight: bold !important;
+  }
+
+  /* Typography */
+  .print-content h1,
+  .print-content h2,
+  .print-content h3,
+  .print-content h4,
+  .print-content h5,
+  .print-content h6 {
+    color: black !important;
+    page-break-after: avoid !important;
+    text-align: right !important;
+  }
+
+  /* Hebrew text alignment */
+  .print-content {
+    text-align: right !important;
+  }
+
+  .print-content [dir="rtl"] {
+    direction: rtl !important;
+    text-align: right !important;
+  }
+
+  /* Page breaks */
+  .print-content .page-break {
+    page-break-before: always !important;
+  }
+
+  .print-content .no-break {
+    page-break-inside: avoid !important;
+  }
+
+  /* Hide print buttons */
+  .print-content button,
+  .print-content .MuiButton-root,
+  .print-content .print-button {
+    display: none !important;
+  }
+
+  /* Ensure proper spacing */
+  .print-content .MuiBox-root {
+    margin: inherit !important;
+    padding: inherit !important;
+  }
+}
+
+/* Screen styles for print preview */
+.print-content {
+  background: white;
+  color: black;
+  font-family: 'Arial', sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.print-hidden {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  visibility: hidden;
+}

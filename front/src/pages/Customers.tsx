@@ -19,6 +19,7 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Refresh as RefreshIcon,
+  Receipt as ReceiptIcon,
 } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
@@ -26,6 +27,7 @@ import { useUIStore } from '../stores';
 import { useCustomers } from '../hooks/useCustomers';
 import type { Customer } from '../types/entities';
 import { ModernButton } from '../components/ui';
+import CustomerDocumentsDialog from '../components/customers/CustomerDocumentsDialog';
 
 const Customers = () => {
   const { language } = useUIStore();
@@ -42,6 +44,8 @@ const Customers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -102,6 +106,16 @@ const Customers = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingCustomer(null);
+  };
+
+  const handleOpenDocumentsDialog = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setDocumentsDialogOpen(true);
+  };
+
+  const handleCloseDocumentsDialog = () => {
+    setDocumentsDialogOpen(false);
+    setSelectedCustomer(null);
   };
 
   const handleSave = async () => {
@@ -236,8 +250,14 @@ const Customers = () => {
       field: 'actions',
       type: 'actions',
       headerName: language === 'he' ? 'פעולות' : 'Actions',
-      width: 100,
+      width: 150,
       getActions: (params) => [
+        <GridActionsCellItem
+          key="documents"
+          icon={<ReceiptIcon />}
+          label={language === 'he' ? 'מסמכים' : 'Documents'}
+          onClick={() => handleOpenDocumentsDialog(params.row)}
+        />,
         <GridActionsCellItem
           key="edit"
           icon={<EditIcon />}
@@ -445,6 +465,16 @@ const Customers = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Customer Documents Dialog */}
+      {selectedCustomer && (
+        <CustomerDocumentsDialog
+          open={documentsDialogOpen}
+          onClose={handleCloseDocumentsDialog}
+          customer={selectedCustomer}
+          companyId={1} // This should come from auth context
+        />
+      )}
     </Box>
   );
 };

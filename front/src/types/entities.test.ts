@@ -95,8 +95,8 @@ describe('Entity Types', () => {
   describe('Item interface', () => {
     it('should have correct numeric types', () => {
       const item: Item = {
-        id: 'item-1',
-        companyId: 'company-1',
+        id: 1,
+        companyId: 1,
         sku: 'SKU-001',
         name: 'Test Item',
         unit: 'piece',
@@ -121,22 +121,30 @@ describe('Entity Types', () => {
   describe('SalesOrder interface', () => {
     it('should have valid status values', () => {
       const validStatuses: SalesOrder['status'][] = [
-        'draft',
-        'sent', 
-        'paid',
-        'overdue',
-        'cancelled'
+        'Quote',
+        'Confirmed', 
+        'Shipped',
+        'Completed',
+        'Cancelled'
       ];
 
       validStatuses.forEach(status => {
         const order: SalesOrder = {
-          id: 'order-1',
-          companyId: 'company-1',
-          customerId: 'customer-1',
-          date: new Date(),
+          id: 1,
+          companyId: 1,
+          customerId: 1,
+          customerName: 'Test Customer',
+          orderNumber: 'SO-001',
+          orderDate: new Date(),
           dueDate: new Date(),
-          totalAmount: 100,
           status,
+          subtotalAmount: 90,
+          taxAmount: 10,
+          totalAmount: 100,
+          paidAmount: 0,
+          currency: 'ILS',
+          notes: '',
+          lines: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         };

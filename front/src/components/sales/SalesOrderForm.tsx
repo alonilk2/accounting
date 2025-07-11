@@ -39,6 +39,7 @@ import { customersAPI, itemsAPI, salesAPI } from '../../services/api';
 interface SalesOrderFormProps {
   onSave: () => void;
   onCancel: () => void;
+  initialDocumentType?: SalesOrderStatus;
 }
 
 const initialLine: CreateSalesOrderLineForm = {
@@ -51,18 +52,22 @@ const initialLine: CreateSalesOrderLineForm = {
 };
 
 const statusOptions: { value: SalesOrderStatus; label: string }[] = [
-  { value: 'Draft', label: 'טיוטה' },
-  { value: 'Confirmed', label: 'מאושר' },
-  { value: 'Shipped', label: 'נשלח' },
-  { value: 'Invoiced', label: 'חשבונית' },
+  { value: 'Quote', label: 'הצעת מחיר' },
+  { value: 'Confirmed', label: 'הזמנה' },
+  { value: 'Shipped', label: 'תעודת משלוח' },
+  { value: 'Completed', label: 'הושלם' },
 ];
 
-const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ onSave, onCancel }) => {
+const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ 
+  onSave, 
+  onCancel, 
+  initialDocumentType = 'Quote' 
+}) => {
   const [formData, setFormData] = useState<CreateSalesOrderForm>({
     customerId: 0,
     orderDate: new Date(),
     dueDate: undefined,
-    status: 'Draft',
+    status: initialDocumentType,
     currency: 'ILS',
     notes: '',
     lines: [{ ...initialLine }],
@@ -90,6 +95,21 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ onSave, onCancel }) => 
 
     loadData();
   }, []);
+
+  const getDocumentTitle = (documentType: SalesOrderStatus): string => {
+    switch (documentType) {
+      case 'Quote':
+        return 'הצעת מחיר חדשה';
+      case 'Confirmed':
+        return 'הזמנה חדשה';
+      case 'Shipped':
+        return 'תעודת משלוח חדשה';
+      case 'Completed':
+        return 'הזמנה הושלמה';
+      default:
+        return 'מסמך מכירה חדש';
+    }
+  };
 
   const handleInputChange = (field: keyof CreateSalesOrderForm, value: unknown) => {
     setFormData(prev => ({
@@ -203,7 +223,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ onSave, onCancel }) => 
 
       <Card>
         <CardHeader
-          title="הזמנת מכירה חדשה"
+          title={getDocumentTitle(formData.status || 'Quote')}
           action={
             <Box display="flex" gap={1}>
               <Button

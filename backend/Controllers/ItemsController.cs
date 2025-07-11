@@ -58,7 +58,7 @@ public class ItemsController : ControllerBase
                 {
                     Id = i.Id,
                     CompanyId = i.CompanyId,
-                    Sku = i.Sku,
+                    Sku = i.SKU,
                     Name = i.Name,
                     Unit = i.Unit,
                     Cost = i.Cost,
@@ -105,7 +105,7 @@ public class ItemsController : ControllerBase
                 {
                     Id = i.Id,
                     CompanyId = i.CompanyId,
-                    Sku = i.Sku,
+                    Sku = i.SKU,
                     Name = i.Name,
                     Unit = i.Unit,
                     Cost = i.Cost,

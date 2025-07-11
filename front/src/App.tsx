@@ -8,6 +8,7 @@ import {
   Dashboard,
   Customers,
   Sales,
+  Invoices,
   Suppliers,
   Purchases,
   Inventory,
@@ -41,6 +42,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/sales" element={<Sales />} />
+            <Route path="/invoices" element={<Invoices />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/purchases" element={<Purchases />} />
             <Route path="/inventory" element={<Inventory />} />

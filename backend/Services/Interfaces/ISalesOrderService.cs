@@ -30,18 +30,6 @@ public interface ISalesOrderService : IBaseService<SalesOrder>
     Task<SalesOrder> UpdateStatusAsync(int salesOrderId, SalesOrderStatus status, int companyId, string userId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Process payment for a sales order
-    /// </summary>
-    /// <param name="salesOrderId">Sales order ID</param>
-    /// <param name="paymentAmount">Payment amount</param>
-    /// <param name="paymentMethod">Payment method</param>
-    /// <param name="companyId">Company ID</param>
-    /// <param name="userId">User ID for audit</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Payment receipt</returns>
-    Task<Receipt> ProcessPaymentAsync(int salesOrderId, decimal paymentAmount, string paymentMethod, int companyId, string userId, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Get sales orders by customer
     /// </summary>
     /// <param name="customerId">Customer ID</param>
@@ -74,25 +62,6 @@ public interface ISalesOrderService : IBaseService<SalesOrder>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Sales summary</returns>
     Task<SalesSummary> GetSalesSummaryAsync(int companyId, DateTime fromDate, DateTime toDate, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Recalculate and update the PaidAmount for a sales order based on its receipts
-    /// </summary>
-    /// <param name="salesOrderId">Sales order ID</param>
-    /// <param name="companyId">Company ID</param>
-    /// <param name="userId">User ID for audit</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Updated sales order</returns>
-    Task<SalesOrder> RecalculatePaidAmountAsync(int salesOrderId, int companyId, string userId, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Recalculate PaidAmount for all sales orders in a company
-    /// </summary>
-    /// <param name="companyId">Company ID</param>
-    /// <param name="userId">User ID for audit</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Number of orders updated</returns>
-    Task<int> RecalculateAllPaidAmountsAsync(int companyId, string userId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

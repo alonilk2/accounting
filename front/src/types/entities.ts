@@ -141,11 +141,52 @@ export interface SalesOrderLine {
   lineTotal: number;
 }
 
-export type SalesOrderStatus = 'Draft' | 'Confirmed' | 'Shipped' | 'Invoiced' | 'Paid' | 'Cancelled';
+export type SalesOrderStatus = 'Quote' | 'Confirmed' | 'Shipped' | 'Completed' | 'Cancelled';
+
+export type InvoiceStatus = 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled';
+
+export interface Invoice {
+  id: number;
+  companyId: number;
+  customerId: number;
+  salesOrderId?: number;
+  invoiceNumber: string;
+  invoiceDate: Date;
+  dueDate?: Date;
+  status: InvoiceStatus;
+  subtotalAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+  paidAmount: number;
+  currency: string;
+  notes?: string;
+  customerName: string;
+  customerAddress: string;
+  customerTaxId?: string;
+  customerContact?: string;
+  lines: InvoiceLine[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface InvoiceLine {
+  id: number;
+  invoiceId: number;
+  itemId?: number;
+  lineNumber: number;
+  description: string;
+  itemSku?: string;
+  quantity: number;
+  unitPrice: number;
+  discountPercent: number;
+  taxRate: number;
+  taxAmount: number;
+  lineTotal: number;
+}
 
 export interface Receipt {
   id: number;
-  salesOrderId: number;
+  invoiceId: number;
   receiptNumber: string;
   paymentDate: Date;
   amount: number;
@@ -231,6 +272,39 @@ export interface CreateCustomerForm {
   phone?: string;
 }
 
+// Customer Documents Types
+export interface CustomerDocument {
+  id: number;
+  documentType: 'SalesOrder' | 'Receipt' | 'POSSale';
+  documentNumber: string;
+  documentDate: Date;
+  totalAmount: number;
+  status: string;
+  description?: string;
+}
+
+export interface CustomerDocumentsResponse {
+  customerId: number;
+  customerName: string;
+  documents: CustomerDocument[];
+  totalDocuments: number;
+  totalAmount: number;
+  fromDate?: Date;
+  toDate?: Date;
+}
+
+export interface CustomerDocumentStats {
+  customerId: number;
+  customerName: string;
+  totalSalesOrders: number;
+  totalReceipts: number;
+  totalPOSSales: number;
+  totalAmount: number;
+  averageOrderValue: number;
+  lastOrderDate?: Date;
+  firstOrderDate?: Date;
+}
+
 export interface CreateSupplierForm {
   name: string;
   address: string;
@@ -248,6 +322,26 @@ export interface CreateItemForm {
   price: number;
   reorderPoint: number;
   description?: string;
+}
+
+export interface CreateInvoiceForm {
+  customerId: number;
+  salesOrderId?: number;
+  invoiceDate: Date;
+  dueDate?: Date;
+  currency: string;
+  notes?: string;
+  lines: CreateInvoiceLineForm[];
+}
+
+export interface CreateInvoiceLineForm {
+  itemId?: number;
+  description: string;
+  itemSku?: string;
+  quantity: number;
+  unitPrice: number;
+  discountPercent: number;
+  taxRate: number;
 }
 
 export interface CreateSalesOrderForm {

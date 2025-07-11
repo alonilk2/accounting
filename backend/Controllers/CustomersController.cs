@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models.Sales;
+using backend.Services.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
 namespace backend.Controllers;
@@ -16,11 +17,16 @@ public class CustomersController : ControllerBase
 {
     private readonly AccountingDbContext _context;
     private readonly ILogger<CustomersController> _logger;
+    private readonly ICustomerDocumentService _customerDocumentService;
 
-    public CustomersController(AccountingDbContext context, ILogger<CustomersController> logger)
+    public CustomersController(
+        AccountingDbContext context, 
+        ILogger<CustomersController> logger,
+        ICustomerDocumentService customerDocumentService)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _customerDocumentService = customerDocumentService ?? throw new ArgumentNullException(nameof(customerDocumentService));
     }
 
     /// <summary>
@@ -369,6 +375,82 @@ public class CustomersController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while retrieving company information" });
         }
     }
+
+    /// <summary>
+    /// Gets all documents for a specific customer
+    /// </summary>
+    /// <param name="customerId">Customer ID</param>
+    /// <param name="companyId">Company ID for multi-tenant filtering</param>
+    /// <param name="fromDate">Optional start date filter</param>
+    /// <param name="toDate">Optional end date filter</param>
+    /// <param name="documentType">Optional document type filter (SalesOrder, Receipt, POSSale)</param>
+    /// <returns>Customer documents response with summary</returns>
+    [HttpGet("{customerId}/documents")]
+    [ProducesResponseType<CustomerDocumentsResponseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<CustomerDocumentsResponseDto>> GetCustomerDocuments(
+        int customerId,
+        [FromQuery] int? companyId = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] string? documentType = null)
+    {
+        try
+        {
+            var currentCompanyId = companyId ?? 1; // Default for now
+
+            var result = await _customerDocumentService.GetCustomerDocumentsAsync(
+                customerId, currentCompanyId, fromDate, toDate, documentType);
+
+            if (result == null)
+            {
+                return NotFound(new { message = $"Customer with ID {customerId} not found" });
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving documents for customer {CustomerId}", customerId);
+            return StatusCode(500, new { message = "An error occurred while retrieving customer documents" });
+        }
+    }
+
+    /// <summary>
+    /// Gets document statistics for a specific customer
+    /// </summary>
+    /// <param name="customerId">Customer ID</param>
+    /// <param name="companyId">Company ID for multi-tenant filtering</param>
+    /// <returns>Customer document statistics</returns>
+    [HttpGet("{customerId}/documents/stats")]
+    [ProducesResponseType<CustomerDocumentStatsDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<CustomerDocumentStatsDto>> GetCustomerDocumentStats(
+        int customerId,
+        [FromQuery] int? companyId = null)
+    {
+        try
+        {
+            var currentCompanyId = companyId ?? 1; // Default for now
+
+            var result = await _customerDocumentService.GetCustomerDocumentStatsAsync(customerId, currentCompanyId);
+
+            if (result == null)
+            {
+                return NotFound(new { message = $"Customer with ID {customerId} not found" });
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving document statistics for customer {CustomerId}", customerId);
+            return StatusCode(500, new { message = "An error occurred while retrieving customer document statistics" });
+        }
+    }
 }
 
 /// <summary>
@@ -458,4 +540,32 @@ public class UpdateCustomerDto
     public int? PaymentTerms { get; set; }
 
     public decimal? CreditLimit { get; set; }
+}
+
+/// <summary>
+/// DTO for customer document summary
+/// </summary>
+public class CustomerDocumentDto
+{
+    public int Id { get; set; }
+    public string DocumentType { get; set; } = string.Empty; // "SalesOrder", "Receipt", "POSSale"
+    public string DocumentNumber { get; set; } = string.Empty;
+    public DateTime DocumentDate { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string? Description { get; set; }
+}
+
+/// <summary>
+/// DTO for customer documents response with pagination
+/// </summary>
+public class CustomerDocumentsResponseDto
+{
+    public int CustomerId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public List<CustomerDocumentDto> Documents { get; set; } = new();
+    public int TotalDocuments { get; set; }
+    public decimal TotalAmount { get; set; }
+    public DateTime? FromDate { get; set; }
+    public DateTime? ToDate { get; set; }
 }

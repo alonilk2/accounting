@@ -16,15 +16,13 @@ const StyledChip = styled(Chip)(() => ({
 const StatusChip: React.FC<StatusChipProps> = ({ status }) => {
   const getStatusColor = (status: SalesOrderStatus) => {
     switch (status) {
-      case 'Draft':
+      case 'Quote':
         return 'default';
       case 'Confirmed':
         return 'info';
       case 'Shipped':
         return 'warning';
-      case 'Invoiced':
-        return 'primary';
-      case 'Paid':
+      case 'Completed':
         return 'success';
       case 'Cancelled':
         return 'error';
@@ -35,16 +33,14 @@ const StatusChip: React.FC<StatusChipProps> = ({ status }) => {
 
   const getStatusLabel = (status: SalesOrderStatus) => {
     switch (status) {
-      case 'Draft':
-        return 'טיוטה';
+      case 'Quote':
+        return 'הצעת מחיר';
       case 'Confirmed':
-        return 'מאושר';
+        return 'הזמנה';
       case 'Shipped':
-        return 'נשלח';
-      case 'Invoiced':
-        return 'חשבונית';
-      case 'Paid':
-        return 'שולם';
+        return 'תעודת משלוח';
+      case 'Completed':
+        return 'הושלם';
       case 'Cancelled':
         return 'בוטל';
       default:

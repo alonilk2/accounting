@@ -9,7 +9,13 @@ import type {
   CreateSalesOrderForm, 
   Receipt, 
   SalesSummary,
-  Item 
+  Item,
+  CustomerDocument,
+  CustomerDocumentsResponse,
+  CustomerDocumentStats,
+  Invoice,
+  InvoiceStatus,
+  CreateInvoiceForm
 } from '../types/entities';
 
 // Create axios instance with base configuration
@@ -106,6 +112,45 @@ export const customersAPI = {
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/customers/${id}`);
+  },
+
+  // Get customer documents
+  getDocuments: async (
+    customerId: number, 
+    companyId?: number,
+    fromDate?: Date,
+    toDate?: Date,
+    documentType?: string
+  ): Promise<CustomerDocumentsResponse> => {
+    const params = new URLSearchParams();
+    if (companyId) params.append('companyId', companyId.toString());
+    if (fromDate) params.append('fromDate', fromDate.toISOString());
+    if (toDate) params.append('toDate', toDate.toISOString());
+    if (documentType) params.append('documentType', documentType);
+
+    const response = await api.get(`/customers/${customerId}/documents?${params.toString()}`);
+    return {
+      ...response.data,
+      fromDate: response.data.fromDate ? new Date(response.data.fromDate) : undefined,
+      toDate: response.data.toDate ? new Date(response.data.toDate) : undefined,
+      documents: response.data.documents.map((doc: CustomerDocument) => ({
+        ...doc,
+        documentDate: new Date(doc.documentDate),
+      })),
+    };
+  },
+
+  // Get customer document statistics
+  getDocumentStats: async (customerId: number, companyId?: number): Promise<CustomerDocumentStats> => {
+    const params = new URLSearchParams();
+    if (companyId) params.append('companyId', companyId.toString());
+
+    const response = await api.get(`/customers/${customerId}/documents/stats?${params.toString()}`);
+    return {
+      ...response.data,
+      lastOrderDate: response.data.lastOrderDate ? new Date(response.data.lastOrderDate) : undefined,
+      firstOrderDate: response.data.firstOrderDate ? new Date(response.data.firstOrderDate) : undefined,
+    };
   },
 };
 
@@ -300,6 +345,106 @@ export const complianceAPI = {
       { responseType: 'blob' }
     );
     return response.data;
+  },
+};
+
+// Invoices API
+export const invoicesAPI = {
+  getAll: async (params?: {
+    status?: InvoiceStatus;
+    customerId?: number;
+    page?: number;
+    pageSize?: number;
+  }): Promise<Invoice[]> => {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.append('status', params.status);
+    if (params?.customerId) searchParams.append('customerId', params.customerId.toString());
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString());
+    
+    const response = await api.get(`/invoices?${searchParams.toString()}`);
+    return response.data.map((invoice: Invoice) => ({
+      ...invoice,
+      invoiceDate: new Date(invoice.invoiceDate),
+      dueDate: invoice.dueDate ? new Date(invoice.dueDate) : undefined,
+      createdAt: new Date(invoice.createdAt),
+      updatedAt: new Date(invoice.updatedAt),
+    }));
+  },
+
+  getById: async (id: number): Promise<Invoice> => {
+    const response = await api.get(`/invoices/${id}`);
+    return {
+      ...response.data,
+      invoiceDate: new Date(response.data.invoiceDate),
+      dueDate: response.data.dueDate ? new Date(response.data.dueDate) : undefined,
+      createdAt: new Date(response.data.createdAt),
+      updatedAt: new Date(response.data.updatedAt),
+    };
+  },
+
+  create: async (invoice: CreateInvoiceForm): Promise<Invoice> => {
+    const response = await api.post('/invoices', invoice);
+    return {
+      ...response.data,
+      invoiceDate: new Date(response.data.invoiceDate),
+      dueDate: response.data.dueDate ? new Date(response.data.dueDate) : undefined,
+      createdAt: new Date(response.data.createdAt),
+      updatedAt: new Date(response.data.updatedAt),
+    };
+  },
+
+  updateStatus: async (id: number, status: InvoiceStatus): Promise<Invoice> => {
+    const response = await api.put(`/invoices/${id}/status`, { status });
+    return {
+      ...response.data,
+      invoiceDate: new Date(response.data.invoiceDate),
+      dueDate: response.data.dueDate ? new Date(response.data.dueDate) : undefined,
+      createdAt: new Date(response.data.createdAt),
+      updatedAt: new Date(response.data.updatedAt),
+    };
+  },
+
+  fromSalesOrder: async (salesOrderId: number): Promise<Invoice> => {
+    const response = await api.post(`/invoices/from-sales-order/${salesOrderId}`);
+    return {
+      ...response.data,
+      invoiceDate: new Date(response.data.invoiceDate),
+      dueDate: response.data.dueDate ? new Date(response.data.dueDate) : undefined,
+      createdAt: new Date(response.data.createdAt),
+      updatedAt: new Date(response.data.updatedAt),
+    };
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/invoices/${id}`);
+  },
+
+  processPayment: async (
+    id: number, 
+    amount: number, 
+    paymentMethod: string,
+    notes?: string
+  ): Promise<Receipt> => {
+    const response = await api.post(`/invoices/${id}/receipts`, {
+      amount,
+      paymentMethod,
+      notes,
+    });
+    return {
+      ...response.data,
+      paymentDate: new Date(response.data.paymentDate),
+      createdAt: new Date(response.data.createdAt),
+    };
+  },
+
+  getInvoiceReceipts: async (invoiceId: number): Promise<Receipt[]> => {
+    const response = await api.get(`/invoices/${invoiceId}/receipts`);
+    return response.data.map((receipt: Receipt) => ({
+      ...receipt,
+      paymentDate: new Date(receipt.paymentDate),
+      createdAt: new Date(receipt.createdAt),
+    }));
   },
 };
 

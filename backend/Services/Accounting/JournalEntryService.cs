@@ -151,8 +151,8 @@ public class JournalEntryService : IJournalEntryService
     public async Task CreatePaymentReceiptJournalEntriesAsync(int receiptId, int companyId, string userId, CancellationToken cancellationToken = default)
     {
         var receipt = await _context.Receipts
-            .Include(r => r.SalesOrder)
-            .ThenInclude(so => so.Customer)
+            .Include(r => r.Invoice)
+            .ThenInclude(i => i.Customer)
             .FirstOrDefaultAsync(r => r.Id == receiptId && r.CompanyId == companyId, cancellationToken);
 
         if (receipt == null)
@@ -176,7 +176,7 @@ public class JournalEntryService : IJournalEntryService
                 AccountId = cashAccount.Id,
                 TransactionDate = receipt.PaymentDate,
                 TransactionNumber = transactionNumber,
-                Description = $"Payment received from {receipt.SalesOrder.Customer.Name} - Receipt {receipt.ReceiptNumber}",
+                Description = $"Payment received from {receipt.Invoice.Customer.Name} - Receipt {receipt.ReceiptNumber}",
                 DebitAmount = receipt.Amount,
                 CreditAmount = 0,
                 ReferenceType = "Receipt",
@@ -192,7 +192,7 @@ public class JournalEntryService : IJournalEntryService
                 AccountId = accountsReceivable.Id,
                 TransactionDate = receipt.PaymentDate,
                 TransactionNumber = transactionNumber,
-                Description = $"Payment received from {receipt.SalesOrder.Customer.Name} - Receipt {receipt.ReceiptNumber}",
+                Description = $"Payment received from {receipt.Invoice.Customer.Name} - Receipt {receipt.ReceiptNumber}",
                 DebitAmount = 0,
                 CreditAmount = receipt.Amount,
                 ReferenceType = "Receipt",

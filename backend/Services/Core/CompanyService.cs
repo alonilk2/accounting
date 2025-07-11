@@ -178,7 +178,7 @@ public class CompanyService : BaseService<Company>, ICompanyService
             // Get accounts receivable (unpaid sales orders)
             stats.AccountsReceivable = await _context.SalesOrders
                 .Where(so => so.CompanyId == companyId && 
-                           so.Status == SalesOrderStatus.Invoiced &&
+                           so.Status == SalesOrderStatus.Shipped &&
                            !so.IsDeleted)
                 .SumAsync(so => so.TotalAmount, cancellationToken);
 
@@ -206,12 +206,12 @@ public class CompanyService : BaseService<Company>, ICompanyService
 
             stats.PendingInvoices = await _context.SalesOrders
                 .CountAsync(so => so.CompanyId == companyId && 
-                                so.Status == SalesOrderStatus.Draft &&
+                                so.Status == SalesOrderStatus.Quote &&
                                 !so.IsDeleted, cancellationToken);
 
             stats.OverdueInvoices = await _context.SalesOrders
                 .CountAsync(so => so.CompanyId == companyId && 
-                                so.Status == SalesOrderStatus.Invoiced &&
+                                so.Status == SalesOrderStatus.Shipped &&
                                 so.DueDate < DateTime.Today &&
                                 !so.IsDeleted, cancellationToken);
 
