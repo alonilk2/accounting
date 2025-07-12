@@ -1,0 +1,129 @@
+### Test Customer Function Calling for AI Assistant
+
+# Test getCustomersList function (original)
+POST http://localhost:7275/api/ai-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "הראה לי את רשימת הלקוחות הפעילים",
+  "sessionId": "test-session-1",
+  "companyId": 1
+}
+
+###
+
+# Test getCustomerDetails function (original)
+POST http://localhost:7275/api/ai-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "הראה לי פרטים מלאים על לקוח מספר 1",
+  "sessionId": "test-session-2",
+  "companyId": 1
+}
+
+###
+
+# Test searchCustomers function (original)
+POST http://localhost:7275/api/ai-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "חפש לקוחות עם השם 'טסט'",
+  "sessionId": "test-session-3",
+  "companyId": 1
+}
+
+###
+
+# Test getCustomerFinancialSummary function (original)
+POST http://localhost:7275/api/ai-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "הראה לי סיכום פיננסי של לקוח מספר 1",
+  "sessionId": "test-session-4",
+  "companyId": 1
+}
+
+###
+
+# Test NEW getCustomerTransactionHistory function
+POST http://localhost:7275/api/ai-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "הראה לי את כל ההיסטוריה של עסקאות לקוח מספר 1 ב-6 החודשים האחרונים",
+  "sessionId": "test-session-5",
+  "companyId": 1
+}
+
+###
+
+# Test NEW getCustomerAging function
+POST http://localhost:7275/api/ai-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "הראה לי דוח הזדקנות חובות ללקוח מספר 1",
+  "sessionId": "test-session-6",
+  "companyId": 1
+}
+
+###
+
+# Test NEW getCustomerStatistics function
+POST http://localhost:7275/api/ai-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "הראה לי סטטיסטיקות מפורטות ללקוח מספר 1 עבור 12 החודשים האחרונים",
+  "sessionId": "test-session-7",
+  "companyId": 1
+}
+
+###
+
+# Test NEW getCustomersTopByRevenue function
+POST http://localhost:7275/api/ai-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "הראה לי את עשרת הלקוחות המובילים לפי הכנסות בשנה האחרונה",
+  "sessionId": "test-session-8",
+  "companyId": 1
+}
+
+###
+
+# Test NEW getCustomersWithOverdueInvoices function
+POST http://localhost:7275/api/ai-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "הראה לי את כל הלקוחות שיש להם חשבוניות באיחור של יותר מ-30 ימים",
+  "sessionId": "test-session-9",
+  "companyId": 1
+}
+
+###
+
+# Test combination of functions - complex query
+POST http://localhost:7275/api/ai-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "מי הם 5 הלקוחות הטובים ביותר שלי לפי הכנסות, ואיזה מהם יש חשבוניות באיחור?",
+  "sessionId": "test-session-10",
+  "companyId": 1
+}
+
+###
+
+# Test direct function calling to verify functions are available
+GET http://localhost:7275/api/customers/functions
+
+###
+
+# Test AI Assistant availability check
+GET http://localhost:7275/api/ai-assistant/available?companyId=1

@@ -18,15 +18,18 @@ public class CustomersController : ControllerBase
     private readonly AccountingDbContext _context;
     private readonly ILogger<CustomersController> _logger;
     private readonly ICustomerDocumentService _customerDocumentService;
+    private readonly ICustomerFunctionService _customerFunctionService;
 
     public CustomersController(
         AccountingDbContext context, 
         ILogger<CustomersController> logger,
-        ICustomerDocumentService customerDocumentService)
+        ICustomerDocumentService customerDocumentService,
+        ICustomerFunctionService customerFunctionService)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _customerDocumentService = customerDocumentService ?? throw new ArgumentNullException(nameof(customerDocumentService));
+        _customerFunctionService = customerFunctionService ?? throw new ArgumentNullException(nameof(customerFunctionService));
     }
 
     /// <summary>
@@ -451,6 +454,72 @@ public class CustomersController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while retrieving customer document statistics" });
         }
     }
+
+    /// <summary>
+    /// Get available customer functions for AI function calling (for testing)
+    /// </summary>
+    /// <returns>List of available function definitions</returns>
+    [HttpGet("functions")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetCustomerFunctions()
+    {
+        try
+        {
+            var functions = _customerFunctionService.GetCustomerFunctions();
+            return Ok(new { 
+                totalFunctions = functions.Count,
+                functions = functions.Select(f => new { 
+                    name = f.Name, 
+                    description = f.Description,
+                    parameters = f.Parameters
+                })
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving customer functions");
+            return StatusCode(500, new { message = "An error occurred while retrieving customer functions" });
+        }
+    }
+
+    /// <summary>
+    /// Test a customer function directly (for development testing)
+    /// </summary>
+    /// <param name="request">Function test request</param>
+    /// <returns>Function execution result</returns>
+    [HttpPost("functions/test")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult> TestCustomerFunction([FromBody] CustomerFunctionTestRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.FunctionName))
+            {
+                return BadRequest(new { message = "Function name is required" });
+            }
+
+            var functionCall = new backend.Services.Interfaces.FunctionCall
+            {
+                Name = request.FunctionName,
+                Arguments = request.Arguments ?? "{}",
+                Id = Guid.NewGuid().ToString()
+            };
+
+            var result = await _customerFunctionService.ExecuteCustomerFunctionAsync(
+                functionCall, 
+                request.CompanyId, 
+                HttpContext.RequestAborted);
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error testing customer function {FunctionName}", request.FunctionName);
+            return StatusCode(500, new { message = "An error occurred while testing the customer function" });
+        }
+    }
 }
 
 /// <summary>
@@ -568,4 +637,18 @@ public class CustomerDocumentsResponseDto
     public decimal TotalAmount { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
+}
+
+/// <summary>
+/// DTO for testing customer functions directly
+/// </summary>
+public class CustomerFunctionTestRequest
+{
+    [Required]
+    public string FunctionName { get; set; } = string.Empty;
+    
+    [Required]
+    public int CompanyId { get; set; }
+    
+    public string Arguments { get; set; } = "{}";
 }
