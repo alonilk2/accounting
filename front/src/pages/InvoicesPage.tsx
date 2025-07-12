@@ -39,7 +39,7 @@ import InvoiceCreateDialog from "../components/invoices/InvoiceCreateDialog";
 import InvoicePaymentDialog from "../components/invoices/InvoicePaymentDialog";
 import InvoiceReceiptsDialog from "../components/invoices/InvoiceReceiptsDialog";
 import { PrintButton, PrintableInvoice } from "../components/print";
-import { invoicesAPI } from "../services/api";
+import { invoicesAPI, customersAPI, authAPI } from "../services/api";
 
 const InvoicesPage: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -73,28 +73,8 @@ const InvoicesPage: React.FC = () => {
 
   const fetchCompany = async () => {
     try {
-      const response = await fetch("/api/company");
-      if (response.ok) {
-        const companyData = await response.json();
-        // Convert date strings to Date objects
-        companyData.createdAt = new Date(companyData.createdAt);
-        companyData.updatedAt = new Date(companyData.updatedAt);
-        setCompany(companyData);
-      } else {
-        // Fallback company data
-        setCompany({
-          id: "1",
-          name: "החברה שלי",
-          israelTaxId: "123456789",
-          address: "כתובת החברה",
-          currency: "ILS",
-          phone: "03-1234567",
-          email: "info@company.co.il",
-          website: "www.company.co.il",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-      }
+      const { company: companyData } = await authAPI.me();
+      setCompany(companyData);
     } catch (error) {
       console.error("Error fetching company:", error);
       // Fallback company data
@@ -115,11 +95,8 @@ const InvoicesPage: React.FC = () => {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch("/api/customers");
-      if (response.ok) {
-        const customersData = await response.json();
-        setCustomers(customersData);
-      }
+      const customersData = await customersAPI.getAll();
+      setCustomers(customersData);
     } catch (error) {
       console.error("Error fetching customers:", error);
     }

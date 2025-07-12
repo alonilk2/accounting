@@ -91,13 +91,28 @@ export interface Item {
   companyId: number;
   sku: string;
   name: string;
+  nameHebrew?: string;
+  description?: string;
+  category?: string;
   unit: string;
-  cost: number;
-  price: number;
+  costPrice: number;
+  sellPrice: number;
   currentStockQty: number;
   reorderPoint: number;
-  description?: string;
+  maxStockLevel: number;
+  itemType: string;
+  isInventoryTracked: boolean;
   isActive: boolean;
+  isSellable: boolean;
+  isPurchasable: boolean;
+  weight?: number;
+  volume?: number;
+  barcode?: string;
+  imageUrl?: string;
+  preferredSupplierId?: number;
+  // Backward compatibility aliases
+  cost: number;
+  price: number;
   createdAt: Date;
   updatedAt: Date;
 }

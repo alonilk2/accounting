@@ -18,7 +18,7 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { Receipt as ReceiptIcon } from "@mui/icons-material";
+import { Receipt as ReceiptIcon, Print as PrintIcon } from "@mui/icons-material";
 import { invoicesAPI } from "../../services/api";
 import { useUIStore } from "../../stores";
 import type {
@@ -165,6 +165,18 @@ const InvoiceReceiptsDialog = ({
 
   const balanceRemaining = invoice.totalAmount - invoice.paidAmount;
   const isRTL = language === "he";
+
+  // Debug: Log missing data for print functionality
+  useEffect(() => {
+    if (open && (!customer || !company)) {
+      console.warn('InvoiceReceiptsDialog: Missing data for print functionality', {
+        hasCustomer: !!customer,
+        hasCompany: !!company,
+        customerId: invoice.customerId,
+        invoiceId: invoice.id
+      });
+    }
+  }, [open, customer, company, invoice]);
 
   return (
     <Dialog
@@ -314,11 +326,9 @@ const InvoiceReceiptsDialog = ({
                           </Typography>
                         </TableCell>
                         <TableCell sx={{ textAlign: "center", padding: "8px" }}>
-                          {customer && company && (
+                          {customer && company ? (
                             <PrintButton
-                              variant="outlined"
-                              size="small"
-                              iconOnly
+
                               printableContent={() => (
                                 <PrintableReceipt
                                   receipt={receipt}
@@ -329,6 +339,16 @@ const InvoiceReceiptsDialog = ({
                               )}
                               documentTitle={`קבלה-${receipt.receiptNumber}`}
                             />
+                          ) : (
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              disabled
+                              sx={{ minWidth: 'auto', p: 1 }}
+                              title={language === "he" ? "נתונים חסרים להדפסה" : "Missing data for printing"}
+                            >
+                              <PrintIcon />
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>

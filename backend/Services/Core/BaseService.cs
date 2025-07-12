@@ -267,7 +267,7 @@ public abstract class BaseService<T> : IBaseService<T> where T : BaseEntity
     /// <summary>
     /// Log audit trail for entity operations
     /// </summary>
-    protected virtual async Task LogAuditAsync(int entityId, int companyId, string userId, string action, string details, CancellationToken cancellationToken = default)
+    protected virtual Task LogAuditAsync(int entityId, int companyId, string userId, string action, string details, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -284,11 +284,13 @@ public abstract class BaseService<T> : IBaseService<T> where T : BaseEntity
 
             _context.AuditLogs.Add(auditLog);
             // Note: SaveChanges will be called by the main operation
+            return Task.CompletedTask;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error logging audit trail for {EntityType} {EntityId}", typeof(T).Name, entityId);
             // Don't throw - audit logging failure shouldn't break the main operation
+            return Task.CompletedTask;
         }
     }
 }

@@ -17,10 +17,15 @@ import type {
   InvoiceStatus,
   CreateInvoiceForm
 } from '../types/entities';
+import type { 
+  CustomerStatement, 
+  CustomerStatementRequest,
+  CustomerTransaction 
+} from '../types/reports';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5121/api',
+  baseURL: 'http://localhost:5121/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -183,8 +188,21 @@ export const suppliersAPI = {
 
 // Items API
 export const itemsAPI = {
-  getAll: async (): Promise<Item[]> => {
-    const response = await api.get('/items');
+  getAll: async (params?: {
+    search?: string;
+    category?: string;
+    isActive?: boolean;
+    page?: number;
+    pageSize?: number;
+  }): Promise<Item[]> => {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.append('search', params.search);
+    if (params?.category) searchParams.append('category', params.category);
+    if (params?.isActive !== undefined) searchParams.append('isActive', params.isActive.toString());
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString());
+    
+    const response = await api.get(`/items?${searchParams.toString()}`);
     return response.data.map((item: Item) => ({
       ...item,
       createdAt: new Date(item.createdAt),
@@ -199,6 +217,49 @@ export const itemsAPI = {
       createdAt: new Date(response.data.createdAt),
       updatedAt: new Date(response.data.updatedAt),
     };
+  },
+
+  create: async (item: Omit<Item, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>): Promise<Item> => {
+    const response = await api.post('/items', item);
+    return {
+      ...response.data,
+      createdAt: new Date(response.data.createdAt),
+      updatedAt: new Date(response.data.updatedAt),
+    };
+  },
+
+  update: async (id: number, item: Partial<Omit<Item, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>>): Promise<Item> => {
+    const response = await api.put(`/items/${id}`, item);
+    return {
+      ...response.data,
+      createdAt: new Date(response.data.createdAt),
+      updatedAt: new Date(response.data.updatedAt),
+    };
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/items/${id}`);
+  },
+
+  adjustStock: async (id: number, quantityChange: number, reason: string): Promise<Item> => {
+    const response = await api.post(`/items/${id}/adjust-stock`, {
+      quantityChange,
+      reason
+    });
+    return {
+      ...response.data,
+      createdAt: new Date(response.data.createdAt),
+      updatedAt: new Date(response.data.updatedAt),
+    };
+  },
+
+  getBelowReorderPoint: async (): Promise<Item[]> => {
+    const response = await api.get('/items/below-reorder-point');
+    return response.data.map((item: Item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      updatedAt: new Date(item.updatedAt),
+    }));
   },
 };
 
@@ -445,6 +506,46 @@ export const invoicesAPI = {
       paymentDate: new Date(receipt.paymentDate),
       createdAt: new Date(receipt.createdAt),
     }));
+  },
+};
+
+// Reports API
+export const reportsAPI = {
+  getCustomerStatement: async (request: CustomerStatementRequest): Promise<CustomerStatement> => {
+    const response = await api.post('/reports/customer-statement', request);
+    return {
+      ...response.data,
+      fromDate: response.data.fromDate,
+      toDate: response.data.toDate,
+      transactions: response.data.transactions.map((transaction: CustomerTransaction) => ({
+        ...transaction,
+        date: transaction.date,
+      }))
+    };
+  },
+
+  getCustomerStatementByParams: async (
+    customerId: number,
+    fromDate: string,
+    toDate: string,
+    includeZeroBalanceTransactions: boolean = true
+  ): Promise<CustomerStatement> => {
+    const response = await api.get(`/reports/customer-statement/${customerId}`, {
+      params: {
+        fromDate,
+        toDate,
+        includeZeroBalanceTransactions,
+      },
+    });
+    return {
+      ...response.data,
+      fromDate: response.data.fromDate,
+      toDate: response.data.toDate,
+      transactions: response.data.transactions.map((transaction: CustomerTransaction) => ({
+        ...transaction,
+        date: transaction.date,
+      }))
+    };
   },
 };
 

@@ -1,9 +1,16 @@
-import { Box, Typography, Button, Grid, Card, CardContent } from '@mui/material';
-import { Download as DownloadIcon } from '@mui/icons-material';
+import { Box, Typography, Button, Grid, Card, CardContent, Tabs, Tab } from '@mui/material';
+import { Download as DownloadIcon, AccountBox as AccountBoxIcon } from '@mui/icons-material';
+import { useState } from 'react';
 import { useUIStore } from '../stores';
+import CustomerStatementGenerator from '../components/reports/CustomerStatementGenerator';
 
 const Reports = () => {
   const { language } = useUIStore();
+  const [activeTab, setActiveTab] = useState(0);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
 
   const reportTypes = [
     {
@@ -35,25 +42,38 @@ const Reports = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
-        {reportTypes.map((report, index) => (
-          <Grid size={{ xs: 12, md: 6 }} key={index}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {report.title}
-                </Typography>
-                <Typography variant="body2" color="textSecondary" paragraph>
-                  {report.description}
-                </Typography>
-                <Button variant="outlined" size="small">
-                  {language === 'he' ? 'הפק דוח' : 'Generate Report'}
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={activeTab} onChange={handleTabChange} aria-label="report tabs">
+          <Tab label={language === 'he' ? 'דוחות כלליים' : 'General Reports'} />
+          <Tab label={language === 'he' ? 'כרטסת לקוח' : 'Customer Statement'} />
+        </Tabs>
+      </Box>
+
+      {activeTab === 0 && (
+        <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }}>
+          {reportTypes.map((report, index) => (
+            <Grid key={index} size={{ xs: 4, sm: 8, md: 6 }}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    {report.title}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" paragraph>
+                    {report.description}
+                  </Typography>
+                  <Button variant="outlined" size="small">
+                    {language === 'he' ? 'הפק דוח' : 'Generate Report'}
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      {activeTab === 1 && (
+        <CustomerStatementGenerator />
+      )}
     </Box>
   );
 };

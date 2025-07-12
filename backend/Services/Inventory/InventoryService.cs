@@ -39,6 +39,61 @@ public class InventoryService : BaseService<Item>, IInventoryService
             (i.Description != null && i.Description.Contains(searchTerm)));
     }
 
+    /// <summary>
+    /// Get filtered items with pagination support
+    /// </summary>
+    /// <param name="companyId">Company ID for tenant isolation</param>
+    /// <param name="search">Search term for name, SKU, or description</param>
+    /// <param name="isActive">Filter by active status</param>
+    /// <param name="page">Page number (1-based)</param>
+    /// <param name="pageSize">Items per page</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Filtered list of items</returns>
+    public async Task<IEnumerable<Item>> GetFilteredAsync(
+        int companyId,
+        string? search = null,
+        bool? isActive = null,
+        int page = 1,
+        int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Getting filtered items for company {CompanyId}, search: {Search}, page: {Page}", 
+                companyId, search, page);
+
+            var query = _context.Items
+                .AsNoTracking()
+                .Where(i => i.CompanyId == companyId && !i.IsDeleted);
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = ApplySearchFilter(query, search);
+            }
+
+            // Apply active filter
+            if (isActive.HasValue)
+            {
+                query = query.Where(i => i.IsActive == isActive.Value);
+            }
+
+            // Apply pagination
+            var skip = (page - 1) * pageSize;
+            
+            return await query
+                .OrderBy(i => i.Name)
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting filtered items for company {CompanyId}", companyId);
+            throw;
+        }
+    }
+
     public async Task<Item?> GetBySkuAsync(string sku, int companyId, CancellationToken cancellationToken = default)
     {
         try
@@ -59,16 +114,14 @@ public class InventoryService : BaseService<Item>, IInventoryService
 
     public async Task<Item> AdjustInventoryAsync(int itemId, decimal quantityChange, string reason, int companyId, string userId, CancellationToken cancellationToken = default)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        
-        try
+        return await TransactionHelper.ExecuteInTransactionAsync(_context, async (transaction, ct) =>
         {
             _logger.LogInformation("Adjusting inventory for item {ItemId}, change: {Change}, reason: {Reason}", 
                 itemId, quantityChange, reason);
 
             var item = await _context.Items
                 .Where(i => i.Id == itemId && i.CompanyId == companyId && !i.IsDeleted)
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(ct);
 
             if (item == null)
             {
@@ -106,7 +159,7 @@ public class InventoryService : BaseService<Item>, IInventoryService
             };
 
             _context.InventoryTransactions.Add(inventoryTransaction);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(ct);
 
             // Create accounting entries for the inventory adjustment
             var valueChange = quantityChange * item.CostPrice;
@@ -119,25 +172,17 @@ public class InventoryService : BaseService<Item>, IInventoryService
                     companyId, 
                     userId, 
                     reason, 
-                    cancellationToken);
+                    ct);
             }
 
-            await transaction.CommitAsync(cancellationToken);
-
             await LogAuditAsync(itemId, companyId, userId, "INVENTORY_ADJUST", 
-                $"Adjusted inventory by {quantityChange}, reason: {reason}", cancellationToken);
+                $"Adjusted inventory by {quantityChange}, reason: {reason}", ct);
 
             _logger.LogInformation("Successfully adjusted inventory for item {ItemId}. New stock: {NewStock}", 
                 itemId, newStock);
 
             return item;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(ex, "Error adjusting inventory for item {ItemId}", itemId);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     public async Task<IEnumerable<Item>> GetItemsBelowReorderPointAsync(int companyId, CancellationToken cancellationToken = default)
@@ -223,16 +268,14 @@ public class InventoryService : BaseService<Item>, IInventoryService
 
     public async Task<InventoryTransaction> TransferInventoryAsync(int itemId, string fromLocation, string toLocation, decimal quantity, int companyId, string userId, CancellationToken cancellationToken = default)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        
-        try
+        return await TransactionHelper.ExecuteInTransactionAsync(_context, async (transaction, ct) =>
         {
             _logger.LogInformation("Transferring {Quantity} of item {ItemId} from {From} to {To}", 
                 quantity, itemId, fromLocation, toLocation);
 
             var item = await _context.Items
                 .Where(i => i.Id == itemId && i.CompanyId == companyId && !i.IsDeleted)
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(ct);
 
             if (item == null)
             {
@@ -264,21 +307,13 @@ public class InventoryService : BaseService<Item>, IInventoryService
             };
 
             _context.InventoryTransactions.Add(transferTransaction);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
+            await _context.SaveChangesAsync(ct);
 
             await LogAuditAsync(itemId, companyId, userId, "INVENTORY_TRANSFER", 
-                $"Transferred {quantity} from {fromLocation} to {toLocation}", cancellationToken);
+                $"Transferred {quantity} from {fromLocation} to {toLocation}", ct);
 
             return transferTransaction;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(ex, "Error transferring inventory for item {ItemId}", itemId);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     public async Task<InventoryReport> GenerateInventoryReportAsync(int companyId, DateTime? asOfDate = null, CancellationToken cancellationToken = default)

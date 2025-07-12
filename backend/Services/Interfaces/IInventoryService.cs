@@ -9,6 +9,24 @@ namespace backend.Services.Interfaces;
 public interface IInventoryService : IBaseService<Item>
 {
     /// <summary>
+    /// Get filtered items with pagination support
+    /// </summary>
+    /// <param name="companyId">Company ID for tenant isolation</param>
+    /// <param name="search">Search term for name, SKU, or description</param>
+    /// <param name="isActive">Filter by active status</param>
+    /// <param name="page">Page number (1-based)</param>
+    /// <param name="pageSize">Items per page</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Filtered list of items</returns>
+    Task<IEnumerable<Item>> GetFilteredAsync(
+        int companyId,
+        string? search = null,
+        bool? isActive = null,
+        int page = 1,
+        int pageSize = 50,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Get item by SKU
     /// </summary>
     /// <param name="sku">Item SKU</param>

@@ -11,11 +11,25 @@
 
   /* Hide everything except print content */
   body * {
-    visibility: hidden;
+    visibility: hidden !important;
   }
 
   .print-content,
   .print-content * {
+    visibility: visible !important;
+  }
+
+  /* Additional visibility rules for common elements */
+  .print-content .MuiBox-root,
+  .print-content .MuiTypography-root,
+  .print-content .MuiTable-root,
+  .print-content .MuiTableHead-root,
+  .print-content .MuiTableBody-root,
+  .print-content .MuiTableRow-root,
+  .print-content .MuiTableCell-root,
+  .print-content .MuiPaper-root,
+  .print-content .MuiGrid-root,
+  .print-content .MuiDivider-root {
     visibility: visible !important;
   }
 

@@ -267,6 +267,15 @@ public static class DataSeeder
                 Level = 2,
                 CompanyId = 0
             },
+            new ChartOfAccount
+            {
+                AccountNumber = "5200",
+                Name = "Inventory Adjustment",
+                NameHebrew = "התאמת מלאי",
+                Type = AccountType.Expense,
+                Level = 2,
+                CompanyId = 0
+            },
 
             // Operating Expenses (6000-6999)
             new ChartOfAccount

@@ -104,14 +104,12 @@ public class CompanyService : BaseService<Company>, ICompanyService
 
     public async Task<Company> InitializeCompanyAsync(Company company, string userId, CancellationToken cancellationToken = default)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        
-        try
+        return await TransactionHelper.ExecuteInTransactionAsync(_context, async (transaction, ct) =>
         {
             _logger.LogInformation("Initializing company: {CompanyName}", company.Name);
 
             // Validate tax ID
-            var (isValid, errorMessage) = await ValidateTaxIdAsync(company.IsraelTaxId, null, cancellationToken);
+            var (isValid, errorMessage) = await ValidateTaxIdAsync(company.IsraelTaxId, null, ct);
             if (!isValid)
             {
                 throw new InvalidOperationException($"Invalid tax ID: {errorMessage}");
@@ -125,24 +123,16 @@ public class CompanyService : BaseService<Company>, ICompanyService
             company.IsDeleted = false;
 
             _context.Companies.Add(company);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(ct);
 
             // Initialize default chart of accounts
-            await CreateDefaultChartOfAccountsAsync(company.Id, userId, cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
+            await CreateDefaultChartOfAccountsAsync(company.Id, userId, ct);
 
             _logger.LogInformation("Successfully initialized company {CompanyId}: {CompanyName}", 
                 company.Id, company.Name);
 
             return company;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(ex, "Error initializing company: {CompanyName}", company.Name);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     public async Task<CompanyDashboardStats> GetDashboardStatsAsync(int companyId, CancellationToken cancellationToken = default)
@@ -310,6 +300,7 @@ public class CompanyService : BaseService<Company>, ICompanyService
             new() { CompanyId = companyId, AccountNumber = "500", Name = "Cost of Goods Sold", Type = AccountType.Expense, Balance = 0, CreatedBy = userId, UpdatedBy = userId },
             new() { CompanyId = companyId, AccountNumber = "510", Name = "Salaries and Wages", Type = AccountType.Expense, Balance = 0, CreatedBy = userId, UpdatedBy = userId },
             new() { CompanyId = companyId, AccountNumber = "520", Name = "Rent Expense", Type = AccountType.Expense, Balance = 0, CreatedBy = userId, UpdatedBy = userId },
+            new() { CompanyId = companyId, AccountNumber = "525", Name = "Inventory Adjustment", Type = AccountType.Expense, Balance = 0, CreatedBy = userId, UpdatedBy = userId },
             new() { CompanyId = companyId, AccountNumber = "530", Name = "Utilities Expense", Type = AccountType.Expense, Balance = 0, CreatedBy = userId, UpdatedBy = userId },
             new() { CompanyId = companyId, AccountNumber = "540", Name = "Office Supplies", Type = AccountType.Expense, Balance = 0, CreatedBy = userId, UpdatedBy = userId },
             new() { CompanyId = companyId, AccountNumber = "550", Name = "Insurance Expense", Type = AccountType.Expense, Balance = 0, CreatedBy = userId, UpdatedBy = userId },

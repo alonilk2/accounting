@@ -425,7 +425,7 @@ public class AccountingDbContext : DbContext
 
         modelBuilder.Entity<AIAssistantConfig>()
             .Property(ac => ac.SystemPrompt)
-            .HasMaxLength(2000);
+            .HasMaxLength(8000);
 
         modelBuilder.Entity<AIAssistantConfig>()
             .Property(ac => ac.EnabledFeatures)

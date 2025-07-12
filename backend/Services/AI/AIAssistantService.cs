@@ -260,38 +260,34 @@ public class AIAssistantService : IAIAssistantService
 
         if (config == null)
         {
-            // Create default configuration
+            // Create default configuration with dynamic function list
+            var systemPrompt = BuildSystemPrompt();
+            
             config = new AIAssistantConfig
             {
                 CompanyId = companyId,
                 IsEnabled = true,
-                OpenAIModel = "gpt-4",
+                OpenAIModel = "gpt-4o-mini",
                 MaxTokens = 1000,
                 Temperature = 0.7m,
                 DailyUsageLimit = 100,
-                SystemPrompt = @"
-                    אתה עוזר חכם לחשבונאות עבור עסק ישראלי עם גישה לנתונים בזמן אמת.
-                    אתה עוזר עם שאלות פיננסיות, ניתוח נתונים ומשימות חשבונאות כלליות.
-                    תמיד תענה בעברית אלא אם מבקשים ממך במפורש להשתמש באנגלית.
-                    היה מקצועי, מדויק, תמציתי ומועיל. 
-
-                    יש לך גישה לפונקציות הבאות לקבלת מידע:
-                    - getCustomersList: לקבלת רשימת לקוחות
-                    - getCustomerDetails: לקבלת פרטי לקוח ספציפי
-                    - searchCustomers: לחיפוש לקוחות לפי שם או פרטים
-                    - getCustomerFinancialSummary: לקבלת סיכום פיננסי של לקוח
-
-                    כאשר המשתמש שואל על לקוחות, חובות, או פרטים פיננסיים - השתמש בפונקציות המתאימות כדי לספק מידע מדויק ועדכני.
-                    
-                    אם אתה לא בטוח לגבי תקנות מס ספציפיות, המלץ להתייעץ עם רואה חשבון מוסמך.
-                    תמיד ציין מקורות אמינים כשאתה נותן מידע על תקנות או חוקים.
-                    
-                    כשאתה מקבל נתונים מהפונקציות, ארגן אותם בצורה ברורה וקריאה למשתמש.
-                "
+                SystemPrompt = systemPrompt
             };
 
             _context.Set<AIAssistantConfig>().Add(config);
             await _context.SaveChangesAsync(cancellationToken);
+        }
+        else
+        {
+            // Update system prompt with current functions if needed
+            var currentPrompt = BuildSystemPrompt();
+            if (config.SystemPrompt != currentPrompt)
+            {
+                config.SystemPrompt = currentPrompt;
+                config.UpdatedAt = DateTime.UtcNow;
+                _context.Set<AIAssistantConfig>().Update(config);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
         }
 
         return config;
@@ -395,7 +391,7 @@ public class AIAssistantService : IAIAssistantService
         return messages;
     }
 
-    private async Task<string> BuildContextInformation(ChatContext context, int companyId, CancellationToken cancellationToken)
+    private Task<string> BuildContextInformation(ChatContext context, int companyId, CancellationToken cancellationToken)
     {
         var contextInfo = new List<string>();
 
@@ -416,7 +412,7 @@ public class AIAssistantService : IAIAssistantService
             contextInfo.Add($"תפקיד המשתמש: {context.UserRole}");
         }
 
-        return string.Join(". ", contextInfo);
+        return Task.FromResult(string.Join(". ", contextInfo));
     }
 
     private async Task UpdateUsageCounterAsync(int companyId, CancellationToken cancellationToken)
@@ -512,26 +508,26 @@ public class AIAssistantService : IAIAssistantService
     {
         try
         {
-            // Route to appropriate service based on function name
-            if (IsCustomerFunction(functionCall.Name))
+            var serviceType = GetFunctionServiceType(functionCall.Name);
+            
+            return serviceType switch
             {
-                return await _customerFunctionService.ExecuteCustomerFunctionAsync(
-                    functionCall, companyId, cancellationToken);
-            }
-
-            // Add more function routing here
-            // if (IsInvoiceFunction(functionCall.Name))
-            // {
-            //     return await _invoiceFunctionService.ExecuteInvoiceFunctionAsync(
-            //         functionCall, companyId, cancellationToken);
-            // }
-
-            return new FunctionResult
-            {
-                FunctionName = functionCall.Name,
-                CallId = functionCall.Id,
-                IsSuccess = false,
-                ErrorMessage = $"Unknown function category for: {functionCall.Name}"
+                "Customer" => await _customerFunctionService.ExecuteCustomerFunctionAsync(
+                    functionCall, companyId, cancellationToken),
+                
+                // Add more service types here
+                // "Invoice" => await _invoiceFunctionService.ExecuteInvoiceFunctionAsync(
+                //     functionCall, companyId, cancellationToken),
+                // "Sales" => await _salesFunctionService.ExecuteSalesFunctionAsync(
+                //     functionCall, companyId, cancellationToken),
+                
+                _ => new FunctionResult
+                {
+                    FunctionName = functionCall.Name,
+                    CallId = functionCall.Id,
+                    IsSuccess = false,
+                    ErrorMessage = $"Unknown function category for: {functionCall.Name}"
+                }
             };
         }
         catch (Exception ex)
@@ -552,16 +548,97 @@ public class AIAssistantService : IAIAssistantService
     /// </summary>
     /// <param name="functionName">Function name</param>
     /// <returns>True if customer function</returns>
-    private static bool IsCustomerFunction(string functionName)
+    private bool IsCustomerFunction(string functionName)
     {
-        var customerFunctionNames = new[] 
-        { 
-            "getCustomersList", 
-            "getCustomerDetails", 
-            "searchCustomers", 
-            "getCustomerFinancialSummary" 
-        };
+        // Get function names dynamically from the customer function service
+        var customerFunctions = _customerFunctionService.GetCustomerFunctions();
+        var customerFunctionNames = customerFunctions.Select(f => f.Name).ToArray();
         
         return customerFunctionNames.Contains(functionName);
+    }
+
+    /// <summary>
+    /// Get function service type based on function name
+    /// </summary>
+    /// <param name="functionName">Function name</param>
+    /// <returns>Function service type</returns>
+    private string GetFunctionServiceType(string functionName)
+    {
+        if (IsCustomerFunction(functionName))
+            return "Customer";
+        
+        // Add more function service types here in the future
+        // if (IsInvoiceFunction(functionName))
+        //     return "Invoice";
+        // if (IsSalesFunction(functionName))
+        //     return "Sales";
+        
+        return "Unknown";
+    }
+
+    /// <summary>
+    /// Build system prompt dynamically with current available functions
+    /// </summary>
+    /// <returns>Complete system prompt</returns>
+    private string BuildSystemPrompt()
+    {
+        var basePrompt = @"
+אתה עוזר חכם לחשבונאות עבור עסק ישראלי עם גישה לנתונים בזמן אמת.
+אתה עוזר עם שאלות פיננסיות, ניתוח נתונים ומשימות חשבונאות כלליות.
+תמיד תענה בעברית אלא אם מבקשים ממך במפורש להשתמש באנגלית.
+היה מקצועי, מדויק, תמציתי ומועיל.
+
+יש לך גישה לפונקציות הבאות לקבלת מידע:
+
+פונקציות לקוחות:";
+
+        // Get customer functions dynamically
+        var customerFunctions = _customerFunctionService.GetCustomerFunctions();
+        
+        // Categorize functions
+        var readOnlyFunctions = new List<string>();
+        var managementFunctions = new List<string>();
+        
+        foreach (var function in customerFunctions)
+        {
+            var functionLine = $"- {function.Name}: {function.Description}";
+            
+            if (function.Name.StartsWith("create") || function.Name.StartsWith("update") || function.Name.StartsWith("add"))
+            {
+                managementFunctions.Add(functionLine);
+            }
+            else
+            {
+                readOnlyFunctions.Add(functionLine);
+            }
+        }
+        
+        // Build the complete prompt
+        var promptBuilder = new System.Text.StringBuilder(basePrompt);
+        
+        foreach (var func in readOnlyFunctions)
+        {
+            promptBuilder.AppendLine(func);
+        }
+        
+        if (managementFunctions.Any())
+        {
+            promptBuilder.AppendLine();
+            promptBuilder.AppendLine("פונקציות ניהול לקוחות:");
+            foreach (var func in managementFunctions)
+            {
+                promptBuilder.AppendLine(func);
+            }
+        }
+        
+        promptBuilder.AppendLine();
+        promptBuilder.AppendLine("כאשר המשתמש שואל על לקוחות, חובות, או פרטים פיננסיים - השתמש בפונקציות המתאימות כדי לספק מידע מדויק ועדכני.");
+        promptBuilder.AppendLine();
+        promptBuilder.AppendLine("אם אתה לא בטוח לגבי תקנות מס ספציפיות, המלץ להתייעץ עם רואה חשבון מוסמך.");
+        promptBuilder.AppendLine("תמיד ציין מקורות אמינים כשאתה נותן מידע על תקנות או חוקים.");
+        promptBuilder.AppendLine();
+        promptBuilder.AppendLine("כשאתה מקבל נתונים מהפונקציות, ארגן אותם בצורה ברורה וקריאה למשתמש.");
+        
+        return promptBuilder.ToString();
     }
 }

@@ -6,6 +6,7 @@ using backend.Services.Inventory;
 using backend.Services.Accounting;
 using backend.Services.Printing;
 using backend.Services.AI;
+using backend.Services.Reports;
 using Azure.Identity;
 
 namespace backend.Services;
@@ -44,6 +45,9 @@ public static class ServiceRegistration
         
         // Print services
         services.AddScoped<IPrintService, PrintService>();
+        
+        // Reports services
+        services.AddScoped<ICustomerStatementService, CustomerStatementService>();
         
         // AI Assistant services
         services.AddScoped<IAIAssistantService, AIAssistantService>();

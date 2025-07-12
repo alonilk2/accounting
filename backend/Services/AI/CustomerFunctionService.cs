@@ -276,6 +276,372 @@ public class CustomerFunctionService : ICustomerFunctionService
                     },
                     Required = new[] { "CompanyId" }
                 }
+            },
+            new()
+            {
+                Name = "createCustomer",
+                Description = "יצירת לקוח חדש - יוצר לקוח חדש במערכת עם הפרטים הנדרשים",
+                Parameters = new
+                {
+                    Type = "object",
+                    Properties = new
+                    {
+                        CompanyId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה החברה"
+                        },
+                        Name = new
+                        {
+                            Type = "string",
+                            Description = "שם הלקוח (חובה)"
+                        },
+                        TaxId = new
+                        {
+                            Type = "string",
+                            Description = "מספר זהות/ח.פ (אופציונלי)"
+                        },
+                        Email = new
+                        {
+                            Type = "string",
+                            Description = "כתובת אימייל (אופציונלי)"
+                        },
+                        Phone = new
+                        {
+                            Type = "string",
+                            Description = "מספר טלפון (אופציונלי)"
+                        },
+                        Address = new
+                        {
+                            Type = "string",
+                            Description = "כתובת (אופציונלי)"
+                        },
+                        ContactPerson = new
+                        {
+                            Type = "string",
+                            Description = "איש קשר (אופציונלי)"
+                        },
+                        Website = new
+                        {
+                            Type = "string",
+                            Description = "אתר אינטרנט (אופציונלי)"
+                        },
+                        PaymentTerms = new
+                        {
+                            Type = "integer",
+                            Description = "תנאי תשלום בימים (ברירת מחדל: 30)"
+                        },
+                        CreditLimit = new
+                        {
+                            Type = "number",
+                            Description = "מסגרת אשראי (אופציונלי)"
+                        }
+                    },
+                    Required = new[] { "CompanyId", "Name" }
+                }
+            },
+            new()
+            {
+                Name = "updateCustomer",
+                Description = "עדכון פרטי לקוח - מעדכן פרטים קיימים של לקוח",
+                Parameters = new
+                {
+                    Type = "object",
+                    Properties = new
+                    {
+                        CustomerId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה הלקוח לעדכון"
+                        },
+                        CompanyId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה החברה"
+                        },
+                        Name = new
+                        {
+                            Type = "string",
+                            Description = "שם הלקוח (אופציונלי)"
+                        },
+                        TaxId = new
+                        {
+                            Type = "string",
+                            Description = "מספר זהות/ח.פ (אופציונלי)"
+                        },
+                        Email = new
+                        {
+                            Type = "string",
+                            Description = "כתובת אימייל (אופציונלי)"
+                        },
+                        Phone = new
+                        {
+                            Type = "string",
+                            Description = "מספר טלפון (אופציונלי)"
+                        },
+                        Address = new
+                        {
+                            Type = "string",
+                            Description = "כתובת (אופציונלי)"
+                        },
+                        ContactPerson = new
+                        {
+                            Type = "string",
+                            Description = "איש קשר (אופציונלי)"
+                        },
+                        Website = new
+                        {
+                            Type = "string",
+                            Description = "אתר אינטרנט (אופציונלי)"
+                        },
+                        PaymentTerms = new
+                        {
+                            Type = "integer",
+                            Description = "תנאי תשלום בימים (אופציונלי)"
+                        },
+                        CreditLimit = new
+                        {
+                            Type = "number",
+                            Description = "מסגרת אשראי (אופציונלי)"
+                        },
+                        IsActive = new
+                        {
+                            Type = "boolean",
+                            Description = "האם הלקוח פעיל (אופציונלי)"
+                        }
+                    },
+                    Required = new[] { "CustomerId", "CompanyId" }
+                }
+            },
+            new()
+            {
+                Name = "getCustomerCreditStatus",
+                Description = "מצב אשראי לקוח - בדיקת מסגרת אשראי, חובות נוכחיים ויתרה זמינה",
+                Parameters = new
+                {
+                    Type = "object",
+                    Properties = new
+                    {
+                        CustomerId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה הלקוח"
+                        },
+                        CompanyId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה החברה"
+                        }
+                    },
+                    Required = new[] { "CustomerId", "CompanyId" }
+                }
+            },
+            new()
+            {
+                Name = "getCustomerOrdersToShip",
+                Description = "הזמנות ללקוח שממתינות למשלוח - מחזיר הזמנות מאושרות שטרם נשלחו",
+                Parameters = new
+                {
+                    Type = "object",
+                    Properties = new
+                    {
+                        CustomerId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה הלקוח (אופציונלי - אם ריק מחזיר עבור כל הלקוחות)"
+                        },
+                        CompanyId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה החברה"
+                        }
+                    },
+                    Required = new[] { "CompanyId" }
+                }
+            },
+            new()
+            {
+                Name = "getCustomerPopularItems",
+                Description = "פריטים פופולריים ללקוח - מחזיר את הפריטים הנרכשים ביותר על ידי הלקוח",
+                Parameters = new
+                {
+                    Type = "object",
+                    Properties = new
+                    {
+                        CustomerId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה הלקוח"
+                        },
+                        CompanyId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה החברה"
+                        },
+                        TopCount = new
+                        {
+                            Type = "integer",
+                            Description = "מספר פריטים מובילים להחזיר (ברירת מחדל: 10)"
+                        },
+                        PeriodMonths = new
+                        {
+                            Type = "integer",
+                            Description = "תקופה בחודשים לחישוב (ברירת מחדל: 12)"
+                        }
+                    },
+                    Required = new[] { "CustomerId", "CompanyId" }
+                }
+            },
+            new()
+            {
+                Name = "getCustomerContactHistory",
+                Description = "היסטוריית קשר עם לקוח - מחזיר רשימת תקשורת קודמת (הערות, שיחות, פגישות)",
+                Parameters = new
+                {
+                    Type = "object",
+                    Properties = new
+                    {
+                        CustomerId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה הלקוח"
+                        },
+                        CompanyId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה החברה"
+                        },
+                        ContactType = new
+                        {
+                            Type = "string",
+                            Description = "סוג קשר (phone, email, meeting, note) - אופציונלי"
+                        },
+                        Limit = new
+                        {
+                            Type = "integer",
+                            Description = "מגבלת מספר רשומות (ברירת מחדל: 20)"
+                        }
+                    },
+                    Required = new[] { "CustomerId", "CompanyId" }
+                }
+            },
+            new()
+            {
+                Name = "addCustomerNote",
+                Description = "הוספת הערה ללקוח - מוסיף הערה או תיעוד של קשר עם הלקוח",
+                Parameters = new
+                {
+                    Type = "object",
+                    Properties = new
+                    {
+                        CustomerId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה הלקוח"
+                        },
+                        CompanyId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה החברה"
+                        },
+                        Note = new
+                        {
+                            Type = "string",
+                            Description = "תוכן הההערה"
+                        },
+                        ContactType = new
+                        {
+                            Type = "string",
+                            Description = "סוג הקשר (phone, email, meeting, note) - ברירת מחדל: note"
+                        },
+                        UserId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה המשתמש שיוצר ההערה (אופציונלי)"
+                        }
+                    },
+                    Required = new[] { "CustomerId", "CompanyId", "Note" }
+                }
+            },
+            new()
+            {
+                Name = "getCustomerPaymentHistory",
+                Description = "היסטוריית תשלומים של לקוח - מחזיר את כל התשלומים שהתקבלו מהלקוח",
+                Parameters = new
+                {
+                    Type = "object",
+                    Properties = new
+                    {
+                        CustomerId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה הלקוח"
+                        },
+                        CompanyId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה החברה"
+                        },
+                        FromDate = new
+                        {
+                            Type = "string",
+                            Format = "date",
+                            Description = "תאריך התחלה (אופציונלי) - פורמט: YYYY-MM-DD"
+                        },
+                        ToDate = new
+                        {
+                            Type = "string",
+                            Format = "date",
+                            Description = "תאריך סיום (אופציונלי) - פורמט: YYYY-MM-DD"
+                        },
+                        PaymentMethod = new
+                        {
+                            Type = "string",
+                            Description = "אמצעי תשלום (Cash, CreditCard, BankTransfer, Check) - אופציונלי"
+                        }
+                    },
+                    Required = new[] { "CustomerId", "CompanyId" }
+                }
+            },
+            new()
+            {
+                Name = "generateCustomerStatement",
+                Description = "יצירת דוח חשבון לקוח - מייצר דוח מפורט של כל העסקאות והיתרות",
+                Parameters = new
+                {
+                    Type = "object",
+                    Properties = new
+                    {
+                        CustomerId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה הלקוח"
+                        },
+                        CompanyId = new
+                        {
+                            Type = "integer",
+                            Description = "מזהה החברה"
+                        },
+                        FromDate = new
+                        {
+                            Type = "string",
+                            Format = "date",
+                            Description = "תאריך התחלה - פורמט: YYYY-MM-DD"
+                        },
+                        ToDate = new
+                        {
+                            Type = "string",
+                            Format = "date",
+                            Description = "תאריך סיום - פורמט: YYYY-MM-DD"
+                        },
+                        IncludeZeroBalance = new
+                        {
+                            Type = "boolean",
+                            Description = "האם לכלול פריטים עם יתרה אפס (ברירת מחדל: false)"
+                        }
+                    },
+                    Required = new[] { "CustomerId", "CompanyId", "FromDate", "ToDate" }
+                }
             }
         };
     }
@@ -305,6 +671,15 @@ public class CustomerFunctionService : ICustomerFunctionService
                 "getCustomerStatistics" => await GetCustomerStatisticsAsync(functionCall.Arguments, companyId, cancellationToken),
                 "getCustomersTopByRevenue" => await GetCustomersTopByRevenueAsync(functionCall.Arguments, companyId, cancellationToken),
                 "getCustomersWithOverdueInvoices" => await GetCustomersWithOverdueInvoicesAsync(functionCall.Arguments, companyId, cancellationToken),
+                "createCustomer" => await CreateCustomerAsync(functionCall.Arguments, companyId, cancellationToken),
+                "updateCustomer" => await UpdateCustomerAsync(functionCall.Arguments, companyId, cancellationToken),
+                "getCustomerCreditStatus" => await GetCustomerCreditStatusAsync(functionCall.Arguments, companyId, cancellationToken),
+                "getCustomerOrdersToShip" => await GetCustomerOrdersToShipAsync(functionCall.Arguments, companyId, cancellationToken),
+                "getCustomerPopularItems" => await GetCustomerPopularItemsAsync(functionCall.Arguments, companyId, cancellationToken),
+                "getCustomerContactHistory" => await GetCustomerContactHistoryAsync(functionCall.Arguments, companyId, cancellationToken),
+                "addCustomerNote" => await AddCustomerNoteAsync(functionCall.Arguments, companyId, cancellationToken),
+                "getCustomerPaymentHistory" => await GetCustomerPaymentHistoryAsync(functionCall.Arguments, companyId, cancellationToken),
+                "generateCustomerStatement" => await GenerateCustomerStatementAsync(functionCall.Arguments, companyId, cancellationToken),
                 _ => new FunctionResult
                 {
                     FunctionName = functionCall.Name,
@@ -324,6 +699,66 @@ public class CustomerFunctionService : ICustomerFunctionService
                 IsSuccess = false,
                 ErrorMessage = "שגיאה בביצוע הפונקציה"
             };
+        }
+    }
+
+    /// <summary>
+    /// Helper method to safely get a required property from JsonElement
+    /// </summary>
+    private static bool TryGetRequiredProperty<T>(JsonElement root, string propertyName, string functionName, out T value, out FunctionResult? errorResult)
+    {
+        value = default(T)!;
+        errorResult = null;
+
+        if (!root.TryGetProperty(propertyName, out var element))
+        {
+            errorResult = new FunctionResult
+            {
+                FunctionName = functionName,
+                IsSuccess = false,
+                ErrorMessage = $"הפרמטר '{propertyName}' הוא שדה חובה וחסר"
+            };
+            return false;
+        }
+
+        try
+        {
+            if (typeof(T) == typeof(int))
+            {
+                value = (T)(object)element.GetInt32();
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                var stringValue = element.GetString();
+                if (string.IsNullOrWhiteSpace(stringValue))
+                {
+                    errorResult = new FunctionResult
+                    {
+                        FunctionName = functionName,
+                        IsSuccess = false,
+                        ErrorMessage = $"הפרמטר '{propertyName}' לא יכול להיות ריק"
+                    };
+                    return false;
+                }
+                value = (T)(object)stringValue;
+            }
+            else
+            {
+                // Handle other types as needed
+                value = element.Deserialize<T>()!;
+            }
+
+            return true;
+        }
+        catch (Exception)
+        {
+            errorResult = new FunctionResult
+            {
+                FunctionName = functionName,
+                IsSuccess = false,
+                ErrorMessage = $"ערך לא תקין עבור הפרמטר '{propertyName}'"
+            };
+            return false;
         }
     }
 
@@ -430,18 +865,16 @@ public class CustomerFunctionService : ICustomerFunctionService
 
     private async Task<FunctionResult> SearchCustomersAsync(string arguments, int companyId, CancellationToken cancellationToken)
     {
-        using var argumentsDocument = JsonDocument.Parse(arguments);
-        var searchTerm = argumentsDocument.RootElement.GetProperty("SearchTerm").GetString()?.Trim();
-
-        if (string.IsNullOrEmpty(searchTerm))
+        try
         {
-            return new FunctionResult
+            using var argumentsDocument = JsonDocument.Parse(arguments);
+            
+            if (!TryGetRequiredProperty<string>(argumentsDocument.RootElement, "SearchTerm", "searchCustomers", out var searchTerm, out var errorResult))
             {
-                FunctionName = "searchCustomers",
-                IsSuccess = false,
-                ErrorMessage = "מונח חיפוש ריק"
-            };
-        }
+                return errorResult!;
+            }
+
+            searchTerm = searchTerm.Trim();
 
         var customers = await _context.Customers
             .Where(c => c.CompanyId == companyId && (
@@ -478,6 +911,25 @@ public class CustomerFunctionService : ICustomerFunctionService
             IsSuccess = true,
             Result = $"נמצאו {customers.Count} לקוחות המתאימים לחיפוש '{searchTerm}':\n{result}"
         };
+        }
+        catch (JsonException ex)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "searchCustomers",
+                IsSuccess = false,
+                ErrorMessage = $"שגיאה בפרמטרים שנשלחו: {ex.Message}"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "searchCustomers",
+                IsSuccess = false,
+                ErrorMessage = $"שגיאה בחיפוש לקוחות: {ex.Message}"
+            };
+        }
     }
 
     private async Task<FunctionResult> GetCustomerFinancialSummaryAsync(string arguments, int companyId, CancellationToken cancellationToken)
@@ -1128,7 +1580,7 @@ public class CustomerFunctionService : ICustomerFunctionService
             AsOfDate = today.ToString("yyyy-MM-dd"),
             Summary = new
             {
-                TotalCustomers = customersWithOverdue.Count,
+               TotalCustomers = customersWithOverdue.Count,
                 TotalOverdueInvoices = totalOverdueInvoices,
                 TotalOverdueAmount = totalOverdueAmount
             },
@@ -1157,6 +1609,552 @@ public class CustomerFunctionService : ICustomerFunctionService
             FunctionName = "getCustomersWithOverdueInvoices",
             IsSuccess = true,
             Result = $"לקוחות עם חשבוניות באיחור של {minDaysOverdue}+ ימים:\n{result}"
+        };
+    }
+
+    private async Task<FunctionResult> CreateCustomerAsync(string arguments, int companyId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var argumentsDocument = JsonDocument.Parse(arguments);
+            var root = argumentsDocument.RootElement;
+
+            // Use TryGetProperty for all properties to avoid KeyNotFoundException
+            if (!root.TryGetProperty("Name", out var nameElement))
+            {
+                return new FunctionResult
+                {
+                    FunctionName = "createCustomer",
+                    IsSuccess = false,
+                    ErrorMessage = "שם הלקוח הוא שדה חובה - הפרמטר 'Name' חסר"
+                };
+            }
+
+            var name = nameElement.GetString();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return new FunctionResult
+                {
+                    FunctionName = "createCustomer",
+                    IsSuccess = false,
+                    ErrorMessage = "שם הלקוח הוא שדה חובה"
+                };
+            }
+
+        var customer = new Customer
+        {
+            CompanyId = companyId,
+            Name = name,
+            TaxId = root.TryGetProperty("TaxId", out var taxIdElement) ? taxIdElement.GetString() : null,
+            Email = root.TryGetProperty("Email", out var emailElement) ? emailElement.GetString() : null,
+            Phone = root.TryGetProperty("Phone", out var phoneElement) ? phoneElement.GetString() : null,
+            Address = root.TryGetProperty("Address", out var addressElement) ? addressElement.GetString() : null,
+            Contact = root.TryGetProperty("ContactPerson", out var contactElement) ? contactElement.GetString() : null,
+            Website = root.TryGetProperty("Website", out var websiteElement) ? websiteElement.GetString() : null,
+            PaymentTermsDays = root.TryGetProperty("PaymentTerms", out var paymentElement) ? paymentElement.GetInt32() : 30,
+            CreditLimit = root.TryGetProperty("CreditLimit", out var creditElement) ? creditElement.GetDecimal() : 0,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new FunctionResult
+        {
+            FunctionName = "createCustomer",
+            IsSuccess = true,
+            Result = $"לקוח חדש נוצר בהצלחה: {customer.Name} (מזהה: {customer.Id})"
+        };
+        }
+        catch (JsonException ex)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "createCustomer",
+                IsSuccess = false,
+                ErrorMessage = $"שגיאה בפרמטרים שנשלחו: {ex.Message}"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "createCustomer",
+                IsSuccess = false,
+                ErrorMessage = $"שגיאה ביצירת הלקוח: {ex.Message}"
+            };
+        }
+    }
+
+    private async Task<FunctionResult> UpdateCustomerAsync(string arguments, int companyId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var argumentsDocument = JsonDocument.Parse(arguments);
+            var root = argumentsDocument.RootElement;
+
+            // Check for required CustomerId parameter
+            if (!root.TryGetProperty("CustomerId", out var customerIdElement))
+            {
+                return new FunctionResult
+                {
+                    FunctionName = "updateCustomer",
+                    IsSuccess = false,
+                    ErrorMessage = "מזהה הלקוח הוא שדה חובה - הפרמטר 'CustomerId' חסר"
+                };
+            }
+
+            var customerId = customerIdElement.GetInt32();
+        
+        var customer = await _context.Customers
+            .Where(c => c.Id == customerId && c.CompanyId == companyId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (customer == null)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "updateCustomer",
+                IsSuccess = false,
+                ErrorMessage = "לקוח לא נמצא"
+            };
+        }
+
+        // Update only provided fields
+        if (root.TryGetProperty("Name", out var nameElement))
+            customer.Name = nameElement.GetString();
+        if (root.TryGetProperty("TaxId", out var taxIdElement))
+            customer.TaxId = taxIdElement.GetString();
+        if (root.TryGetProperty("Email", out var emailElement))
+            customer.Email = emailElement.GetString();
+        if (root.TryGetProperty("Phone", out var phoneElement))
+            customer.Phone = phoneElement.GetString();
+        if (root.TryGetProperty("Address", out var addressElement))
+            customer.Address = addressElement.GetString();
+        if (root.TryGetProperty("ContactPerson", out var contactElement))
+            customer.Contact = contactElement.GetString();
+        if (root.TryGetProperty("Website", out var websiteElement))
+            customer.Website = websiteElement.GetString();
+        if (root.TryGetProperty("PaymentTerms", out var paymentElement))
+            customer.PaymentTermsDays = paymentElement.GetInt32();
+        if (root.TryGetProperty("CreditLimit", out var creditElement))
+            customer.CreditLimit = creditElement.GetDecimal();
+        if (root.TryGetProperty("IsActive", out var activeElement))
+            customer.IsActive = activeElement.GetBoolean();
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new FunctionResult
+        {
+            FunctionName = "updateCustomer",
+            IsSuccess = true,
+            Result = $"פרטי הלקוח {customer.Name} עודכנו בהצלחה"
+        };
+        }
+        catch (JsonException ex)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "updateCustomer",
+                IsSuccess = false,
+                ErrorMessage = $"שגיאה בפרמטרים שנשלחו: {ex.Message}"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "updateCustomer",
+                IsSuccess = false,
+                ErrorMessage = $"שגיאה בעדכון הלקוח: {ex.Message}"
+            };
+        }
+    }
+
+    private async Task<FunctionResult> GetCustomerCreditStatusAsync(string arguments, int companyId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var argumentsDocument = JsonDocument.Parse(arguments);
+            
+            if (!TryGetRequiredProperty<int>(argumentsDocument.RootElement, "CustomerId", "getCustomerCreditStatus", out var customerId, out var errorResult))
+            {
+                return errorResult!;
+            }
+
+        var customer = await _context.Customers
+            .Where(c => c.Id == customerId && c.CompanyId == companyId)
+            .Select(c => new
+            {
+                c.Id,
+                c.Name,
+                c.CreditLimit,
+                OutstandingInvoices = c.Invoices
+                    .Where(i => !i.IsDeleted && i.Status != InvoiceStatus.Paid)
+                    .Sum(i => i.TotalAmount),
+                OverdueAmount = c.Invoices
+                    .Where(i => !i.IsDeleted && i.Status != InvoiceStatus.Paid && i.DueDate < DateTime.UtcNow)
+                    .Sum(i => i.TotalAmount)
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (customer == null)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "getCustomerCreditStatus",
+                IsSuccess = false,
+                ErrorMessage = "לקוח לא נמצא"
+            };
+        }
+
+        var availableCredit = customer.CreditLimit - customer.OutstandingInvoices;
+        var creditStatus = availableCredit >= 0 ? "תקין" : "חריגה ממסגרת";
+
+        var result = JsonSerializer.Serialize(new
+        {
+            CustomerId = customer.Id,
+            CustomerName = customer.Name,
+            CreditLimit = customer.CreditLimit,
+            OutstandingAmount = customer.OutstandingInvoices,
+            OverdueAmount = customer.OverdueAmount,
+            AvailableCredit = Math.Max(0, availableCredit),
+            CreditStatus = creditStatus,
+            IsOverLimit = availableCredit < 0
+        }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        return new FunctionResult
+        {
+            FunctionName = "getCustomerCreditStatus",
+            IsSuccess = true,
+            Result = $"מצב אשראי עבור {customer.Name}:\n{result}"
+        };
+        }
+        catch (JsonException ex)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "getCustomerCreditStatus",
+                IsSuccess = false,
+                ErrorMessage = $"שגיאה בפרמטרים שנשלחו: {ex.Message}"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "getCustomerCreditStatus",
+                IsSuccess = false,
+                ErrorMessage = $"שגיאה בקבלת מצב אשראי: {ex.Message}"
+            };
+        }
+    }
+
+    private async Task<FunctionResult> GetCustomerOrdersToShipAsync(string arguments, int companyId, CancellationToken cancellationToken)
+    {
+        using var argumentsDocument = JsonDocument.Parse(arguments);
+        var root = argumentsDocument.RootElement;
+        
+        var customerId = root.TryGetProperty("CustomerId", out var customerElement) ? 
+            customerElement.GetInt32() : (int?)null;
+
+        var query = _context.SalesOrders
+            .Where(so => so.CompanyId == companyId && !so.IsDeleted)
+            .Where(so => so.Status == SalesOrderStatus.Confirmed);
+
+        if (customerId.HasValue)
+        {
+            query = query.Where(so => so.CustomerId == customerId.Value);
+        }
+
+        var ordersToShip = await query
+            .Include(so => so.Customer)
+            .Include(so => so.Lines)
+                .ThenInclude(sl => sl.Item)
+            .Select(so => new
+            {
+                so.Id,
+                so.OrderNumber,
+                so.OrderDate,
+                so.Status,
+                StatusText = so.Status.ToString(),
+                Customer = new { so.Customer.Id, so.Customer.Name },
+                TotalAmount = so.TotalAmount,
+                ItemsCount = so.Lines.Count,
+                Items = so.Lines.Select(sl => new
+                {
+                    sl.Item.Name,
+                    sl.Quantity,
+                    sl.UnitPrice
+                })
+            })
+            .OrderBy(so => so.OrderDate)
+            .ToListAsync(cancellationToken);
+
+        var result = JsonSerializer.Serialize(new
+        {
+            TotalOrders = ordersToShip.Count,
+            TotalValue = ordersToShip.Sum(o => o.TotalAmount),
+            Orders = ordersToShip
+        }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        return new FunctionResult
+        {
+            FunctionName = "getCustomerOrdersToShip",
+            IsSuccess = true,
+            Result = $"הזמנות ממתינות למשלוח:\n{result}"
+        };
+    }
+
+    private async Task<FunctionResult> GetCustomerPopularItemsAsync(string arguments, int companyId, CancellationToken cancellationToken)
+    {
+        using var argumentsDocument = JsonDocument.Parse(arguments);
+        var root = argumentsDocument.RootElement;
+        
+        var customerId = root.GetProperty("CustomerId").GetInt32();
+        var topCount = root.TryGetProperty("TopCount", out var topElement) ? topElement.GetInt32() : 10;
+        var periodMonths = root.TryGetProperty("PeriodMonths", out var periodElement) ? periodElement.GetInt32() : 12;
+
+        var fromDate = DateTime.UtcNow.AddMonths(-periodMonths);
+
+        var popularItems = await _context.SalesOrderLines
+            .Include(sl => sl.SalesOrder)
+            .Include(sl => sl.Item)
+            .Where(sl => sl.SalesOrder.CompanyId == companyId 
+                      && sl.SalesOrder.CustomerId == customerId
+                      && !sl.SalesOrder.IsDeleted
+                      && sl.SalesOrder.OrderDate >= fromDate)
+            .GroupBy(sl => new { sl.ItemId, sl.Item.Name, sl.Item.SKU })
+            .Select(g => new
+            {
+                ItemId = g.Key.ItemId,
+                ItemName = g.Key.Name,
+                ItemSKU = g.Key.SKU,
+                TotalQuantity = g.Sum(sl => sl.Quantity),
+                TotalValue = g.Sum(sl => sl.LineTotal),
+                OrderCount = g.Select(sl => sl.SalesOrderId).Distinct().Count(),
+                AveragePrice = g.Average(sl => sl.UnitPrice)
+            })
+            .OrderByDescending(item => item.TotalQuantity)
+            .Take(topCount)
+            .ToListAsync(cancellationToken);
+
+        var customer = await _context.Customers
+            .Where(c => c.Id == customerId && c.CompanyId == companyId)
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var result = JsonSerializer.Serialize(new
+        {
+            CustomerId = customerId,
+            CustomerName = customer,
+            PeriodMonths = periodMonths,
+            PopularItems = popularItems
+        }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        return new FunctionResult
+        {
+            FunctionName = "getCustomerPopularItems",
+            IsSuccess = true,
+            Result = $"פריטים פופולריים עבור {customer}:\n{result}"
+        };
+    }
+
+    private Task<FunctionResult> GetCustomerContactHistoryAsync(string arguments, int companyId, CancellationToken cancellationToken)
+    {
+        // Note: This would require a CustomerContacts or Notes table to be implemented
+        // For now, return a placeholder response
+        return Task.FromResult(new FunctionResult
+        {
+            FunctionName = "getCustomerContactHistory",
+            IsSuccess = false,
+            ErrorMessage = "פונקציה זו דורשת יישום טבלת הערות/קשרים במערכת"
+        });
+    }
+
+    private Task<FunctionResult> AddCustomerNoteAsync(string arguments, int companyId, CancellationToken cancellationToken)
+    {
+        // Note: This would require a CustomerNotes table to be implemented
+        // For now, return a placeholder response
+        return Task.FromResult(new FunctionResult
+        {
+            FunctionName = "addCustomerNote",
+            IsSuccess = false,
+            ErrorMessage = "פונקציה זו דורשת יישום טבלת הערות במערכת"
+        });
+    }
+
+    private async Task<FunctionResult> GetCustomerPaymentHistoryAsync(string arguments, int companyId, CancellationToken cancellationToken)
+    {
+        using var argumentsDocument = JsonDocument.Parse(arguments);
+        var root = argumentsDocument.RootElement;
+        
+        var customerId = root.GetProperty("CustomerId").GetInt32();
+        var fromDate = root.TryGetProperty("FromDate", out var fromElement) && !string.IsNullOrEmpty(fromElement.GetString()) ? 
+            DateTime.Parse(fromElement.GetString()!) : DateTime.UtcNow.AddYears(-1);
+        var toDate = root.TryGetProperty("ToDate", out var toElement) && !string.IsNullOrEmpty(toElement.GetString()) ? 
+            DateTime.Parse(toElement.GetString()!) : DateTime.UtcNow;
+        var paymentMethod = root.TryGetProperty("PaymentMethod", out var methodElement) ? 
+            methodElement.GetString() : null;
+
+        var query = _context.Receipts
+            .Include(r => r.Invoice)
+            .Where(r => r.CompanyId == companyId 
+                     && r.Invoice.CustomerId == customerId
+                     && !r.IsDeleted
+                     && r.PaymentDate >= fromDate 
+                     && r.PaymentDate <= toDate);
+
+        if (!string.IsNullOrEmpty(paymentMethod))
+        {
+            query = query.Where(r => r.PaymentMethod == paymentMethod);
+        }
+
+        var payments = await query
+            .Select(r => new
+            {
+                r.Id,
+                r.PaymentDate,
+                r.Amount,
+                r.PaymentMethod,
+                r.ReferenceNumber,
+                InvoiceNumber = r.Invoice.InvoiceNumber,
+                r.Invoice.TotalAmount
+            })
+            .OrderByDescending(r => r.PaymentDate)
+            .ToListAsync(cancellationToken);
+
+        var customer = await _context.Customers
+            .Where(c => c.Id == customerId && c.CompanyId == companyId)
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var result = JsonSerializer.Serialize(new
+        {
+            CustomerId = customerId,
+            CustomerName = customer,
+            Period = new { From = fromDate.ToString("yyyy-MM-dd"), To = toDate.ToString("yyyy-MM-dd") },
+            PaymentMethod = paymentMethod ?? "כל האמצעים",
+            TotalPayments = payments.Count,
+            TotalAmount = payments.Sum(p => p.Amount),
+            Payments = payments
+        }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        return new FunctionResult
+        {
+            FunctionName = "getCustomerPaymentHistory",
+            IsSuccess = true,
+            Result = $"היסטוריית תשלומים עבור {customer}:\n{result}"
+        };
+    }
+
+    private async Task<FunctionResult> GenerateCustomerStatementAsync(string arguments, int companyId, CancellationToken cancellationToken)
+    {
+        using var argumentsDocument = JsonDocument.Parse(arguments);
+        var root = argumentsDocument.RootElement;
+        
+        var customerId = root.GetProperty("CustomerId").GetInt32();
+        var fromDate = DateTime.Parse(root.GetProperty("FromDate").GetString()!);
+        var toDate = DateTime.Parse(root.GetProperty("ToDate").GetString()!);
+        var includeZeroBalance = root.TryGetProperty("IncludeZeroBalance", out var zeroElement) ? 
+            zeroElement.GetBoolean() : false;
+
+        var customer = await _context.Customers
+            .Where(c => c.Id == customerId && c.CompanyId == companyId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (customer == null)
+        {
+            return new FunctionResult
+            {
+                FunctionName = "generateCustomerStatement",
+                IsSuccess = false,
+                ErrorMessage = "לקוח לא נמצא"
+            };
+        }
+
+        // Get invoices in period
+        var invoices = await _context.Invoices
+            .Where(i => i.CompanyId == companyId 
+                     && i.CustomerId == customerId
+                     && !i.IsDeleted
+                     && i.InvoiceDate >= fromDate 
+                     && i.InvoiceDate <= toDate)
+            .Select(i => new
+            {
+                i.Id,
+                i.InvoiceNumber,
+                i.InvoiceDate,
+                i.DueDate,
+                i.TotalAmount,
+                Status = i.Status.ToString(),
+                PaidAmount = i.Receipts.Where(r => !r.IsDeleted).Sum(r => r.Amount),
+                Balance = i.TotalAmount - i.Receipts.Where(r => !r.IsDeleted).Sum(r => r.Amount)
+            })
+            .ToListAsync(cancellationToken);
+
+        if (!includeZeroBalance)
+        {
+            invoices = invoices.Where(i => i.Balance != 0).ToList();
+        }
+
+        // Get payments in period
+        var payments = await _context.Receipts
+            .Include(r => r.Invoice)
+            .Where(r => r.CompanyId == companyId 
+                     && r.Invoice.CustomerId == customerId
+                     && !r.IsDeleted
+                     && r.PaymentDate >= fromDate 
+                     && r.PaymentDate <= toDate)
+            .Select(r => new
+            {
+                r.PaymentDate,
+                r.Amount,
+                r.PaymentMethod,
+                r.ReferenceNumber,
+                InvoiceNumber = r.Invoice.InvoiceNumber
+            })
+            .ToListAsync(cancellationToken);
+
+        var statement = new
+        {
+            Customer = new
+            {
+                customer.Id,
+                customer.Name,
+                customer.Email,
+                customer.Phone,
+                customer.Address
+            },
+            Period = new
+            {
+                From = fromDate.ToString("yyyy-MM-dd"),
+                To = toDate.ToString("yyyy-MM-dd")
+            },
+            Summary = new
+            {
+                TotalInvoiced = invoices.Sum(i => i.TotalAmount),
+                TotalPaid = payments.Sum(p => p.Amount),
+                OutstandingBalance = invoices.Sum(i => i.Balance),
+                InvoiceCount = invoices.Count,
+                PaymentCount = payments.Count
+            },
+            Invoices = invoices.OrderBy(i => i.InvoiceDate),
+            Payments = payments.OrderBy(p => p.PaymentDate)
+        };
+
+        var result = JsonSerializer.Serialize(statement, new JsonSerializerOptions 
+        { 
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        });
+
+        return new FunctionResult
+        {
+            FunctionName = "generateCustomerStatement",
+            IsSuccess = true,
+            Result = $"דוח חשבון לקוח עבור {customer.Name}:\n{result}"
         };
     }
 }

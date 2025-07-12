@@ -43,7 +43,7 @@ public class CustomerFunctionService : ICustomerFunctionService
 ## Development Commands
 ```bash
 # Backend (HTTPS required)
-cd backend && dotnet run --launch-profile https  # Port 7275
+cd backend && dotnet run  # Port 5121
 dotnet ef migrations add MigrationName && dotnet ef database update
 
 # Frontend  

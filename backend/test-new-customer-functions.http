@@ -1,0 +1,161 @@
+### Variables
+@baseUrl = https://localhost:5121
+
+### Test Create Customer Function
+POST {{baseUrl}}/api/ai/assistant/query
+Content-Type: application/json
+
+{
+  "message": "צור לקוח חדש בשם 'דוגמה בע\"מ' עם טלפון 03-1234567 ואימייל info@example.co.il",
+  "companyId": 1
+}
+
+### Test Update Customer Function  
+POST {{baseUrl}}/api/ai/assistant/query
+Content-Type: application/json
+
+{
+  "message": "עדכן את פרטי הלקוח מספר 1 - שנה את האימייל ל new@email.com ואת הטלפון ל 03-9876543",
+  "companyId": 1
+}
+
+### Test Customer Credit Status
+POST {{baseUrl}}/api/ai/assistant/query
+Content-Type: application/json
+
+{
+  "message": "מה מצב האשראי של הלקוח מספר 1?",
+  "companyId": 1
+}
+
+### Test Customer Orders to Ship
+POST {{baseUrl}}/api/ai/assistant/query
+Content-Type: application/json
+
+{
+  "message": "איזה הזמנות ממתינות למשלוח עבור הלקוח מספר 1?",
+  "companyId": 1
+}
+
+### Test Customer Popular Items
+POST {{baseUrl}}/api/ai/assistant/query
+Content-Type: application/json
+
+{
+  "message": "מה הפריטים הפופולריים ביותר עבור הלקוח מספר 1 ב-6 החודשים האחרונים?",
+  "companyId": 1
+}
+
+### Test Customer Payment History
+POST {{baseUrl}}/api/ai/assistant/query
+Content-Type: application/json
+
+{
+  "message": "הצג את היסטוריית התשלומים של הלקוח מספר 1 ב-3 החודשים האחרונים",
+  "companyId": 1
+}
+
+### Test Generate Customer Statement
+POST {{baseUrl}}/api/ai/assistant/query
+Content-Type: application/json
+
+{
+  "message": "צור דוח חשבון לקוח עבור לקוח מספר 1 מתאריך 2025-01-01 עד 2025-07-13",
+  "companyId": 1
+}
+
+### Test Direct Function Call - Create Customer
+POST {{baseUrl}}/api/ai/customers/function
+Content-Type: application/json
+
+{
+  "functionName": "createCustomer",
+  "arguments": {
+    "CompanyId": 1,
+    "Name": "לקוח חדש לבדיקה",
+    "Email": "test@customer.co.il",
+    "Phone": "03-1111111",
+    "PaymentTerms": 45,
+    "CreditLimit": 50000
+  }
+}
+
+### Test Direct Function Call - Update Customer  
+POST {{baseUrl}}/api/ai/customers/function
+Content-Type: application/json
+
+{
+  "functionName": "updateCustomer",
+  "arguments": {
+    "CustomerId": 1,
+    "CompanyId": 1,
+    "Email": "updated@customer.co.il",
+    "CreditLimit": 75000
+  }
+}
+
+### Test Direct Function Call - Credit Status
+POST {{baseUrl}}/api/ai/customers/function
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerCreditStatus",
+  "arguments": {
+    "CustomerId": 1,
+    "CompanyId": 1
+  }
+}
+
+### Test Direct Function Call - Orders to Ship
+POST {{baseUrl}}/api/ai/customers/function
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerOrdersToShip",
+  "arguments": {
+    "CompanyId": 1
+  }
+}
+
+### Test Direct Function Call - Popular Items
+POST {{baseUrl}}/api/ai/customers/function
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerPopularItems",
+  "arguments": {
+    "CustomerId": 1,
+    "CompanyId": 1,
+    "TopCount": 5,
+    "PeriodMonths": 6
+  }
+}
+
+### Test Direct Function Call - Payment History
+POST {{baseUrl}}/api/ai/customers/function
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerPaymentHistory",
+  "arguments": {
+    "CustomerId": 1,
+    "CompanyId": 1,
+    "FromDate": "2025-04-01",
+    "ToDate": "2025-07-13"
+  }
+}
+
+### Test Direct Function Call - Generate Statement
+POST {{baseUrl}}/api/ai/customers/function
+Content-Type: application/json
+
+{
+  "functionName": "generateCustomerStatement",
+  "arguments": {
+    "CustomerId": 1,
+    "CompanyId": 1,
+    "FromDate": "2025-01-01",
+    "ToDate": "2025-07-13",
+    "IncludeZeroBalance": true
+  }
+}
