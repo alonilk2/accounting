@@ -297,12 +297,15 @@ export interface CustomerDocumentStats {
   customerId: number;
   customerName: string;
   totalSalesOrders: number;
+  totalInvoices: number;
   totalReceipts: number;
   totalPOSSales: number;
-  totalAmount: number;
-  averageOrderValue: number;
-  lastOrderDate?: Date;
-  firstOrderDate?: Date;
+  totalSalesAmount: number;
+  totalInvoiceAmount: number;
+  totalReceiptsAmount: number;
+  outstandingAmount: number;
+  lastDocumentDate?: Date;
+  firstDocumentDate?: Date;
 }
 
 export interface CreateSupplierForm {
@@ -364,3 +367,14 @@ export interface CreateSalesOrderLineForm {
   discountPercent?: number;
   taxRate?: number;
 }
+
+// Re-export AI types for convenience
+export type {
+  ChatMessage,
+  ChatRequest,
+  ChatResponse,
+  ChatContext,
+  SuggestedAction,
+  ChatSession,
+  AIAssistantState,
+} from './ai';

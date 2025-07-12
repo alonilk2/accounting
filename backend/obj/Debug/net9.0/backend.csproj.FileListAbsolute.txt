@@ -156,3 +156,5 @@ C:\Users\aloni\botaccount\backend\obj\Debug\net9.0\backend.pdb
 C:\Users\aloni\botaccount\backend\obj\Debug\net9.0\backend.genruntimeconfig.cache
 C:\Users\aloni\botaccount\backend\obj\Debug\net9.0\ref\backend.dll
 C:\Users\aloni\botaccount\backend\obj\Debug\net9.0\backend.sourcelink.json
+C:\Users\aloni\botaccount\backend\bin\Debug\net9.0\Azure.AI.OpenAI.dll
+C:\Users\aloni\botaccount\backend\bin\Debug\net9.0\OpenAI.dll

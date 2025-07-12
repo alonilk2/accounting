@@ -17,9 +17,7 @@ import {
 import {
   Add as AddIcon,
   Refresh as RefreshIcon,
-  Payment as PaymentIcon,
   Edit as EditIcon,
-  Receipt as ReceiptIcon,
   Print as PrintIcon,
   Assignment as QuoteIcon,
   CheckCircle as ConfirmedIcon,
@@ -31,7 +29,6 @@ import { useUIStore } from '../stores';
 import { salesAPI, customersAPI } from '../services/api';
 import type { SalesOrder, SalesOrderStatus, Customer, Company } from '../types/entities';
 import SalesOrderForm from '../components/sales/SalesOrderForm';
-import SalesOrderReceiptsDialog from '../components/sales/SalesOrderReceiptsDialog';
 import { PrintButton, PrintableSalesOrder } from '../components/print';
 import { ModernButton, ModernFab } from '../components/ui';
 
@@ -42,11 +39,7 @@ const Sales = () => {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedDocumentType, setSelectedDocumentType] = useState<SalesOrderStatus>('Quote');
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('Cash');
-  const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
@@ -112,27 +105,6 @@ const Sales = () => {
     } catch (err) {
       setError('Failed to update order status');
       console.error('Error updating status:', err);
-    }
-  };
-
-  const handlePayment = async () => {
-    if (!selectedOrder || !paymentAmount) return;
-
-    try {
-      const amount = parseFloat(paymentAmount);
-      if (amount <= 0) {
-        setError('Payment amount must be greater than 0');
-        return;
-      }
-
-      await salesAPI.processPayment(selectedOrder.id, amount, paymentMethod);
-      setShowPaymentDialog(false);
-      setSelectedOrder(null);
-      setPaymentAmount('');
-      await loadOrders(); // Refresh the list
-    } catch (err) {
-      setError('Failed to process payment');
-      console.error('Error processing payment:', err);
     }
   };
 
@@ -247,30 +219,6 @@ const Sales = () => {
         const order = params.row as SalesOrder;
         const actions = [];
 
-        if (order.status !== 'Completed' && order.status !== 'Cancelled') {
-          actions.push({
-            icon: <PaymentIcon />,
-            label: "תשלום",
-            onClick: () => {
-              setSelectedOrder(order);
-              setPaymentAmount((order.totalAmount - order.paidAmount).toString());
-              setShowPaymentDialog(true);
-            }
-          });
-        }
-
-        // Always show receipts button if there are any payments
-        if (order.paidAmount > 0) {
-          actions.push({
-            icon: <ReceiptIcon />,
-            label: "קבלות",
-            onClick: () => {
-              setSelectedOrder(order);
-              setShowReceiptsDialog(true);
-            }
-          });
-        }
-
         actions.push({
           icon: <EditIcon />,
           label: "עריכה",
@@ -366,13 +314,6 @@ const Sales = () => {
     { value: 'Shipped', label: 'תעודת משלוח' },
     { value: 'Completed', label: 'הושלם' },
     { value: 'Cancelled', label: 'בוטל' },
-  ];
-
-  const paymentMethods = [
-    { value: 'Cash', label: 'מזומן' },
-    { value: 'CreditCard', label: 'כרטיס אשראי' },
-    { value: 'BankTransfer', label: 'העברה בנקאית' },
-    { value: 'Check', label: 'צ\'ק' },
   ];
 
   if (showForm) {
@@ -549,79 +490,6 @@ const Sales = () => {
           />
         </CardContent>
       </Card>
-
-      {/* Payment Dialog */}
-      <Dialog
-        open={showPaymentDialog}
-        onClose={() => setShowPaymentDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>רישום תשלום</DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            {selectedOrder && (
-              <Typography variant="body2" color="textSecondary" gutterBottom>
-                הזמנה: {selectedOrder.orderNumber} | לקוח: {selectedOrder.customerName}
-              </Typography>
-            )}
-            <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }}>
-              <Grid size={{ xs: 4, sm: 8, md: 12 }}>
-                <TextField
-                  label="סכום תשלום"
-                  type="number"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  fullWidth
-                  inputProps={{ min: 0, step: 0.01 }}
-                />
-              </Grid>
-              <Grid size={{ xs: 4, sm: 8, md: 12 }}>
-                <TextField
-                  select
-                  label="אמצעי תשלום"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  fullWidth
-                >
-                  {paymentMethods.map((method) => (
-                    <MenuItem key={method.value} value={method.value}>
-                      {method.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            </Grid>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <ModernButton 
-            variant="ghost" 
-            onClick={() => setShowPaymentDialog(false)}
-          >
-            ביטול
-          </ModernButton>
-          <ModernButton
-            variant="primary"
-            onClick={handlePayment}
-            disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
-            glow
-          >
-            רשום תשלום
-          </ModernButton>
-        </DialogActions>
-      </Dialog>
-
-      {/* Receipts Dialog */}
-      {selectedOrder && (
-        <SalesOrderReceiptsDialog
-          open={showReceiptsDialog}
-          onClose={() => setShowReceiptsDialog(false)}
-          salesOrder={selectedOrder}
-          customer={customers.find(c => c.id === selectedOrder.customerId)}
-          company={company || undefined}
-        />
-      )}
 
       {/* Print Dialog */}
       {selectedOrder && (

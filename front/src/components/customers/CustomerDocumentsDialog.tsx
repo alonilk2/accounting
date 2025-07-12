@@ -31,6 +31,7 @@ import {
 import {
   Close as CloseIcon,
   Receipt as ReceiptIcon,
+  Description as InvoiceIcon,
   ShoppingCart as ShoppingCartIcon,
   PointOfSale as POSIcon,
   ExpandMore as ExpandMoreIcon,
@@ -69,6 +70,8 @@ const getDocumentIcon = (documentType: string) => {
   switch (documentType) {
     case "SalesOrder":
       return <ShoppingCartIcon />;
+    case "Invoice":
+      return <InvoiceIcon />;
     case "Receipt":
       return <ReceiptIcon />;
     case "POSSale":
@@ -82,6 +85,8 @@ const getDocumentTypeLabel = (documentType: string) => {
   switch (documentType) {
     case "SalesOrder":
       return "מכירות";
+    case "Invoice":
+      return "חשבונית";
     case "Receipt":
       return "קבלה";
     case "POSSale":
@@ -374,7 +379,7 @@ const CustomerDocumentsDialog: React.FC<CustomerDocumentsDialogProps> = ({
                         >
                           <MoneyIcon color="warning" />
                           <Typography variant="h6" fontWeight="bold">
-                            {formatCurrency(statsData.totalAmount)}
+                            {formatCurrency(statsData.totalSalesAmount + statsData.totalInvoiceAmount)}
                           </Typography>
                         </Box>
                         <Typography variant="body2" color="text.secondary">
@@ -444,6 +449,7 @@ const CustomerDocumentsDialog: React.FC<CustomerDocumentsDialogProps> = ({
                           >
                             <MenuItem value="">הכל</MenuItem>
                             <MenuItem value="SalesOrder">מכירות</MenuItem>
+                            <MenuItem value="Invoice">חשבונית</MenuItem>
                             <MenuItem value="Receipt">קבלה</MenuItem>
                             <MenuItem value="POSSale">מכירת קופה</MenuItem>
                           </Select>

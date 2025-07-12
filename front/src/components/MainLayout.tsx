@@ -43,6 +43,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, useUIStore } from '../stores';
+import { AIAssistant, AIAssistantFab } from './ai';
 
 // Inject global styles for animations
 if (typeof document !== 'undefined') {
@@ -694,6 +695,10 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
           </Box>
         </Box>
       </Box>
+      
+      {/* AI Assistant Components */}
+      <AIAssistant />
+      <AIAssistantFab />
     </Box>
   );
 };

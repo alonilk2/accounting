@@ -202,3 +202,6 @@ export const useUIStore = create<UIStore>()(
 
 // Export notification type for use in components
 export type { Notification };
+
+// Export AI Assistant store
+export { useAIAssistantStore } from './aiAssistantStore';

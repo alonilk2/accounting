@@ -8,6 +8,7 @@ using backend.Models.Purchasing;
 using backend.Models.Inventory;
 using backend.Models.POS;
 using backend.Models.Audit;
+using backend.Models.AI;
 
 namespace backend.Data;
 
@@ -61,6 +62,10 @@ public class AccountingDbContext : DbContext
     // Audit
     public DbSet<AuditLog> AuditLogs { get; set; } = null!;
 
+    // AI Assistant
+    public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
+    public DbSet<AIAssistantConfig> AIAssistantConfigs { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -79,6 +84,7 @@ public class AccountingDbContext : DbContext
         ConfigureInventory(modelBuilder);
         ConfigurePOS(modelBuilder);
         ConfigureAudit(modelBuilder);
+        ConfigureAIAssistant(modelBuilder);
         ConfigureIndexes(modelBuilder);
         ConfigureSoftDelete(modelBuilder);
         ConfigureTenantEntities(modelBuilder);
@@ -126,6 +132,10 @@ public class AccountingDbContext : DbContext
 
         // Audit entities
         modelBuilder.Entity<AuditLog>().ToTable("AuditLogs");
+
+        // AI Assistant entities
+        modelBuilder.Entity<ChatMessage>().ToTable("ChatMessages");
+        modelBuilder.Entity<AIAssistantConfig>().ToTable("AIAssistantConfigs");
     }
 
     private static void ConfigureIdentity(ModelBuilder modelBuilder)
@@ -375,6 +385,58 @@ public class AccountingDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
     }
 
+    private static void ConfigureAIAssistant(ModelBuilder modelBuilder)
+    {
+        // Configure ChatMessage entity
+        modelBuilder.Entity<ChatMessage>()
+            .Property(cm => cm.SessionId)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        modelBuilder.Entity<ChatMessage>()
+            .Property(cm => cm.Content)
+            .HasMaxLength(4000)
+            .IsRequired();
+
+        modelBuilder.Entity<ChatMessage>()
+            .Property(cm => cm.Role)
+            .HasMaxLength(20)
+            .IsRequired();
+
+        modelBuilder.Entity<ChatMessage>()
+            .Property(cm => cm.EntityType)
+            .HasMaxLength(50);
+
+        // Indexes for ChatMessage
+        modelBuilder.Entity<ChatMessage>()
+            .HasIndex(cm => cm.SessionId);
+
+        modelBuilder.Entity<ChatMessage>()
+            .HasIndex(cm => cm.CompanyId);
+
+        modelBuilder.Entity<ChatMessage>()
+            .HasIndex(cm => cm.Timestamp);
+
+        // Configure AIAssistantConfig entity
+        modelBuilder.Entity<AIAssistantConfig>()
+            .Property(ac => ac.OpenAIModel)
+            .HasMaxLength(50)
+            .IsRequired();
+
+        modelBuilder.Entity<AIAssistantConfig>()
+            .Property(ac => ac.SystemPrompt)
+            .HasMaxLength(2000);
+
+        modelBuilder.Entity<AIAssistantConfig>()
+            .Property(ac => ac.EnabledFeatures)
+            .HasMaxLength(500);
+
+        // Unique constraint for one config per company
+        modelBuilder.Entity<AIAssistantConfig>()
+            .HasIndex(ac => ac.CompanyId)
+            .IsUnique();
+    }
+
     private static void ConfigureIndexes(ModelBuilder modelBuilder)
     {
         // Performance indexes for common queries
@@ -398,6 +460,13 @@ public class AccountingDbContext : DbContext
 
         modelBuilder.Entity<AuditLog>()
             .HasIndex(al => al.CreatedAt);
+
+        // AI Assistant indexes
+        modelBuilder.Entity<ChatMessage>()
+            .HasIndex(cm => new { cm.CompanyId, cm.SessionId, cm.Timestamp });
+
+        modelBuilder.Entity<AIAssistantConfig>()
+            .HasIndex(ac => ac.CompanyId);
 
         // Multi-column indexes for common filter combinations
         modelBuilder.Entity<JournalEntry>()

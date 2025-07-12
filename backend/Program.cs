@@ -29,6 +29,12 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Add authentication and authorization services
+builder.Services.AddAuthentication()
+    .AddJwtBearer(); // Add JWT authentication scheme
+
+builder.Services.AddAuthorization(); // Add authorization services
+
 // Add controllers for API endpoints
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -60,6 +66,10 @@ app.UseCors("AllowFrontend");
 
 // Add routing
 app.UseRouting();
+
+// Add authentication and authorization middleware (must be after UseRouting())
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Map controllers
 app.MapControllers();

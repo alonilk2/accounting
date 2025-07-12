@@ -40,9 +40,11 @@ public class CustomerDocumentStatsDto
     public int CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public int TotalSalesOrders { get; set; }
+    public int TotalInvoices { get; set; }
     public int TotalReceipts { get; set; }
     public int TotalPOSSales { get; set; }
     public decimal TotalSalesAmount { get; set; }
+    public decimal TotalInvoiceAmount { get; set; }
     public decimal TotalReceiptsAmount { get; set; }
     public decimal OutstandingAmount { get; set; }
     public DateTime? LastDocumentDate { get; set; }

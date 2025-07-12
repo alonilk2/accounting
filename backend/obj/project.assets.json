@@ -2,6 +2,23 @@
   "version": 3,
   "targets": {
     "net9.0": {
+      "Azure.AI.OpenAI/2.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Azure.Core": "1.44.1",
+          "OpenAI": "2.1.0"
+        },
+        "compile": {
+          "lib/netstandard2.0/Azure.AI.OpenAI.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/Azure.AI.OpenAI.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "Azure.Core/1.46.2": {
         "type": "package",
         "dependencies": {
@@ -1206,6 +1223,23 @@
           "buildTransitive/Mono.TextTemplating.targets": {}
         }
       },
+      "OpenAI/2.1.0": {
+        "type": "package",
+        "dependencies": {
+          "System.ClientModel": "1.2.1",
+          "System.Diagnostics.DiagnosticSource": "6.0.1"
+        },
+        "compile": {
+          "lib/net6.0/OpenAI.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/OpenAI.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "System.ClientModel/1.4.2": {
         "type": "package",
         "dependencies": {
@@ -1792,6 +1826,22 @@
     }
   },
   "libraries": {
+    "Azure.AI.OpenAI/2.1.0": {
+      "sha512": "doixr3tcsIcdzbzF9NxKt+6U0NKj6aPeOCPYONPsWjyf3gxVndVJAdjPcVdqeR/3vcRHXRgGnGlv+iXx5jMA4g==",
+      "type": "package",
+      "path": "azure.ai.openai/2.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "CHANGELOG.md",
+        "README.md",
+        "azure.ai.openai.2.1.0.nupkg.sha512",
+        "azure.ai.openai.nuspec",
+        "azureicon.png",
+        "lib/netstandard2.0/Azure.AI.OpenAI.dll",
+        "lib/netstandard2.0/Azure.AI.OpenAI.xml"
+      ]
+    },
     "Azure.Core/1.46.2": {
       "sha512": "HFcvd1besmgBFPIZ7iSFHZOgzGfHTZNTzG8gWYdIP8ZJQySrb+vAdArcmFw7je3kFRMDbbtMoWKNVGj2vvH1sw==",
       "type": "package",
@@ -3908,6 +3958,24 @@
         "readme.md"
       ]
     },
+    "OpenAI/2.1.0": {
+      "sha512": "zl72nyP4O94ZyEoCLoE8qoc5vp8kSJmRuqR+UdK+jNIjFJGWJYjsb4rAGpMWWRTbPYuk82E8myMJdVQurMLDnQ==",
+      "type": "package",
+      "path": "openai/2.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "CHANGELOG.md",
+        "OpenAI.png",
+        "README.md",
+        "lib/net6.0/OpenAI.dll",
+        "lib/net6.0/OpenAI.xml",
+        "lib/netstandard2.0/OpenAI.dll",
+        "lib/netstandard2.0/OpenAI.xml",
+        "openai.2.1.0.nupkg.sha512",
+        "openai.nuspec"
+      ]
+    },
     "System.ClientModel/1.4.2": {
       "sha512": "goGitN7trB9hoQ01dIpxaSYcruI+lGt/xq471AUv8irFvsIX+4HCqk1pDT/4ZPTLmU6ZUuNzhCb4MJAIwG7+Uw==",
       "type": "package",
@@ -4898,6 +4966,7 @@
   },
   "projectFileDependencyGroups": {
     "net9.0": [
+      "Azure.AI.OpenAI >= 2.1.0",
       "Azure.Identity >= 1.13.1",
       "Azure.Security.KeyVault.Secrets >= 4.8.0",
       "Microsoft.AspNetCore.Authentication.JwtBearer >= 9.0.0",
@@ -4916,11 +4985,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
+      "projectUniqueName": "C:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
       "projectName": "backend",
-      "projectPath": "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
+      "projectPath": "C:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
       "packagesPath": "C:\\Users\\aloni\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\aloni\\botaccount\\backend\\obj\\",
+      "outputPath": "C:\\Users\\aloni\\botaccount\\backend\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -4959,6 +5028,10 @@
       "net9.0": {
         "targetAlias": "net9.0",
         "dependencies": {
+          "Azure.AI.OpenAI": {
+            "target": "Package",
+            "version": "[2.1.0, )"
+          },
           "Azure.Identity": {
             "target": "Package",
             "version": "[1.13.1, )"

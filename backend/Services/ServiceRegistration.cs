@@ -5,6 +5,8 @@ using backend.Services.Purchasing;
 using backend.Services.Inventory;
 using backend.Services.Accounting;
 using backend.Services.Printing;
+using backend.Services.AI;
+using Azure.Identity;
 
 namespace backend.Services;
 
@@ -42,6 +44,16 @@ public static class ServiceRegistration
         
         // Print services
         services.AddScoped<IPrintService, PrintService>();
+        
+        // AI Assistant services
+        services.AddScoped<IAIAssistantService, AIAssistantService>();
+        // AI Services - Azure OpenAI with Managed Identity
+        services.AddScoped<IOpenAIService, OpenAIService>();
+        // AI Function Services for function calling
+        services.AddScoped<ICustomerFunctionService, CustomerFunctionService>();
+        
+        // Azure Identity and Key Vault
+        services.AddScoped<DefaultAzureCredential>();
         
         return services;
     }

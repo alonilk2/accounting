@@ -8,6 +8,7 @@
     ".NETCoreApp,Version=v9.0": {
       "backend/1.0.0": {
         "dependencies": {
+          "Azure.AI.OpenAI": "2.1.0",
           "Azure.Identity": "1.13.1",
           "Azure.Security.KeyVault.Secrets": "4.8.0",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "9.0.0",
@@ -20,6 +21,18 @@
         },
         "runtime": {
           "backend.dll": {}
+        }
+      },
+      "Azure.AI.OpenAI/2.1.0": {
+        "dependencies": {
+          "Azure.Core": "1.46.2",
+          "OpenAI": "2.1.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Azure.AI.OpenAI.dll": {
+            "assemblyVersion": "2.1.0.0",
+            "fileVersion": "2.100.24.60605"
+          }
         }
       },
       "Azure.Core/1.46.2": {
@@ -788,6 +801,18 @@
           }
         }
       },
+      "OpenAI/2.1.0": {
+        "dependencies": {
+          "System.ClientModel": "1.4.2",
+          "System.Diagnostics.DiagnosticSource": "6.0.1"
+        },
+        "runtime": {
+          "lib/net6.0/OpenAI.dll": {
+            "assemblyVersion": "2.1.0.0",
+            "fileVersion": "2.1.0.0"
+          }
+        }
+      },
       "System.ClientModel/1.4.2": {
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "9.0.0",
@@ -1033,6 +1058,13 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "Azure.AI.OpenAI/2.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-doixr3tcsIcdzbzF9NxKt+6U0NKj6aPeOCPYONPsWjyf3gxVndVJAdjPcVdqeR/3vcRHXRgGnGlv+iXx5jMA4g==",
+      "path": "azure.ai.openai/2.1.0",
+      "hashPath": "azure.ai.openai.2.1.0.nupkg.sha512"
     },
     "Azure.Core/1.46.2": {
       "type": "package",
@@ -1432,6 +1464,13 @@
       "sha512": "sha512-YqueG52R/Xej4VVbKuRIodjiAhV0HR/XVbLbNrJhCZnzjnSjgMJ/dCdV0akQQxavX6hp/LC6rqLGLcXeQYU7XA==",
       "path": "mono.texttemplating/3.0.0",
       "hashPath": "mono.texttemplating.3.0.0.nupkg.sha512"
+    },
+    "OpenAI/2.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-zl72nyP4O94ZyEoCLoE8qoc5vp8kSJmRuqR+UdK+jNIjFJGWJYjsb4rAGpMWWRTbPYuk82E8myMJdVQurMLDnQ==",
+      "path": "openai/2.1.0",
+      "hashPath": "openai.2.1.0.nupkg.sha512"
     },
     "System.ClientModel/1.4.2": {
       "type": "package",

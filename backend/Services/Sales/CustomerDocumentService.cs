@@ -59,6 +59,14 @@ public class CustomerDocumentService : ICustomerDocumentService
                 documents.AddRange(salesOrders);
             }
 
+            // Get Invoices
+            if (string.IsNullOrEmpty(documentType) || 
+                documentType.Equals("Invoice", StringComparison.OrdinalIgnoreCase))
+            {
+                var invoices = await GetInvoiceDocuments(customerId, companyId, fromDate, toDate);
+                documents.AddRange(invoices);
+            }
+
             // Get Receipts
             if (string.IsNullOrEmpty(documentType) || 
                 documentType.Equals("Receipt", StringComparison.OrdinalIgnoreCase))
@@ -153,6 +161,19 @@ public class CustomerDocumentService : ICustomerDocumentService
             var receiptsCount = receiptsStats?.Count ?? 0;
             var receiptsAmount = receiptsStats?.TotalAmount ?? 0m;
 
+            // Get invoice statistics
+            var invoiceStats = await _context.Invoices
+                .Where(inv => inv.CustomerId == customerId && inv.CompanyId == companyId)
+                .GroupBy(inv => 1)
+                .Select(g => new
+                {
+                    Count = g.Count(),
+                    TotalAmount = g.Sum(inv => inv.TotalAmount),
+                    TotalPaidAmount = g.Sum(inv => inv.PaidAmount),
+                    OutstandingAmount = g.Sum(inv => inv.TotalAmount - inv.PaidAmount)
+                })
+                .FirstOrDefaultAsync();
+
             // Get POS sales count (approximate - based on company)
             var posSalesCount = await _context.POSSales
                 .Where(ps => ps.CompanyId == companyId)
@@ -163,17 +184,19 @@ public class CustomerDocumentService : ICustomerDocumentService
                 CustomerId = customerId,
                 CustomerName = customer.Name,
                 TotalSalesOrders = salesOrderStats?.Count ?? 0,
+                TotalInvoices = invoiceStats?.Count ?? 0,
                 TotalReceipts = receiptsCount,
                 TotalPOSSales = posSalesCount, // Approximate
                 TotalSalesAmount = salesOrderStats?.TotalAmount ?? 0,
+                TotalInvoiceAmount = invoiceStats?.TotalAmount ?? 0,
                 TotalReceiptsAmount = receiptsAmount,
-                OutstandingAmount = salesOrderStats?.OutstandingAmount ?? 0,
+                OutstandingAmount = (invoiceStats?.OutstandingAmount ?? 0) + (salesOrderStats?.OutstandingAmount ?? 0),
                 FirstDocumentDate = salesOrderStats?.FirstDate,
                 LastDocumentDate = salesOrderStats?.LastDate
             };
 
-            _logger.LogInformation("Retrieved statistics for customer {CustomerId}: {TotalOrders} orders, {TotalAmount} total",
-                customerId, stats.TotalSalesOrders, stats.TotalSalesAmount);
+            _logger.LogInformation("Retrieved statistics for customer {CustomerId}: {TotalOrders} orders, {TotalInvoices} invoices, {TotalSalesAmount} sales total, {TotalInvoiceAmount} invoice total",
+                customerId, stats.TotalSalesOrders, stats.TotalInvoices, stats.TotalSalesAmount, stats.TotalInvoiceAmount);
 
             return stats;
         }
@@ -270,6 +293,45 @@ public class CustomerDocumentService : ICustomerDocumentService
     }
 
     /// <summary>
+    /// Gets invoice documents for a customer
+    /// </summary>
+    private async Task<List<CustomerDocumentDto>> GetInvoiceDocuments(
+        int customerId, int companyId, DateTime? fromDate, DateTime? toDate)
+    {
+        var query = _context.Invoices
+            .Where(inv => inv.CustomerId == customerId && inv.CompanyId == companyId);
+
+        if (fromDate.HasValue)
+            query = query.Where(inv => inv.InvoiceDate >= fromDate.Value);
+        if (toDate.HasValue)
+            query = query.Where(inv => inv.InvoiceDate <= toDate.Value);
+
+        var invoices = await query
+            .OrderByDescending(inv => inv.InvoiceDate)
+            .Select(inv => new
+            {
+                Id = inv.Id,
+                InvoiceNumber = inv.InvoiceNumber,
+                InvoiceDate = inv.InvoiceDate,
+                TotalAmount = inv.TotalAmount,
+                PaidAmount = inv.PaidAmount,
+                Status = inv.Status
+            })
+            .ToListAsync();
+
+        return invoices.Select(inv => new CustomerDocumentDto
+        {
+            Id = inv.Id,
+            DocumentType = "Invoice",
+            DocumentNumber = inv.InvoiceNumber,
+            DocumentDate = inv.InvoiceDate,
+            TotalAmount = inv.TotalAmount,
+            Status = inv.Status.ToString(),
+            Description = $"חשבונית #{inv.InvoiceNumber} - {GetInvoiceStatusInHebrew(inv.Status)} - שולם: ₪{inv.PaidAmount:F2}"
+        }).ToList();
+    }
+
+    /// <summary>
     /// Gets POS sale documents for a customer
     /// </summary>
     private async Task<List<CustomerDocumentDto>> GetPOSSaleDocuments(
@@ -300,6 +362,22 @@ public class CustomerDocumentService : ICustomerDocumentService
                 Description = $"מכירה בקופה #{ps.TransactionNumber}"
             })
             .ToListAsync();
+    }
+
+    /// <summary>
+    /// Converts invoice status to Hebrew
+    /// </summary>
+    private static string GetInvoiceStatusInHebrew(InvoiceStatus status)
+    {
+        return status switch
+        {
+            InvoiceStatus.Draft => "טיוטה",
+            InvoiceStatus.Sent => "נשלחה",
+            InvoiceStatus.Paid => "שולמה",
+            InvoiceStatus.Overdue => "פגת תוקף",
+            InvoiceStatus.Cancelled => "בוטלה",
+            _ => status.ToString()
+        };
     }
 
     /// <summary>
