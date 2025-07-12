@@ -1,0 +1,87 @@
+### Test AI Assistant with Customer Document Functions
+
+# Test getting customer documents
+POST http://localhost:7275/api/aiassistant/chat
+Content-Type: application/json
+
+{
+  "message": "Get all documents for customer ID 1",
+  "sessionId": "test-documents-session"
+}
+
+###
+
+# Test getting customer document statistics
+POST http://localhost:7275/api/aiassistant/chat
+Content-Type: application/json
+
+{
+  "message": "Show me document statistics for customer ID 1",
+  "sessionId": "test-stats-session"
+}
+
+###
+
+# Test getting outstanding documents
+POST http://localhost:7275/api/aiassistant/chat
+Content-Type: application/json
+
+{
+  "message": "What outstanding documents does customer ID 1 have?",
+  "sessionId": "test-outstanding-session"
+}
+
+###
+
+# Test searching customer documents
+POST http://localhost:7275/api/aiassistant/chat
+Content-Type: application/json
+
+{
+  "message": "Search for documents containing 'INV' for customer ID 1",
+  "sessionId": "test-search-session"
+}
+
+###
+
+# Test getting document details
+POST http://localhost:7275/api/aiassistant/chat
+Content-Type: application/json
+
+{
+  "message": "Get details for invoice ID 1",
+  "sessionId": "test-details-session"
+}
+
+###
+
+# Test filtered customer documents
+POST http://localhost:7275/api/aiassistant/chat
+Content-Type: application/json
+
+{
+  "message": "Get all invoices for customer ID 1 from January 2025",
+  "sessionId": "test-filtered-session"
+}
+
+###
+
+# Test basic customer list (existing function)
+POST http://localhost:7275/api/aiassistant/chat
+Content-Type: application/json
+
+{
+  "message": "Show me all customers",
+  "sessionId": "test-customers-session"
+}
+
+###
+
+# Test customer financial summary (existing function)
+POST http://localhost:7275/api/aiassistant/chat
+Content-Type: application/json
+
+{
+  "message": "Give me financial summary for customer ID 1",
+  "sessionId": "test-financial-session"
+}
