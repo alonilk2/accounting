@@ -1,0 +1,172 @@
+### Test Customer Functions Directly (without AI Assistant)
+
+# Get list of available customer functions
+GET http://localhost:7275/api/customers/functions
+
+###
+
+# Test getCustomersList function
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomersList",
+  "companyId": 1,
+  "arguments": "{\"CompanyId\": 1, \"IsActiveOnly\": true}"
+}
+
+###
+
+# Test getCustomerDetails function
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerDetails", 
+  "companyId": 1,
+  "arguments": "{\"CustomerId\": 1, \"CompanyId\": 1}"
+}
+
+###
+
+# Test searchCustomers function
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "searchCustomers",
+  "companyId": 1, 
+  "arguments": "{\"SearchTerm\": \"test\", \"CompanyId\": 1}"
+}
+
+###
+
+# Test getCustomerFinancialSummary function
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerFinancialSummary",
+  "companyId": 1,
+  "arguments": "{\"CustomerId\": 1, \"CompanyId\": 1}"
+}
+
+###
+
+# Test NEW getCustomerTransactionHistory function
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerTransactionHistory",
+  "companyId": 1,
+  "arguments": "{\"CustomerId\": 1, \"CompanyId\": 1, \"PeriodMonths\": 6, \"Limit\": 20}"
+}
+
+###
+
+# Test NEW getCustomerAging function
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerAging",
+  "companyId": 1,
+  "arguments": "{\"CustomerId\": 1, \"CompanyId\": 1}"
+}
+
+###
+
+# Test NEW getCustomerStatistics function
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerStatistics",
+  "companyId": 1,
+  "arguments": "{\"CustomerId\": 1, \"CompanyId\": 1, \"PeriodMonths\": 12}"
+}
+
+###
+
+# Test NEW getCustomersTopByRevenue function
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomersTopByRevenue",
+  "companyId": 1,
+  "arguments": "{\"CompanyId\": 1, \"TopCount\": 10, \"PeriodMonths\": 12}"
+}
+
+###
+
+# Test NEW getCustomersWithOverdueInvoices function
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomersWithOverdueInvoices",
+  "companyId": 1,
+  "arguments": "{\"CompanyId\": 1, \"MinDaysOverdue\": 30}"
+}
+
+###
+
+# Test function with different parameters - transaction history with date range
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerTransactionHistory",
+  "companyId": 1,
+  "arguments": "{\"CustomerId\": 1, \"CompanyId\": 1, \"FromDate\": \"2024-01-01\", \"ToDate\": \"2024-12-31\", \"Limit\": 50}"
+}
+
+###
+
+# Test aging with specific date
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomerAging",
+  "companyId": 1,
+  "arguments": "{\"CustomerId\": 1, \"CompanyId\": 1, \"AsOfDate\": \"2025-01-01\"}"
+}
+
+###
+
+# Test top customers with smaller count
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomersTopByRevenue",
+  "companyId": 1,
+  "arguments": "{\"CompanyId\": 1, \"TopCount\": 5, \"PeriodMonths\": 6}"
+}
+
+###
+
+# Test overdue invoices with minimum amount
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "getCustomersWithOverdueInvoices",
+  "companyId": 1,
+  "arguments": "{\"CompanyId\": 1, \"MinDaysOverdue\": 7, \"MinAmount\": 100}"
+}
+
+###
+
+# Test with invalid function name (should return error)
+POST http://localhost:7275/api/customers/functions/test
+Content-Type: application/json
+
+{
+  "functionName": "invalidFunction",
+  "companyId": 1,
+  "arguments": "{\"CustomerId\": 1, \"CompanyId\": 1}"
+}
