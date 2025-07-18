@@ -4,6 +4,7 @@ using backend.Data;
 using backend.Models.Sales;
 using backend.Models.Core;
 using backend.Services.Sales;
+using backend.DTOs.Sales;
 
 namespace backend.Controllers;
 
@@ -412,6 +413,7 @@ public class InvoicesController : ControllerBase
 
             // Verify invoice exists and belongs to current company
             var invoice = await _context.Invoices
+                .Include(i => i.Customer)
                 .FirstOrDefaultAsync(i => i.Id == id && i.CompanyId == currentCompanyId);
 
             if (invoice == null)
@@ -425,14 +427,16 @@ public class InvoicesController : ControllerBase
             var receiptDtos = receipts.Select(receipt => new ReceiptDto
             {
                 Id = receipt.Id,
+                CompanyId = currentCompanyId,
                 InvoiceId = receipt.InvoiceId,
+                InvoiceNumber = invoice.InvoiceNumber,
+                CustomerName = invoice.Customer.Name,
                 ReceiptNumber = receipt.ReceiptNumber,
                 PaymentDate = receipt.PaymentDate,
                 Amount = receipt.Amount,
                 PaymentMethod = receipt.PaymentMethod,
                 ReferenceNumber = receipt.ReferenceNumber,
                 Notes = receipt.Notes,
-                Currency = receipt.Currency,
                 CreatedAt = receipt.CreatedAt
             }).ToList();
 
@@ -457,20 +461,32 @@ public class InvoicesController : ControllerBase
             _logger.LogInformation("Processing payment of {Amount:C} for invoice {InvoiceId}", 
                 request.Amount, id);
 
+            // Get invoice details for complete ReceiptDto
+            var invoice = await _context.Invoices
+                .Include(i => i.Customer)
+                .FirstOrDefaultAsync(i => i.Id == id && i.CompanyId == currentCompanyId);
+
+            if (invoice == null)
+            {
+                return NotFound($"Invoice with ID {id} not found");
+            }
+
             var receipt = await _invoiceService.ProcessPaymentAsync(
                 id, request.Amount, request.PaymentMethod, currentCompanyId, userId, request.Notes, request.ReferenceNumber);
 
             var receiptDto = new ReceiptDto
             {
                 Id = receipt.Id,
+                CompanyId = currentCompanyId,
                 InvoiceId = receipt.InvoiceId,
+                InvoiceNumber = invoice.InvoiceNumber,
+                CustomerName = invoice.Customer.Name,
                 ReceiptNumber = receipt.ReceiptNumber,
                 PaymentDate = receipt.PaymentDate,
                 Amount = receipt.Amount,
                 PaymentMethod = receipt.PaymentMethod,
                 ReferenceNumber = receipt.ReferenceNumber,
                 Notes = receipt.Notes,
-                Currency = receipt.Currency,
                 CreatedAt = receipt.CreatedAt
             };
 
@@ -561,20 +577,6 @@ public class InvoiceLineDto
     public decimal TaxRate { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal LineTotal { get; set; }
-}
-
-public class ReceiptDto
-{
-    public int Id { get; set; }
-    public int InvoiceId { get; set; }
-    public string ReceiptNumber { get; set; } = string.Empty;
-    public DateTime PaymentDate { get; set; }
-    public decimal Amount { get; set; }
-    public string PaymentMethod { get; set; } = string.Empty;
-    public string? ReferenceNumber { get; set; }
-    public string? Notes { get; set; }
-    public string Currency { get; set; } = "ILS";
-    public DateTime CreatedAt { get; set; }
 }
 
 public class PaymentRequest

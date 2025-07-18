@@ -39,11 +39,12 @@ import {
   TrendingUp,
   Insights,
   SmartToy,
-  Description,
+  CorporateFare,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, useUIStore } from '../stores';
 import { AIAssistant, AIAssistantFab } from './ai';
+import DocumentCreationFab from './ui/DocumentCreationFab';
 
 // Inject global styles for animations
 if (typeof document !== 'undefined') {
@@ -76,12 +77,13 @@ const navigationItems: NavItem[] = [
   { text: 'Smart Analytics', textHe: 'אנליטיקה חכמה', icon: <TrendingUp />, path: '/smart-analytics', section: 'AI Analytics', isAI: true, badge: 'AI' },
   { text: 'Customers', textHe: 'לקוחות', icon: <People />, path: '/customers', section: 'Sales' },
   { text: 'Sales Orders', textHe: 'מכירות', icon: <Receipt />, path: '/sales', section: 'Sales' },
-  { text: 'Invoices', textHe: 'חשבוניות', icon: <Description />, path: '/invoices', section: 'Sales' },
+  { text: 'Sales Documents', textHe: 'מסמכי מכירות', icon: <Business />, path: '/sales-documents', section: 'Sales' },
   { text: 'Suppliers', textHe: 'ספקים', icon: <Business />, path: '/suppliers', section: 'Purchasing' },
   { text: 'Purchase Orders', textHe: 'הזמנות רכש', icon: <ShoppingCart />, path: '/purchases', section: 'Purchasing' },
   { text: 'Inventory', textHe: 'מלאי', icon: <Inventory />, path: '/inventory', section: 'Inventory' },
   { text: 'Chart of Accounts', textHe: 'תרשים חשבונות', icon: <AccountBalance />, path: '/accounts', section: 'Accounting' },
   { text: 'Reports', textHe: 'דוחות', icon: <BarChart />, path: '/reports', section: 'Reports' },
+  { text: 'Company Management', textHe: 'ניהול חברה', icon: <CorporateFare />, path: '/company-management', section: 'System' },
   { text: 'AI Assistant', textHe: 'עוזר AI', icon: <SmartToy />, path: '/ai-assistant', section: 'System', isAI: true, badge: 'AI' },
   { text: 'Settings', textHe: 'הגדרות', icon: <Settings />, path: '/settings', section: 'System' },
 ];
@@ -479,8 +481,8 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
           boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
         }}
       >
-        <Toolbar sx={{ minHeight: '70px !important' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+        <Toolbar sx={{ minHeight: '70px !important', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <AutoAwesome sx={{ 
               color: theme.palette.primary.main, 
               fontSize: 24,
@@ -496,6 +498,9 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
               {language === 'he' ? 'מערכת הנהלת חשבונות חכמה' : 'Smart Accounting System'}
             </Typography>
           </Box>
+
+          {/* Space for DocumentCreationFab - מקום ל-FAB */}
+          <Box sx={{ width: 170 }} />
 
           <IconButton
             color="inherit"
@@ -672,7 +677,8 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
       >
         <Toolbar sx={{ minHeight: '70px !important' }} /> {/* Spacer for AppBar */}
         <Box sx={{ 
-          p: 1.5, 
+          px: { xs: 1, sm: 2, md: 3, lg: 5, xl: 7 }, // רווחים רספונסיביים מימין ומשמאל
+          py: 1.5, 
           height: 'calc(100vh - 70px)', 
           overflow: 'auto',
           position: 'relative',
@@ -690,7 +696,12 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
             zIndex: 0,
           },
         }}>
-          <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Box sx={{ 
+            position: 'relative', 
+            zIndex: 1,
+            maxWidth: '1600px', // הגבלת רוחב מקסימלי לקריאות טובה יותר
+            mx: 'auto', // מרכוז התוכן
+          }}>
             {children}
           </Box>
         </Box>
@@ -699,6 +710,9 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
       {/* AI Assistant Components */}
       <AIAssistant />
       <AIAssistantFab />
+      
+      {/* Document Creation FAB */}
+      <DocumentCreationFab />
     </Box>
   );
 };

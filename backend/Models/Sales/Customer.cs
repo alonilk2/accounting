@@ -85,6 +85,7 @@ public class Customer : TenantEntity
     public virtual ICollection<SalesOrder> SalesOrders { get; set; } = new List<SalesOrder>();
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     public virtual ICollection<StandingOrder> StandingOrders { get; set; } = new List<StandingOrder>();
+    public virtual ICollection<TaxInvoiceReceipt> TaxInvoiceReceipts { get; set; } = new List<TaxInvoiceReceipt>();
 }
 
 /// <summary>

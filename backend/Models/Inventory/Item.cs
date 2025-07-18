@@ -153,7 +153,9 @@ public class Item : TenantEntity
     public virtual ICollection<SalesOrderLine> SalesOrderLines { get; set; } = new List<SalesOrderLine>();
     public virtual ICollection<InvoiceLine> InvoiceLines { get; set; } = new List<InvoiceLine>();
     public virtual ICollection<PurchaseOrderLine> PurchaseOrderLines { get; set; } = new List<PurchaseOrderLine>();
+    public virtual ICollection<PurchaseInvoiceLine> PurchaseInvoiceLines { get; set; } = new List<PurchaseInvoiceLine>();
     public virtual ICollection<POSSaleLine> POSSaleLines { get; set; } = new List<POSSaleLine>();
+    public virtual ICollection<TaxInvoiceReceiptLine> TaxInvoiceReceiptLines { get; set; } = new List<TaxInvoiceReceiptLine>();
 }
 
 /// <summary>

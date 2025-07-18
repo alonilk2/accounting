@@ -115,14 +115,11 @@ public class AIAssistantService : IAIAssistantService
                 var followUpMessages = new List<OpenAIMessage>(messages);
                 
                 // Add the assistant's function call message  
-                foreach (var functionCall in aiResponse.FunctionCalls)
-                {
-                    followUpMessages.Add(new OpenAIMessage 
-                    { 
-                        Role = "assistant", 
-                        Content = $"מבצע פונקציה: {functionCall.Name}" 
-                    });
-                }
+                followUpMessages.Add(new OpenAIMessage 
+                { 
+                    Role = "assistant", 
+                    Content = aiResponse.Content
+                });
 
                 // Add function results
                 foreach (var result in functionResults)
@@ -130,7 +127,7 @@ public class AIAssistantService : IAIAssistantService
                     followUpMessages.Add(new OpenAIMessage
                     {
                         Role = "user",
-                        Content = $"תוצאות הפונקציה: {(result.IsSuccess ? result.Result : $"שגיאה: {result.ErrorMessage}")}"
+                        Content = $"תוצאות הפונקציה {result.FunctionName}: {(result.IsSuccess ? result.Result : $"שגיאה: {result.ErrorMessage}")}"
                     });
                 }
 
@@ -144,7 +141,11 @@ public class AIAssistantService : IAIAssistantService
 
                 if (finalResponse.IsSuccess)
                 {
-                    finalContent = finalResponse.Content;
+                    // Combine function execution info with final response
+                    var executionSummary = string.Join(", ", functionResults.Select(r => 
+                        r.IsSuccess ? $"✅ {r.FunctionName}" : $"❌ {r.FunctionName}"));
+                    
+                    finalContent = $"🔄 בוצעו פונקציות: {executionSummary}\n\n{finalResponse.Content}";
                 }
             }
 
@@ -171,6 +172,11 @@ public class AIAssistantService : IAIAssistantService
             // Generate suggested actions based on context
             var suggestedActions = GenerateSuggestedActions(request.Context, finalContent);
 
+            // Check if function calls were executed
+            var hasFunctionCalls = aiResponse.RequiresFunctionExecution && aiResponse.FunctionCalls.Any();
+            var executedFunctions = hasFunctionCalls ? 
+                aiResponse.FunctionCalls.Select(fc => fc.Name).ToList() : null;
+
             return new ChatResponse
             {
                 Message = finalContent,
@@ -178,7 +184,9 @@ public class AIAssistantService : IAIAssistantService
                 ConfidenceScore = aiResponse.ConfidenceScore,
                 ResponseTimeMs = responseTime,
                 IsSuccess = true,
-                SuggestedActions = suggestedActions
+                SuggestedActions = suggestedActions,
+                HasFunctionCalls = hasFunctionCalls,
+                ExecutedFunctions = executedFunctions
             };
         }
         catch (Exception ex)

@@ -145,12 +145,12 @@ public class InventoryService : BaseService<Item>, IInventoryService
             {
                 CompanyId = companyId,
                 ItemId = itemId,
-                Date = DateTime.UtcNow,
-                QtyChange = quantityChange,
+                TransactionDate = DateTime.UtcNow,
+                QuantityChange = quantityChange,
                 TransactionType = InventoryTransactionType.Adjustment,
                 ReferenceId = null,
                 ReferenceType = "Manual Adjustment",
-                Notes = reason,
+                Description = reason,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 CreatedBy = userId,
@@ -205,16 +205,16 @@ public class InventoryService : BaseService<Item>, IInventoryService
 
         if (fromDate.HasValue)
         {
-            query = query.Where(t => t.Date >= fromDate.Value);
+            query = query.Where(t => t.TransactionDate >= fromDate.Value);
         }
 
         if (toDate.HasValue)
         {
-            query = query.Where(t => t.Date <= toDate.Value);
+            query = query.Where(t => t.TransactionDate <= toDate.Value);
         }
 
         return await query
-            .OrderByDescending(t => t.Date)
+            .OrderByDescending(t => t.TransactionDate)
             .ToListAsync(cancellationToken);
     }
 

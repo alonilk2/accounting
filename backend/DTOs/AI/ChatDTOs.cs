@@ -60,6 +60,16 @@ public class ChatResponse
     /// Suggested actions based on the conversation
     /// </summary>
     public List<SuggestedAction>? SuggestedActions { get; set; }
+    
+    /// <summary>
+    /// Whether this response included function calls
+    /// </summary>
+    public bool HasFunctionCalls { get; set; }
+    
+    /// <summary>
+    /// List of function names that were executed
+    /// </summary>
+    public List<string>? ExecutedFunctions { get; set; }
 }
 
 /// <summary>

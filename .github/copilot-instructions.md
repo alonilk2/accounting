@@ -13,13 +13,26 @@ var customers = await _context.Customers
     .ToListAsync();
 ```
 
+### BaseService Pattern (Foundation)
+All services inherit from `BaseService<T>` providing standardized multi-tenant CRUD:
+```csharp
+public abstract class BaseService<T> : IBaseService<T> where T : BaseEntity
+{
+    protected abstract DbSet<T> DbSet { get; }
+    protected abstract string CompanyIdPropertyName { get; }
+    
+    // Auto-applies company filtering via EF.Property<int>(e, CompanyIdPropertyName)
+    // Includes audit logging, optimistic concurrency, soft deletes
+}
+```
+
 ### Document Separation (July 2025 Update)
 - **SalesOrder**: Quotations & order management (`Quote → Confirmed → Shipped → Completed`)
 - **Invoice**: Separate billing documents (`Draft → Sent → Paid → Overdue`)  
 - **Migration**: `SeparateInvoicesFromSalesOrders` - invoices no longer tied to sales order status
 
 ### AI Function Calling Pattern (Unique)
-Extensible function routing for OpenAI function calls:
+Extensible function routing for Azure OpenAI function calls with Hebrew descriptions:
 ```csharp
 public class CustomerFunctionService : ICustomerFunctionService
 {
@@ -39,6 +52,11 @@ public class CustomerFunctionService : ICustomerFunctionService
     }
 }
 ```
+
+### Azure Integration
+- **OpenAI**: Uses `DefaultAzureCredential` with fallback to API key for local dev
+- **Database**: Azure SQL with retry logic, managed identity auth
+- **Configuration**: Azure Key Vault integration via `DatabaseConfiguration.cs`
 
 ## Development Commands
 ```bash
@@ -77,17 +95,25 @@ public abstract class TenantEntity : BaseEntity
 }
 ```
 
-## Israeli Compliance
+## Israeli Compliance & Localization
 - **Tax ID**: Use `CompanyService.ValidateTaxIdAsync()` (Israeli check digit algorithm)
 - **VAT Rate**: 17% standard Israeli VAT in service calculations
-- **Currency**: Default "ILS" for all Israeli businesses
+- **Currency**: Default "ILS" for all Israeli businesses, format with ₪
 - **Print Templates**: Hebrew RTL support in `src/components/print/`
+- **Hebrew UI**: All text uses conditional `language === 'he' ? 'עברית' : 'English'`
 
 ## Frontend Stack
-- **State**: Zustand stores in `src/stores/index.ts`
-- **Types**: Mirror backend models in `src/types/entities.ts`
-- **UI**: Material-UI with Hebrew RTL support
+- **State**: Zustand stores in `src/stores/index.ts` (AuthStore, UIStore pattern)
+- **Types**: TypeScript interfaces in `src/types/entities.ts` mirror backend models exactly
+- **UI**: Material-UI with Hebrew RTL theme support in `AppThemeProvider.tsx`
 - **Print**: `react-to-print` for browser-based document printing
+- **Routing**: React Router with navigation in `MainLayout.tsx`
+
+## UI Conventions
+- **RTL Support**: Theme auto-configures for Hebrew `direction: 'rtl'`
+- **Modern Design**: Custom theme with rounded corners, elevated shadows
+- **Colors**: Israeli business context (blue primary, amber secondary)
+- **Typography**: Hebrew fonts (`Noto Sans Hebrew`) with English fallbacks
 
 ## API Conventions
 - RESTful: `/api/[controller]/[action]`

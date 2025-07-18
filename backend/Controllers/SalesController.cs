@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models.Sales;
 using backend.Services.Interfaces;
+using backend.DTOs.Shared;
 using System.ComponentModel.DataAnnotations;
 
 namespace backend.Controllers;
@@ -538,18 +539,4 @@ public class UpdateSalesOrderStatusRequest
 {
     [Required]
     public SalesOrderStatus Status { get; set; }
-}
-
-public class ProcessPaymentRequest
-{
-    [Required]
-    [Range(0.01, double.MaxValue, ErrorMessage = "Payment amount must be greater than 0")]
-    public decimal Amount { get; set; }
-    
-    [Required]
-    [MaxLength(50)]
-    public string PaymentMethod { get; set; } = string.Empty;
-    
-    [MaxLength(500)]
-    public string? Notes { get; set; }
 }

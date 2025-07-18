@@ -12,6 +12,8 @@ import {
   Snackbar,
   CircularProgress,
   Backdrop,
+  Paper,
+  Button,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -20,13 +22,13 @@ import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
   Receipt as ReceiptIcon,
+  People as PeopleIcon,
 } from '@mui/icons-material';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useUIStore } from '../stores';
 import { useCustomers } from '../hooks/useCustomers';
 import type { Customer } from '../types/entities';
-import { ModernButton } from '../components/ui';
 import CustomerDocumentsDialog from '../components/customers/CustomerDocumentsDialog';
 
 const Customers = () => {
@@ -211,38 +213,98 @@ const Customers = () => {
       headerName: language === 'he' ? 'שם הלקוח' : 'Customer Name',
       flex: 1,
       minWidth: 200,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {language === 'he' ? 'שם הלקוח' : 'Customer Name'}
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+          {params.value}
+        </Typography>
+      ),
     },
     {
       field: 'contact',
       headerName: language === 'he' ? 'איש קשר' : 'Contact',
       flex: 1,
       minWidth: 150,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {language === 'he' ? 'איש קשר' : 'Contact'}
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+          {params.value}
+        </Typography>
+      ),
     },
     {
       field: 'taxId',
       headerName: language === 'he' ? 'ח.פ./ת.ז.' : 'Tax ID',
       width: 120,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {language === 'he' ? 'ח.פ./ת.ז.' : 'Tax ID'}
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+          {params.value || '-'}
+        </Typography>
+      ),
     },
     {
       field: 'email',
       headerName: language === 'he' ? 'אימייל' : 'Email',
       flex: 1,
       minWidth: 200,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {language === 'he' ? 'אימייל' : 'Email'}
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+          {params.value || '-'}
+        </Typography>
+      ),
     },
     {
       field: 'phone',
       headerName: language === 'he' ? 'טלפון' : 'Phone',
       width: 150,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {language === 'he' ? 'טלפון' : 'Phone'}
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+          {params.value || '-'}
+        </Typography>
+      ),
     },
     {
       field: 'isActive',
       headerName: language === 'he' ? 'סטטוס' : 'Status',
       width: 100,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {language === 'he' ? 'סטטוס' : 'Status'}
+        </Typography>
+      ),
       renderCell: (params) => (
         <Chip
           label={params.value ? (language === 'he' ? 'פעיל' : 'Active') : (language === 'he' ? 'לא פעיל' : 'Inactive')}
           color={params.value ? 'success' : 'default'}
           size="small"
+          sx={{ 
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            borderRadius: 2
+          }}
         />
       ),
     },
@@ -251,22 +313,27 @@ const Customers = () => {
       type: 'actions',
       headerName: language === 'he' ? 'פעולות' : 'Actions',
       width: 150,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {language === 'he' ? 'פעולות' : 'Actions'}
+        </Typography>
+      ),
       getActions: (params) => [
         <GridActionsCellItem
           key="documents"
-          icon={<ReceiptIcon />}
+          icon={<ReceiptIcon sx={{ fontSize: 20 }} />}
           label={language === 'he' ? 'מסמכים' : 'Documents'}
           onClick={() => handleOpenDocumentsDialog(params.row)}
         />,
         <GridActionsCellItem
           key="edit"
-          icon={<EditIcon />}
+          icon={<EditIcon sx={{ fontSize: 20 }} />}
           label={language === 'he' ? 'עריכה' : 'Edit'}
           onClick={() => handleOpenDialog(params.row)}
         />,
         <GridActionsCellItem
           key="delete"
-          icon={<DeleteIcon />}
+          icon={<DeleteIcon sx={{ fontSize: 20 }} />}
           label={language === 'he' ? 'מחיקה' : 'Delete'}
           onClick={() => handleDelete(params.id as number)}
         />,
@@ -275,95 +342,172 @@ const Customers = () => {
   ];
 
   return (
-    <Box>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
+    <Box sx={{ 
+      p: { xs: 3, md: 4 }, 
+      backgroundColor: '#fafafa',
+      minHeight: '100vh'
+    }}>
+      {/* Header with Actions */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Typography
+          variant="h3"
+          sx={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: 2,
+            fontWeight: 600,
+            color: 'primary.main'
+          }}
+        >
+          <PeopleIcon sx={{ fontSize: 40 }} />
           {language === 'he' ? 'לקוחות' : 'Customers'}
         </Typography>
-        <Box display="flex" gap={1}>
-          <ModernButton
-            variant="outline"
-            icon={<RefreshIcon />}
+        
+        <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
             onClick={refreshCustomers}
             disabled={loading}
+            sx={{ 
+              borderRadius: 3,
+              px: 3,
+              py: 1.5,
+              fontSize: '1rem',
+              fontWeight: 500
+            }}
           >
             {language === 'he' ? 'רענן' : 'Refresh'}
-          </ModernButton>
-          <ModernButton
-            variant="primary"
-            icon={<AddIcon />}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
             onClick={() => handleOpenDialog()}
             disabled={loading}
-            glow
+            sx={{ 
+              borderRadius: 3,
+              px: 4,
+              py: 1.5,
+              fontSize: '1rem',
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)'
+            }}
           >
             {language === 'he' ? 'הוסף לקוח' : 'Add Customer'}
-          </ModernButton>
+          </Button>
         </Box>
       </Box>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => window.location.reload()}>
-          {error}
-        </Alert>
-      )}
+      <Paper sx={{ 
+        p: 4,
+        borderRadius: 3,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+        backgroundColor: 'white'
+      }}>
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => window.location.reload()}>
+            {error}
+          </Alert>
+        )}
 
-      {/* Search */}
-      <Box mb={3}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder={language === 'he' ? 'חיפוש לקוחות...' : 'Search customers...'}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-          }}
-        />
-      </Box>
+        {/* Search */}
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder={language === 'he' ? 'חיפוש לקוחות...' : 'Search customers...'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                fontSize: '1.1rem'
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: '1rem'
+              }
+            }}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+            }}
+          />
+        </Box>
 
-      {/* Data Grid */}
-      <Box sx={{ height: 600, width: '100%' }}>
-        <DataGrid
-          rows={filteredCustomers}
-          columns={columns}
-          loading={loading}
-          pagination
-          pageSizeOptions={[10, 25, 50]}
-          initialState={{
-            pagination: { paginationModel: { pageSize: 10 } },
-          }}
-          disableRowSelectionOnClick
-          localeText={
-            language === 'he'
-              ? {
-                  noRowsLabel: loading ? 'טוען...' : 'אין לקוחות',
-                  paginationRowsPerPage: 'שורות בעמוד:',
-                }
-              : {
-                  noRowsLabel: loading ? 'Loading...' : 'No customers found',
-                }
+        {/* Data Grid */}
+        <Box sx={{ 
+          height: 600, 
+          width: '100%',
+          '& .MuiDataGrid-root': {
+            borderRadius: 2,
+            fontSize: '1rem'
           }
-        />
-      </Box>
+        }}>
+          <DataGrid
+            rows={filteredCustomers}
+            columns={columns}
+            loading={loading}
+            pagination
+            pageSizeOptions={[10, 25, 50]}
+            initialState={{
+              pagination: { paginationModel: { pageSize: 10 } },
+            }}
+            disableRowSelectionOnClick
+            localeText={
+              language === 'he'
+                ? {
+                    noRowsLabel: loading ? 'טוען...' : 'אין לקוחות',
+                    paginationRowsPerPage: 'שורות בעמוד:',
+                  }
+                : {
+                    noRowsLabel: loading ? 'Loading...' : 'No customers found',
+                  }
+            }
+          />
+        </Box>
+      </Paper>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: 3,
+            p: 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          fontSize: '1.5rem',
+          fontWeight: 600,
+          color: 'text.primary',
+          pb: 2
+        }}>
           {editingCustomer
             ? (language === 'he' ? 'עריכת לקוח' : 'Edit Customer')
             : (language === 'he' ? 'הוספת לקוח חדש' : 'Add New Customer')
           }
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
             <TextField
               fullWidth
               label={language === 'he' ? 'שם הלקוח' : 'Customer Name'}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1.1rem'
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: '1rem'
+                }
+              }}
             />
             <TextField
               fullWidth
@@ -372,18 +516,45 @@ const Customers = () => {
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               multiline
               rows={2}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1.1rem'
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: '1rem'
+                }
+              }}
             />
             <TextField
               fullWidth
               label={language === 'he' ? 'איש קשר' : 'Contact Person'}
               value={formData.contact}
               onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1.1rem'
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: '1rem'
+                }
+              }}
             />
             <TextField
               fullWidth
               label={language === 'he' ? 'ח.פ./ת.ז.' : 'Tax ID'}
               value={formData.taxId}
               onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1.1rem'
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: '1rem'
+                }
+              }}
             />
             <TextField
               fullWidth
@@ -391,64 +562,135 @@ const Customers = () => {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1.1rem'
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: '1rem'
+                }
+              }}
             />
             <TextField
               fullWidth
               label={language === 'he' ? 'טלפון' : 'Phone'}
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />              <TextField
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1.1rem'
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: '1rem'
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              label={language === 'he' ? 'אתר אינטרנט' : 'Website'}
+              value={formData.website}
+              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1.1rem'
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: '1rem'
+                }
+              }}
+            />
+            <Box sx={{ display: 'flex', gap: 3 }}>
+              <TextField
                 fullWidth
-                label={language === 'he' ? 'אתר אינטרנט' : 'Website'}
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                label={language === 'he' ? 'תנאי תשלום (ימים)' : 'Payment Terms (days)'}
+                type="number"
+                value={formData.paymentTerms}
+                onChange={(e) => setFormData({ ...formData, paymentTerms: parseInt(e.target.value) || 0 })}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    fontSize: '1.1rem'
+                  },
+                  '& .MuiInputLabel-root': {
+                    fontSize: '1rem'
+                  }
+                }}
               />
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  fullWidth
-                  label={language === 'he' ? 'תנאי תשלום (ימים)' : 'Payment Terms (days)'}
-                  type="number"
-                  value={formData.paymentTerms}
-                  onChange={(e) => setFormData({ ...formData, paymentTerms: parseInt(e.target.value) || 0 })}
-                />
-                <TextField
-                  fullWidth
-                  label={language === 'he' ? 'מסגרת אשראי' : 'Credit Limit'}
-                  type="number"
-                  value={formData.creditLimit}
-                  onChange={(e) => setFormData({ ...formData, creditLimit: parseFloat(e.target.value) || 0 })}
-                />
-              </Box>
+              <TextField
+                fullWidth
+                label={language === 'he' ? 'מסגרת אשראי' : 'Credit Limit'}
+                type="number"
+                value={formData.creditLimit}
+                onChange={(e) => setFormData({ ...formData, creditLimit: parseFloat(e.target.value) || 0 })}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    fontSize: '1.1rem'
+                  },
+                  '& .MuiInputLabel-root': {
+                    fontSize: '1rem'
+                  }
+                }}
+              />
+            </Box>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <ModernButton 
-            variant="ghost" 
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <Button 
+            variant="outlined"
             onClick={handleCloseDialog} 
             disabled={saving}
+            sx={{ 
+              borderRadius: 3,
+              px: 3,
+              py: 1.5,
+              fontSize: '1rem',
+              fontWeight: 500
+            }}
           >
             {language === 'he' ? 'ביטול' : 'Cancel'}
-          </ModernButton>
-          <ModernButton 
-            variant="primary"
+          </Button>
+          <Button 
+            variant="contained"
             onClick={handleSave} 
             disabled={saving}
-            icon={saving ? <CircularProgress size={16} /> : undefined}
-            glow
+            startIcon={saving ? <CircularProgress size={16} /> : undefined}
+            sx={{ 
+              borderRadius: 3,
+              px: 4,
+              py: 1.5,
+              fontSize: '1rem',
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)'
+            }}
           >
             {saving 
               ? (language === 'he' ? 'שומר...' : 'Saving...') 
               : (language === 'he' ? 'שמירה' : 'Save')
             }
-          </ModernButton>
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Loading Backdrop */}
       <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }} open={saving}>
-        <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-          <CircularProgress color="inherit" />
-          <Typography>
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "center", 
+          alignItems: "center", 
+          minHeight: 300,
+          flexDirection: "column",
+          gap: 2 
+        }}>
+          <CircularProgress size={48} />
+          <Typography 
+            variant="body1" 
+            color="inherit"
+            sx={{ fontSize: '1.1rem' }}
+          >
             {language === 'he' ? 'שומר...' : 'Saving...'}
           </Typography>
         </Box>

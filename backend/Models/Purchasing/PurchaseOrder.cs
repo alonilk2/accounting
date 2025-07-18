@@ -118,6 +118,7 @@ public class PurchaseOrder : TenantEntity
     public virtual Supplier Supplier { get; set; } = null!;
     public virtual ICollection<PurchaseOrderLine> Lines { get; set; } = new List<PurchaseOrderLine>();
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+    public virtual ICollection<PurchaseInvoice> PurchaseInvoices { get; set; } = new List<PurchaseInvoice>();
 }
 
 /// <summary>

@@ -34,6 +34,9 @@ public static class DataSeeder
         // Always ensure there's at least one active company for development/testing
         await EnsureDefaultCompanyExists(context);
 
+        // Ensure chart of accounts exists for all active companies (fixes missing accounts)
+        await EnsureChartOfAccountsForAllCompanies(context);
+
         // Seed demo customers for company 1
         await SeedDemoCustomers(context);
     }
@@ -152,6 +155,15 @@ public static class DataSeeder
                 AccountNumber = "1300",
                 Name = "Inventory",
                 NameHebrew = "מלאי",
+                Type = AccountType.Asset,
+                Level = 2,
+                CompanyId = 0
+            },
+            new ChartOfAccount
+            {
+                AccountNumber = "1400",
+                Name = "VAT Receivable",
+                NameHebrew = "מע\"מ ניתן לקיזוז",
                 Type = AccountType.Asset,
                 Level = 2,
                 CompanyId = 0
@@ -328,6 +340,14 @@ public static class DataSeeder
     /// </summary>
     public static async Task CreateCompanyChartOfAccounts(AccountingDbContext context, int companyId)
     {
+        // Check if accounts already exist for this company
+        var existingAccounts = await context.ChartOfAccounts
+            .Where(a => a.CompanyId == companyId)
+            .AnyAsync();
+
+        if (existingAccounts)
+            return; // Accounts already exist for this company
+
         // Get template accounts (CompanyId = 0)
         var templateAccounts = await context.ChartOfAccounts
             .Where(a => a.CompanyId == 0)
@@ -346,19 +366,26 @@ public static class DataSeeder
             Type = template.Type,
             Level = template.Level,
             IsControlAccount = template.IsControlAccount,
-            IsActive = template.IsActive,
+            IsActive = true, // Ensure all new accounts are active
             Description = template.Description,
-            IsDebitNormal = template.IsDebitNormal
+            IsDebitNormal = template.IsDebitNormal,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedBy = "System",
+            UpdatedBy = "System"
         }).ToList();
 
-        // Set up parent-child relationships
-        var accountMap = new Dictionary<string, ChartOfAccount>();
-        foreach (var account in companyAccounts)
-        {
-            accountMap[account.AccountNumber] = account;
-        }
+        context.ChartOfAccounts.AddRange(companyAccounts);
+        await context.SaveChangesAsync();
 
-        foreach (var account in companyAccounts)
+        // Set up parent-child relationships after saving (so we have IDs)
+        var savedAccounts = await context.ChartOfAccounts
+            .Where(a => a.CompanyId == companyId)
+            .ToListAsync();
+
+        var accountMap = savedAccounts.ToDictionary(a => a.AccountNumber, a => a);
+
+        foreach (var account in savedAccounts)
         {
             var template = templateAccounts.First(t => t.AccountNumber == account.AccountNumber);
             if (template.ParentAccountId.HasValue)
@@ -366,13 +393,29 @@ public static class DataSeeder
                 var parentTemplate = templateAccounts.First(t => t.Id == template.ParentAccountId);
                 if (accountMap.TryGetValue(parentTemplate.AccountNumber, out var parentAccount))
                 {
-                    account.ParentAccount = parentAccount;
+                    account.ParentAccountId = parentAccount.Id;
                 }
             }
         }
 
-        context.ChartOfAccounts.AddRange(companyAccounts);
         await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Ensures chart of accounts exists for all active companies
+    /// This method can be called to fix missing accounts for existing companies
+    /// </summary>
+    public static async Task EnsureChartOfAccountsForAllCompanies(AccountingDbContext context)
+    {
+        var activeCompanies = await context.Companies
+            .Where(c => c.IsActive && !c.IsDeleted && c.Id > 0) // Exclude template company (ID 0)
+            .Select(c => c.Id)
+            .ToListAsync();
+
+        foreach (var companyId in activeCompanies)
+        {
+            await CreateCompanyChartOfAccounts(context, companyId);
+        }
     }
 
     private static async Task SeedDefaultCompany(AccountingDbContext context)

@@ -43,11 +43,16 @@ public class AccountingDbContext : DbContext
     public DbSet<InvoiceLine> InvoiceLines { get; set; } = null!;
     public DbSet<Receipt> Receipts { get; set; } = null!;
     public DbSet<StandingOrder> StandingOrders { get; set; } = null!;
+    public DbSet<TaxInvoiceReceipt> TaxInvoiceReceipts { get; set; } = null!;
+    public DbSet<TaxInvoiceReceiptLine> TaxInvoiceReceiptLines { get; set; } = null!;
 
     // Purchasing
     public DbSet<Supplier> Suppliers { get; set; } = null!;
     public DbSet<PurchaseOrder> PurchaseOrders { get; set; } = null!;
     public DbSet<PurchaseOrderLine> PurchaseOrderLines { get; set; } = null!;
+    public DbSet<PurchaseInvoice> PurchaseInvoices { get; set; } = null!;
+    public DbSet<PurchaseInvoiceLine> PurchaseInvoiceLines { get; set; } = null!;
+    public DbSet<SupplierPayment> SupplierPayments { get; set; } = null!;
     public DbSet<Payment> Payments { get; set; } = null!;
 
     // Inventory
@@ -73,9 +78,6 @@ public class AccountingDbContext : DbContext
         // Configure Table Per Type (TPT) inheritance strategy
         ConfigureInheritance(modelBuilder);
 
-        // Configure tenant entity relationships to prevent cascade conflicts
-        ConfigureTenantEntities(modelBuilder);
-
         // Configure entity relationships and constraints
         ConfigureIdentity(modelBuilder);
         ConfigureAccounting(modelBuilder);
@@ -87,7 +89,7 @@ public class AccountingDbContext : DbContext
         ConfigureAIAssistant(modelBuilder);
         ConfigureIndexes(modelBuilder);
         ConfigureSoftDelete(modelBuilder);
-        ConfigureTenantEntities(modelBuilder);
+        // ConfigureTenantEntities(modelBuilder); // Temporarily disabled due to shadow property conflicts
     }
 
     private static void ConfigureInheritance(ModelBuilder modelBuilder)
@@ -114,11 +116,16 @@ public class AccountingDbContext : DbContext
         modelBuilder.Entity<InvoiceLine>().ToTable("InvoiceLines");
         modelBuilder.Entity<Receipt>().ToTable("Receipts");
         modelBuilder.Entity<StandingOrder>().ToTable("StandingOrders");
+        modelBuilder.Entity<TaxInvoiceReceipt>().ToTable("TaxInvoiceReceipts");
+        modelBuilder.Entity<TaxInvoiceReceiptLine>().ToTable("TaxInvoiceReceiptLines");
 
         // Purchasing entities
         modelBuilder.Entity<Supplier>().ToTable("Suppliers");
         modelBuilder.Entity<PurchaseOrder>().ToTable("PurchaseOrders");
         modelBuilder.Entity<PurchaseOrderLine>().ToTable("PurchaseOrderLines");
+        modelBuilder.Entity<PurchaseInvoice>().ToTable("PurchaseInvoices");
+        modelBuilder.Entity<PurchaseInvoiceLine>().ToTable("PurchaseInvoiceLines");
+        modelBuilder.Entity<SupplierPayment>().ToTable("SupplierPayments");
         modelBuilder.Entity<Payment>().ToTable("Payments");
 
         // Inventory entities
@@ -270,6 +277,26 @@ public class AccountingDbContext : DbContext
             .HasForeignKey(so => so.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Tax Invoice Receipt relationships
+        modelBuilder.Entity<TaxInvoiceReceipt>()
+            .HasOne(tir => tir.Customer)
+            .WithMany(c => c.TaxInvoiceReceipts)
+            .HasForeignKey(tir => tir.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Tax Invoice Receipt Lines
+        modelBuilder.Entity<TaxInvoiceReceiptLine>()
+            .HasOne(tirl => tirl.TaxInvoiceReceipt)
+            .WithMany(tir => tir.Lines)
+            .HasForeignKey(tirl => tirl.TaxInvoiceReceiptId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TaxInvoiceReceiptLine>()
+            .HasOne(tirl => tirl.Item)
+            .WithMany(i => i.TaxInvoiceReceiptLines)
+            .HasForeignKey(tirl => tirl.ItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Unique constraints
         modelBuilder.Entity<SalesOrder>()
             .HasIndex(so => new { so.CompanyId, so.OrderNumber })
@@ -277,6 +304,10 @@ public class AccountingDbContext : DbContext
 
         modelBuilder.Entity<Invoice>()
             .HasIndex(i => new { i.CompanyId, i.InvoiceNumber })
+            .IsUnique();
+
+        modelBuilder.Entity<TaxInvoiceReceipt>()
+            .HasIndex(tir => new { tir.CompanyId, tir.DocumentNumber })
             .IsUnique();
     }
 
@@ -312,6 +343,58 @@ public class AccountingDbContext : DbContext
         // Unique constraints
         modelBuilder.Entity<PurchaseOrder>()
             .HasIndex(po => new { po.CompanyId, po.OrderNumber })
+            .IsUnique();
+
+        // Purchase Invoice relationships
+        modelBuilder.Entity<PurchaseInvoice>()
+            .HasOne(pi => pi.Supplier)
+            .WithMany(s => s.PurchaseInvoices)
+            .HasForeignKey(pi => pi.SupplierId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PurchaseInvoice>()
+            .HasOne(pi => pi.PurchaseOrder)
+            .WithMany(po => po.PurchaseInvoices)
+            .HasForeignKey(pi => pi.PurchaseOrderId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Purchase Invoice Lines
+        modelBuilder.Entity<PurchaseInvoiceLine>()
+            .HasOne(pil => pil.PurchaseInvoice)
+            .WithMany(pi => pi.Lines)
+            .HasForeignKey(pil => pil.PurchaseInvoiceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PurchaseInvoiceLine>()
+            .HasOne(pil => pil.Item)
+            .WithMany(i => i.PurchaseInvoiceLines)
+            .HasForeignKey(pil => pil.ItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Supplier Payments
+        modelBuilder.Entity<SupplierPayment>()
+            .HasOne(sp => sp.PurchaseInvoice)
+            .WithMany(pi => pi.Payments)
+            .HasForeignKey(sp => sp.PurchaseInvoiceId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SupplierPayment>()
+            .HasOne(sp => sp.Supplier)
+            .WithMany(s => s.SupplierPayments)
+            .HasForeignKey(sp => sp.SupplierId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Purchase Invoice unique constraints
+        modelBuilder.Entity<PurchaseInvoice>()
+            .HasIndex(pi => new { pi.CompanyId, pi.SupplierInvoiceNumber, pi.SupplierId })
+            .IsUnique();
+
+        modelBuilder.Entity<PurchaseInvoice>()
+            .HasIndex(pi => new { pi.CompanyId, pi.InternalReferenceNumber })
+            .IsUnique();
+
+        modelBuilder.Entity<SupplierPayment>()
+            .HasIndex(sp => new { sp.CompanyId, sp.PaymentNumber })
             .IsUnique();
     }
 
@@ -500,11 +583,16 @@ public class AccountingDbContext : DbContext
         modelBuilder.Entity<InvoiceLine>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Receipt>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<StandingOrder>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<TaxInvoiceReceipt>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<TaxInvoiceReceiptLine>().HasQueryFilter(e => !e.IsDeleted);
 
         // Purchasing entities
         modelBuilder.Entity<Supplier>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<PurchaseOrder>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<PurchaseOrderLine>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<PurchaseInvoice>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<PurchaseInvoiceLine>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<SupplierPayment>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Payment>().HasQueryFilter(e => !e.IsDeleted);
 
         // Inventory entities
@@ -524,7 +612,7 @@ public class AccountingDbContext : DbContext
     {
         // Configure Company relationships to use Restrict instead of Cascade 
         // to prevent multiple cascade paths conflicts
-        // Only configure entities that inherit from TenantEntity
+        // Explicitly override the TenantEntity.Company relationship for all tenant entities
 
         // Accounting entities
         modelBuilder.Entity<ChartOfAccount>()
@@ -582,6 +670,18 @@ public class AccountingDbContext : DbContext
             .HasForeignKey(e => e.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<TaxInvoiceReceipt>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<TaxInvoiceReceiptLine>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Purchasing entities
         modelBuilder.Entity<Supplier>()
             .HasOne(e => e.Company)
@@ -601,20 +701,36 @@ public class AccountingDbContext : DbContext
             .HasForeignKey(e => e.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<PurchaseInvoice>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PurchaseInvoiceLine>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SupplierPayment>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<Payment>()
             .HasOne(e => e.Company)
             .WithMany()
             .HasForeignKey(e => e.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Inventory entities (only those that inherit from TenantEntity)
+        // Inventory entities
         modelBuilder.Entity<Item>()
             .HasOne(e => e.Company)
             .WithMany()
             .HasForeignKey(e => e.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        // InventoryBOM inherits from BaseEntity, not TenantEntity - skip
 
         modelBuilder.Entity<InventoryTransaction>()
             .HasOne(e => e.Company)
@@ -622,17 +738,22 @@ public class AccountingDbContext : DbContext
             .HasForeignKey(e => e.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // POS entities (only those that inherit from TenantEntity)
+        // POS entities
         modelBuilder.Entity<POSSale>()
             .HasOne(e => e.Company)
             .WithMany()
             .HasForeignKey(e => e.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // POSSaleLine inherits from BaseEntity, not TenantEntity - skip
-
         // Audit entities
         modelBuilder.Entity<AuditLog>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // AI entities
+        modelBuilder.Entity<ChatMessage>()
             .HasOne(e => e.Company)
             .WithMany()
             .HasForeignKey(e => e.CompanyId)

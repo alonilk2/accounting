@@ -8,12 +8,14 @@ import {
   Dashboard,
   Customers,
   Sales,
-  Invoices,
+  SalesDocumentsPage,
+  CreateTaxInvoiceReceiptPage,
   Suppliers,
   Purchases,
   Inventory,
   ChartOfAccounts,
   Reports,
+  Company,
   Settings,
   Login,
 } from './pages';
@@ -42,12 +44,14 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/sales" element={<Sales />} />
-            <Route path="/invoices" element={<Invoices />} />
+            <Route path="/sales-documents" element={<SalesDocumentsPage />} />
+            <Route path="/tax-invoice-receipts/create" element={<CreateTaxInvoiceReceiptPage />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/purchases" element={<Purchases />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/accounts" element={<ChartOfAccounts />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/company-management" element={<Company />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

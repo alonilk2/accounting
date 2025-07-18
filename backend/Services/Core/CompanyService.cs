@@ -151,13 +151,13 @@ public class CompanyService : BaseService<Company>, ICompanyService
             // Get revenue and expenses from sales orders and purchase orders
             var salesOrders = await _context.SalesOrders
                 .Where(so => so.CompanyId == companyId && 
-                           so.Date >= yearStart && so.Date <= yearEnd &&
+                           so.OrderDate >= yearStart && so.OrderDate <= yearEnd &&
                            !so.IsDeleted)
                 .SumAsync(so => so.TotalAmount, cancellationToken);
 
             var purchaseOrders = await _context.PurchaseOrders
                 .Where(po => po.CompanyId == companyId && 
-                           po.Date >= yearStart && po.Date <= yearEnd &&
+                           po.OrderDate >= yearStart && po.OrderDate <= yearEnd &&
                            !po.IsDeleted)
                 .SumAsync(po => po.TotalAmount, cancellationToken);
 
@@ -185,7 +185,7 @@ public class CompanyService : BaseService<Company>, ICompanyService
                             coa.Type == AccountType.Asset &&
                             coa.Name.Contains("Cash") &&
                             !coa.IsDeleted)
-                .SumAsync(coa => coa.Balance, cancellationToken);
+                .SumAsync(coa => coa.CurrentBalance, cancellationToken);
 
             // Get counts
             stats.TotalCustomers = await _context.Customers
@@ -230,6 +230,217 @@ public class CompanyService : BaseService<Company>, ICompanyService
             _logger.LogError(ex, "Error checking feature access for company {CompanyId}, feature {Feature}", 
                 companyId, feature);
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Update company subscription
+    /// </summary>
+    public async Task<Company> UpdateSubscriptionAsync(int companyId, string subscriptionPlan, DateTime? expiresAt, string userId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Updating subscription for company {CompanyId} to {SubscriptionPlan}", 
+                companyId, subscriptionPlan);
+
+            var company = await GetByIdAsync(companyId, companyId, cancellationToken);
+            if (company == null)
+            {
+                throw new InvalidOperationException($"Company with ID {companyId} not found");
+            }
+
+            company.SubscriptionPlan = subscriptionPlan;
+            company.SubscriptionExpiresAt = expiresAt;
+
+            return await UpdateAsync(company, companyId, userId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating subscription for company {CompanyId}", companyId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Get company settings
+    /// </summary>
+    public async Task<CompanySettings> GetCompanySettingsAsync(int companyId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Getting settings for company {CompanyId}", companyId);
+
+            var company = await GetByIdAsync(companyId, companyId, cancellationToken);
+            if (company == null)
+            {
+                throw new InvalidOperationException($"Company with ID {companyId} not found");
+            }
+
+            return new CompanySettings
+            {
+                CompanyId = company.Id,
+                Currency = company.Currency,
+                FiscalYearStartMonth = company.FiscalYearStartMonth,
+                TimeZone = company.TimeZone,
+                SubscriptionPlan = company.SubscriptionPlan,
+                SubscriptionExpiresAt = company.SubscriptionExpiresAt,
+                IsActive = company.IsActive,
+                CreatedAt = company.CreatedAt,
+                UpdatedAt = company.UpdatedAt
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting settings for company {CompanyId}", companyId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Update company settings
+    /// </summary>
+    public async Task<CompanySettings> UpdateCompanySettingsAsync(int companyId, CompanySettings settings, string userId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Updating settings for company {CompanyId}", companyId);
+
+            var company = await GetByIdAsync(companyId, companyId, cancellationToken);
+            if (company == null)
+            {
+                throw new InvalidOperationException($"Company with ID {companyId} not found");
+            }
+
+            // Update settings
+            company.Currency = settings.Currency;
+            company.FiscalYearStartMonth = settings.FiscalYearStartMonth;
+            company.TimeZone = settings.TimeZone;
+            company.SubscriptionPlan = settings.SubscriptionPlan;
+            company.SubscriptionExpiresAt = settings.SubscriptionExpiresAt;
+
+            var updatedCompany = await UpdateAsync(company, companyId, userId, cancellationToken);
+
+            return new CompanySettings
+            {
+                CompanyId = updatedCompany.Id,
+                Currency = updatedCompany.Currency,
+                FiscalYearStartMonth = updatedCompany.FiscalYearStartMonth,
+                TimeZone = updatedCompany.TimeZone,
+                SubscriptionPlan = updatedCompany.SubscriptionPlan,
+                SubscriptionExpiresAt = updatedCompany.SubscriptionExpiresAt,
+                IsActive = updatedCompany.IsActive,
+                CreatedAt = updatedCompany.CreatedAt,
+                UpdatedAt = updatedCompany.UpdatedAt
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating settings for company {CompanyId}", companyId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Get company by criteria
+    /// </summary>
+    public async Task<IEnumerable<Company>> GetCompaniesByCriteriaAsync(CompanySearchCriteria criteria, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Searching companies with criteria: {Criteria}", criteria);
+
+            var query = _context.Companies.AsNoTracking().Where(c => !c.IsDeleted);
+
+            // Apply filters
+            if (!string.IsNullOrWhiteSpace(criteria.Name))
+            {
+                query = query.Where(c => c.Name.Contains(criteria.Name));
+            }
+
+            if (!string.IsNullOrWhiteSpace(criteria.TaxId))
+            {
+                query = query.Where(c => c.IsraelTaxId.Contains(criteria.TaxId));
+            }
+
+            if (!string.IsNullOrWhiteSpace(criteria.City))
+            {
+                query = query.Where(c => c.City != null && c.City.Contains(criteria.City));
+            }
+
+            if (!string.IsNullOrWhiteSpace(criteria.SubscriptionPlan))
+            {
+                query = query.Where(c => c.SubscriptionPlan == criteria.SubscriptionPlan);
+            }
+
+            if (criteria.IsActive.HasValue)
+            {
+                query = query.Where(c => c.IsActive == criteria.IsActive.Value);
+            }
+
+            if (criteria.CreatedAfter.HasValue)
+            {
+                query = query.Where(c => c.CreatedAt >= criteria.CreatedAfter.Value);
+            }
+
+            if (criteria.CreatedBefore.HasValue)
+            {
+                query = query.Where(c => c.CreatedAt <= criteria.CreatedBefore.Value);
+            }
+
+            // Apply ordering
+            query = criteria.OrderBy?.ToLower() switch
+            {
+                "name" => query.OrderBy(c => c.Name),
+                "createdat" => query.OrderBy(c => c.CreatedAt),
+                "updatedat" => query.OrderBy(c => c.UpdatedAt),
+                _ => query.OrderBy(c => c.Id)
+            };
+
+            if (criteria.OrderDescending)
+            {
+                query = criteria.OrderBy?.ToLower() switch
+                {
+                    "name" => query.OrderByDescending(c => c.Name),
+                    "createdat" => query.OrderByDescending(c => c.CreatedAt),
+                    "updatedat" => query.OrderByDescending(c => c.UpdatedAt),
+                    _ => query.OrderByDescending(c => c.Id)
+                };
+            }
+
+            // Apply pagination
+            if (criteria.PageNumber > 0 && criteria.PageSize > 0)
+            {
+                query = query.Skip((criteria.PageNumber - 1) * criteria.PageSize).Take(criteria.PageSize);
+            }
+
+            return await query.ToListAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching companies with criteria: {Criteria}", criteria);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Check if subscription is expired
+    /// </summary>
+    public async Task<bool> IsSubscriptionExpiredAsync(int companyId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var company = await GetByIdAsync(companyId, companyId, cancellationToken);
+            if (company == null)
+            {
+                return true; // Consider non-existent companies as expired
+            }
+
+            return company.SubscriptionExpiresAt.HasValue && company.SubscriptionExpiresAt.Value < DateTime.UtcNow;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking subscription expiry for company {CompanyId}", companyId);
+            return true; // Consider error as expired for safety
         }
     }
 

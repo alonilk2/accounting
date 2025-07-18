@@ -1,0 +1,23 @@
+### Test to check existing accounts for company 1
+GET https://localhost:5121/api/company/1/chart-of-accounts
+Content-Type: application/json
+
+### Test getting accounts payable
+GET https://localhost:5121/api/company/1/chart-of-accounts
+Content-Type: application/json
+
+### Manual test to create VAT Receivable account if missing
+POST https://localhost:5121/api/company/1/chart-of-accounts
+Content-Type: application/json
+
+{
+    "accountNumber": "1400",
+    "name": "VAT Receivable",
+    "nameHebrew": "מע\"מ ניתן לקיזוז",
+    "type": 1,
+    "level": 2,
+    "isControlAccount": false,
+    "isActive": true,
+    "isDebitNormal": true,
+    "description": "VAT amounts that can be offset against VAT liability"
+}

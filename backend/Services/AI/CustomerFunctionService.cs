@@ -41,18 +41,18 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה (CompanyId) לקבלת לקוחות"
                         },
-                        IsActiveOnly = new
+                        isActiveOnly = new
                         {
                             Type = "boolean",
                             Description = "האם להחזיר רק לקוחות פעילים (true) או כולם (false). ברירת מחדל: true"
                         }
                     },
-                    Required = new[] { "CompanyId" }
+                    Required = new[] { "companyId" }
                 }
             },
             new()
@@ -64,18 +64,18 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId" }
+                    Required = new[] { "customerId", "companyId" }
                 }
             },
             new()
@@ -87,18 +87,18 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        SearchTerm = new
+                        searchTerm = new
                         {
                             Type = "string",
                             Description = "מונח החיפוש - שם, מספר זהות, אימייל או טלפון"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         }
                     },
-                    Required = new[] { "SearchTerm", "CompanyId" }
+                    Required = new[] { "searchTerm", "companyId" }
                 }
             },
             new()
@@ -110,18 +110,18 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId" }
+                    Required = new[] { "customerId", "companyId" }
                 }
             },
             new()
@@ -133,35 +133,35 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        FromDate = new
+                        fromDate = new
                         {
                             Type = "string",
                             Format = "date",
                             Description = "תאריך התחלה (אופציונלי) - פורמט: YYYY-MM-DD"
                         },
-                        ToDate = new
+                        toDate = new
                         {
                             Type = "string",
                             Format = "date",
                             Description = "תאריך סיום (אופציונלי) - פורמט: YYYY-MM-DD"
                         },
-                        Limit = new
+                        limit = new
                         {
                             Type = "integer",
                             Description = "מגבלת מספר רשומות (ברירת מחדל: 50, מקסימום: 200)"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId" }
+                    Required = new[] { "customerId", "companyId" }
                 }
             },
             new()
@@ -173,24 +173,24 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        AsOfDate = new
+                        asOfDate = new
                         {
                             Type = "string",
                             Format = "date",
                             Description = "תאריך הדוח (אופציונלי, ברירת מחדל: היום) - פורמט: YYYY-MM-DD"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId" }
+                    Required = new[] { "customerId", "companyId" }
                 }
             },
             new()
@@ -202,23 +202,23 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        PeriodMonths = new
+                        periodMonths = new
                         {
                             Type = "integer",
                             Description = "תקופה בחודשים לחישוב הסטטיסטיקה (ברירת מחדל: 12)"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId" }
+                    Required = new[] { "customerId", "companyId" }
                 }
             },
             new()
@@ -230,23 +230,23 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        TopCount = new
+                        topCount = new
                         {
                             Type = "integer",
                             Description = "מספר לקוחות מובילים להחזיר (ברירת מחדל: 10, מקסימום: 50)"
                         },
-                        PeriodMonths = new
+                        periodMonths = new
                         {
                             Type = "integer",
                             Description = "תקופה בחודשים לחישוב ההכנסות (ברירת מחדל: 12)"
                         }
                     },
-                    Required = new[] { "CompanyId" }
+                    Required = new[] { "companyId" }
                 }
             },
             new()
@@ -258,23 +258,23 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        MinDaysOverdue = new
+                        minDaysOverdue = new
                         {
                             Type = "integer",
                             Description = "מספר ימים מינימלי של איחור (ברירת מחדל: 1)"
                         },
-                        MinAmount = new
+                        minAmount = new
                         {
                             Type = "number",
                             Description = "סכום מינימלי של חוב באיחור (אופציונלי)"
                         }
                     },
-                    Required = new[] { "CompanyId" }
+                    Required = new[] { "companyId" }
                 }
             },
             new()
@@ -286,58 +286,58 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        Name = new
+                        name = new
                         {
                             Type = "string",
                             Description = "שם הלקוח (חובה)"
                         },
-                        TaxId = new
+                        taxId = new
                         {
                             Type = "string",
                             Description = "מספר זהות/ח.פ (אופציונלי)"
                         },
-                        Email = new
+                        email = new
                         {
                             Type = "string",
                             Description = "כתובת אימייל (אופציונלי)"
                         },
-                        Phone = new
+                        phone = new
                         {
                             Type = "string",
                             Description = "מספר טלפון (אופציונלי)"
                         },
-                        Address = new
+                        address = new
                         {
                             Type = "string",
                             Description = "כתובת (אופציונלי)"
                         },
-                        ContactPerson = new
+                        contactPerson = new
                         {
                             Type = "string",
                             Description = "איש קשר (אופציונלי)"
                         },
-                        Website = new
+                        website = new
                         {
                             Type = "string",
                             Description = "אתר אינטרנט (אופציונלי)"
                         },
-                        PaymentTerms = new
+                        paymentTerms = new
                         {
                             Type = "integer",
                             Description = "תנאי תשלום בימים (ברירת מחדל: 30)"
                         },
-                        CreditLimit = new
+                        creditLimit = new
                         {
                             Type = "number",
                             Description = "מסגרת אשראי (אופציונלי)"
                         }
                     },
-                    Required = new[] { "CompanyId", "Name" }
+                    Required = new[] { "companyId", "name" }
                 }
             },
             new()
@@ -349,68 +349,68 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח לעדכון"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        Name = new
+                        name = new
                         {
                             Type = "string",
                             Description = "שם הלקוח (אופציונלי)"
                         },
-                        TaxId = new
+                        taxId = new
                         {
                             Type = "string",
                             Description = "מספר זהות/ח.פ (אופציונלי)"
                         },
-                        Email = new
+                        email = new
                         {
                             Type = "string",
                             Description = "כתובת אימייל (אופציונלי)"
                         },
-                        Phone = new
+                        phone = new
                         {
                             Type = "string",
                             Description = "מספר טלפון (אופציונלי)"
                         },
-                        Address = new
+                        address = new
                         {
                             Type = "string",
                             Description = "כתובת (אופציונלי)"
                         },
-                        ContactPerson = new
+                        contactPerson = new
                         {
                             Type = "string",
                             Description = "איש קשר (אופציונלי)"
                         },
-                        Website = new
+                        website = new
                         {
                             Type = "string",
                             Description = "אתר אינטרנט (אופציונלי)"
                         },
-                        PaymentTerms = new
+                        paymentTerms = new
                         {
                             Type = "integer",
                             Description = "תנאי תשלום בימים (אופציונלי)"
                         },
-                        CreditLimit = new
+                        creditLimit = new
                         {
                             Type = "number",
                             Description = "מסגרת אשראי (אופציונלי)"
                         },
-                        IsActive = new
+                        isActive = new
                         {
                             Type = "boolean",
                             Description = "האם הלקוח פעיל (אופציונלי)"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId" }
+                    Required = new[] { "customerId", "companyId" }
                 }
             },
             new()
@@ -422,18 +422,18 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId" }
+                    Required = new[] { "customerId", "companyId" }
                 }
             },
             new()
@@ -445,18 +445,18 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח (אופציונלי - אם ריק מחזיר עבור כל הלקוחות)"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         }
                     },
-                    Required = new[] { "CompanyId" }
+                    Required = new[] { "companyId" }
                 }
             },
             new()
@@ -468,28 +468,28 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        TopCount = new
+                        topCount = new
                         {
                             Type = "integer",
                             Description = "מספר פריטים מובילים להחזיר (ברירת מחדל: 10)"
                         },
-                        PeriodMonths = new
+                        periodMonths = new
                         {
                             Type = "integer",
                             Description = "תקופה בחודשים לחישוב (ברירת מחדל: 12)"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId" }
+                    Required = new[] { "customerId", "companyId" }
                 }
             },
             new()
@@ -501,28 +501,28 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        ContactType = new
+                        contactType = new
                         {
                             Type = "string",
                             Description = "סוג קשר (phone, email, meeting, note) - אופציונלי"
                         },
-                        Limit = new
+                        limit = new
                         {
                             Type = "integer",
                             Description = "מגבלת מספר רשומות (ברירת מחדל: 20)"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId" }
+                    Required = new[] { "customerId", "companyId" }
                 }
             },
             new()
@@ -534,33 +534,33 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        Note = new
+                        note = new
                         {
                             Type = "string",
                             Description = "תוכן הההערה"
                         },
-                        ContactType = new
+                        contactType = new
                         {
                             Type = "string",
                             Description = "סוג הקשר (phone, email, meeting, note) - ברירת מחדל: note"
                         },
-                        UserId = new
+                        userId = new
                         {
                             Type = "integer",
                             Description = "מזהה המשתמש שיוצר ההערה (אופציונלי)"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId", "Note" }
+                    Required = new[] { "customerId", "companyId", "note" }
                 }
             },
             new()
@@ -572,35 +572,35 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        FromDate = new
+                        fromDate = new
                         {
                             Type = "string",
                             Format = "date",
                             Description = "תאריך התחלה (אופציונלי) - פורמט: YYYY-MM-DD"
                         },
-                        ToDate = new
+                        toDate = new
                         {
                             Type = "string",
                             Format = "date",
                             Description = "תאריך סיום (אופציונלי) - פורמט: YYYY-MM-DD"
                         },
-                        PaymentMethod = new
+                        paymentMethod = new
                         {
                             Type = "string",
                             Description = "אמצעי תשלום (Cash, CreditCard, BankTransfer, Check) - אופציונלי"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId" }
+                    Required = new[] { "customerId", "companyId" }
                 }
             },
             new()
@@ -612,35 +612,35 @@ public class CustomerFunctionService : ICustomerFunctionService
                     Type = "object",
                     Properties = new
                     {
-                        CustomerId = new
+                        customerId = new
                         {
                             Type = "integer",
                             Description = "מזהה הלקוח"
                         },
-                        CompanyId = new
+                        companyId = new
                         {
                             Type = "integer",
                             Description = "מזהה החברה"
                         },
-                        FromDate = new
+                        fromDate = new
                         {
                             Type = "string",
                             Format = "date",
                             Description = "תאריך התחלה - פורמט: YYYY-MM-DD"
                         },
-                        ToDate = new
+                        toDate = new
                         {
                             Type = "string",
                             Format = "date",
                             Description = "תאריך סיום - פורמט: YYYY-MM-DD"
                         },
-                        IncludeZeroBalance = new
+                        includeZeroBalance = new
                         {
                             Type = "boolean",
                             Description = "האם לכלול פריטים עם יתרה אפס (ברירת מחדל: false)"
                         }
                     },
-                    Required = new[] { "CustomerId", "CompanyId", "FromDate", "ToDate" }
+                    Required = new[] { "customerId", "companyId", "fromDate", "toDate" }
                 }
             }
         };
@@ -765,7 +765,7 @@ public class CustomerFunctionService : ICustomerFunctionService
     private async Task<FunctionResult> GetCustomersListAsync(string arguments, int companyId, CancellationToken cancellationToken)
     {
         using var argumentsDocument = JsonDocument.Parse(arguments);
-        var isActiveOnly = argumentsDocument.RootElement.TryGetProperty("IsActiveOnly", out var activeElement) ? 
+        var isActiveOnly = argumentsDocument.RootElement.TryGetProperty("isActiveOnly", out var activeElement) ? 
             activeElement.GetBoolean() : true;
 
         var query = _context.Customers.Where(c => c.CompanyId == companyId);
@@ -809,7 +809,7 @@ public class CustomerFunctionService : ICustomerFunctionService
     private async Task<FunctionResult> GetCustomerDetailsAsync(string arguments, int companyId, CancellationToken cancellationToken)
     {
         using var argumentsDocument = JsonDocument.Parse(arguments);
-        var customerId = argumentsDocument.RootElement.GetProperty("CustomerId").GetInt32();
+        var customerId = argumentsDocument.RootElement.GetProperty("customerId").GetInt32();
 
         var customer = await _context.Customers
             .Where(c => c.Id == customerId && c.CompanyId == companyId)
@@ -869,7 +869,7 @@ public class CustomerFunctionService : ICustomerFunctionService
         {
             using var argumentsDocument = JsonDocument.Parse(arguments);
             
-            if (!TryGetRequiredProperty<string>(argumentsDocument.RootElement, "SearchTerm", "searchCustomers", out var searchTerm, out var errorResult))
+            if (!TryGetRequiredProperty<string>(argumentsDocument.RootElement, "searchTerm", "searchCustomers", out var searchTerm, out var errorResult))
             {
                 return errorResult!;
             }
@@ -935,7 +935,7 @@ public class CustomerFunctionService : ICustomerFunctionService
     private async Task<FunctionResult> GetCustomerFinancialSummaryAsync(string arguments, int companyId, CancellationToken cancellationToken)
     {
         using var argumentsDocument = JsonDocument.Parse(arguments);
-        var customerId = argumentsDocument.RootElement.GetProperty("CustomerId").GetInt32();
+        var customerId = argumentsDocument.RootElement.GetProperty("customerId").GetInt32();
 
         // Get customer details
         var customer = await _context.Customers
@@ -998,26 +998,26 @@ public class CustomerFunctionService : ICustomerFunctionService
     private async Task<FunctionResult> GetCustomerTransactionHistoryAsync(string arguments, int companyId, CancellationToken cancellationToken)
     {
         using var argumentsDocument = JsonDocument.Parse(arguments);
-        var customerId = argumentsDocument.RootElement.GetProperty("CustomerId").GetInt32();
+        var customerId = argumentsDocument.RootElement.GetProperty("customerId").GetInt32();
         
         // Parse optional parameters
         DateTime? fromDate = null;
         DateTime? toDate = null;
         int limit = 50;
 
-        if (argumentsDocument.RootElement.TryGetProperty("FromDate", out var fromElement))
+        if (argumentsDocument.RootElement.TryGetProperty("fromDate", out var fromElement))
         {
             if (DateTime.TryParse(fromElement.GetString(), out var parsedFromDate))
                 fromDate = parsedFromDate;
         }
 
-        if (argumentsDocument.RootElement.TryGetProperty("ToDate", out var toElement))
+        if (argumentsDocument.RootElement.TryGetProperty("toDate", out var toElement))
         {
             if (DateTime.TryParse(toElement.GetString(), out var parsedToDate))
                 toDate = parsedToDate;
         }
 
-        if (argumentsDocument.RootElement.TryGetProperty("Limit", out var limitElement))
+        if (argumentsDocument.RootElement.TryGetProperty("limit", out var limitElement))
         {
             limit = Math.Min(limitElement.GetInt32(), 200); // Max 200 records
         }
@@ -1176,11 +1176,11 @@ public class CustomerFunctionService : ICustomerFunctionService
     private async Task<FunctionResult> GetCustomerAgingAsync(string arguments, int companyId, CancellationToken cancellationToken)
     {
         using var argumentsDocument = JsonDocument.Parse(arguments);
-        var customerId = argumentsDocument.RootElement.GetProperty("CustomerId").GetInt32();
+        var customerId = argumentsDocument.RootElement.GetProperty("customerId").GetInt32();
         
         // Parse optional date parameter
         var asOfDate = DateTime.Today;
-        if (argumentsDocument.RootElement.TryGetProperty("AsOfDate", out var dateElement))
+        if (argumentsDocument.RootElement.TryGetProperty("asOfDate", out var dateElement))
         {
             if (DateTime.TryParse(dateElement.GetString(), out var parsedDate))
                 asOfDate = parsedDate;
@@ -1302,11 +1302,11 @@ public class CustomerFunctionService : ICustomerFunctionService
     private async Task<FunctionResult> GetCustomerStatisticsAsync(string arguments, int companyId, CancellationToken cancellationToken)
     {
         using var argumentsDocument = JsonDocument.Parse(arguments);
-        var customerId = argumentsDocument.RootElement.GetProperty("CustomerId").GetInt32();
+        var customerId = argumentsDocument.RootElement.GetProperty("customerId").GetInt32();
         
         // Parse optional period parameter
         var periodMonths = 12;
-        if (argumentsDocument.RootElement.TryGetProperty("PeriodMonths", out var periodElement))
+        if (argumentsDocument.RootElement.TryGetProperty("periodMonths", out var periodElement))
         {
             periodMonths = periodElement.GetInt32();
         }
@@ -1426,12 +1426,12 @@ public class CustomerFunctionService : ICustomerFunctionService
         var topCount = 10;
         var periodMonths = 12;
 
-        if (argumentsDocument.RootElement.TryGetProperty("TopCount", out var countElement))
+        if (argumentsDocument.RootElement.TryGetProperty("topCount", out var countElement))
         {
             topCount = Math.Min(countElement.GetInt32(), 50); // Max 50
         }
 
-        if (argumentsDocument.RootElement.TryGetProperty("PeriodMonths", out var periodElement))
+        if (argumentsDocument.RootElement.TryGetProperty("periodMonths", out var periodElement))
         {
             periodMonths = periodElement.GetInt32();
         }
@@ -1509,12 +1509,12 @@ public class CustomerFunctionService : ICustomerFunctionService
         var minDaysOverdue = 1;
         decimal? minAmount = null;
 
-        if (argumentsDocument.RootElement.TryGetProperty("MinDaysOverdue", out var daysElement))
+        if (argumentsDocument.RootElement.TryGetProperty("minDaysOverdue", out var daysElement))
         {
             minDaysOverdue = daysElement.GetInt32();
         }
 
-        if (argumentsDocument.RootElement.TryGetProperty("MinAmount", out var amountElement))
+        if (argumentsDocument.RootElement.TryGetProperty("minAmount", out var amountElement))
         {
             minAmount = amountElement.GetDecimal();
         }
@@ -1620,13 +1620,13 @@ public class CustomerFunctionService : ICustomerFunctionService
             var root = argumentsDocument.RootElement;
 
             // Use TryGetProperty for all properties to avoid KeyNotFoundException
-            if (!root.TryGetProperty("Name", out var nameElement))
+            if (!root.TryGetProperty("name", out var nameElement))
             {
                 return new FunctionResult
                 {
                     FunctionName = "createCustomer",
                     IsSuccess = false,
-                    ErrorMessage = "שם הלקוח הוא שדה חובה - הפרמטר 'Name' חסר"
+                    ErrorMessage = "שם הלקוח הוא שדה חובה - הפרמטר 'name' חסר"
                 };
             }
 
@@ -1645,14 +1645,14 @@ public class CustomerFunctionService : ICustomerFunctionService
         {
             CompanyId = companyId,
             Name = name,
-            TaxId = root.TryGetProperty("TaxId", out var taxIdElement) ? taxIdElement.GetString() : null,
-            Email = root.TryGetProperty("Email", out var emailElement) ? emailElement.GetString() : null,
-            Phone = root.TryGetProperty("Phone", out var phoneElement) ? phoneElement.GetString() : null,
-            Address = root.TryGetProperty("Address", out var addressElement) ? addressElement.GetString() : null,
-            Contact = root.TryGetProperty("ContactPerson", out var contactElement) ? contactElement.GetString() : null,
-            Website = root.TryGetProperty("Website", out var websiteElement) ? websiteElement.GetString() : null,
-            PaymentTermsDays = root.TryGetProperty("PaymentTerms", out var paymentElement) ? paymentElement.GetInt32() : 30,
-            CreditLimit = root.TryGetProperty("CreditLimit", out var creditElement) ? creditElement.GetDecimal() : 0,
+            TaxId = root.TryGetProperty("taxId", out var taxIdElement) ? taxIdElement.GetString() : null,
+            Email = root.TryGetProperty("email", out var emailElement) ? emailElement.GetString() : null,
+            Phone = root.TryGetProperty("phone", out var phoneElement) ? phoneElement.GetString() : null,
+            Address = root.TryGetProperty("address", out var addressElement) ? addressElement.GetString() : null,
+            Contact = root.TryGetProperty("contactPerson", out var contactElement) ? contactElement.GetString() : null,
+            Website = root.TryGetProperty("website", out var websiteElement) ? websiteElement.GetString() : null,
+            PaymentTermsDays = root.TryGetProperty("paymentTerms", out var paymentElement) ? paymentElement.GetInt32() : 30,
+            CreditLimit = root.TryGetProperty("creditLimit", out var creditElement) ? creditElement.GetDecimal() : 0,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -1694,14 +1694,14 @@ public class CustomerFunctionService : ICustomerFunctionService
             using var argumentsDocument = JsonDocument.Parse(arguments);
             var root = argumentsDocument.RootElement;
 
-            // Check for required CustomerId parameter
-            if (!root.TryGetProperty("CustomerId", out var customerIdElement))
+            // Check for required customerId parameter
+            if (!root.TryGetProperty("customerId", out var customerIdElement))
             {
                 return new FunctionResult
                 {
                     FunctionName = "updateCustomer",
                     IsSuccess = false,
-                    ErrorMessage = "מזהה הלקוח הוא שדה חובה - הפרמטר 'CustomerId' חסר"
+                    ErrorMessage = "מזהה הלקוח הוא שדה חובה - הפרמטר 'customerId' חסר"
                 };
             }
 
@@ -1722,25 +1722,25 @@ public class CustomerFunctionService : ICustomerFunctionService
         }
 
         // Update only provided fields
-        if (root.TryGetProperty("Name", out var nameElement))
-            customer.Name = nameElement.GetString();
-        if (root.TryGetProperty("TaxId", out var taxIdElement))
+        if (root.TryGetProperty("name", out var nameElement))
+            customer.Name = nameElement.GetString() ?? customer.Name;
+        if (root.TryGetProperty("taxId", out var taxIdElement))
             customer.TaxId = taxIdElement.GetString();
-        if (root.TryGetProperty("Email", out var emailElement))
+        if (root.TryGetProperty("email", out var emailElement))
             customer.Email = emailElement.GetString();
-        if (root.TryGetProperty("Phone", out var phoneElement))
+        if (root.TryGetProperty("phone", out var phoneElement))
             customer.Phone = phoneElement.GetString();
-        if (root.TryGetProperty("Address", out var addressElement))
+        if (root.TryGetProperty("address", out var addressElement))
             customer.Address = addressElement.GetString();
-        if (root.TryGetProperty("ContactPerson", out var contactElement))
+        if (root.TryGetProperty("contactPerson", out var contactElement))
             customer.Contact = contactElement.GetString();
-        if (root.TryGetProperty("Website", out var websiteElement))
+        if (root.TryGetProperty("website", out var websiteElement))
             customer.Website = websiteElement.GetString();
-        if (root.TryGetProperty("PaymentTerms", out var paymentElement))
+        if (root.TryGetProperty("paymentTerms", out var paymentElement))
             customer.PaymentTermsDays = paymentElement.GetInt32();
-        if (root.TryGetProperty("CreditLimit", out var creditElement))
+        if (root.TryGetProperty("creditLimit", out var creditElement))
             customer.CreditLimit = creditElement.GetDecimal();
-        if (root.TryGetProperty("IsActive", out var activeElement))
+        if (root.TryGetProperty("isActive", out var activeElement))
             customer.IsActive = activeElement.GetBoolean();
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -1778,7 +1778,7 @@ public class CustomerFunctionService : ICustomerFunctionService
         {
             using var argumentsDocument = JsonDocument.Parse(arguments);
             
-            if (!TryGetRequiredProperty<int>(argumentsDocument.RootElement, "CustomerId", "getCustomerCreditStatus", out var customerId, out var errorResult))
+            if (!TryGetRequiredProperty<int>(argumentsDocument.RootElement, "customerId", "getCustomerCreditStatus", out var customerId, out var errorResult))
             {
                 return errorResult!;
             }
@@ -1856,7 +1856,7 @@ public class CustomerFunctionService : ICustomerFunctionService
         using var argumentsDocument = JsonDocument.Parse(arguments);
         var root = argumentsDocument.RootElement;
         
-        var customerId = root.TryGetProperty("CustomerId", out var customerElement) ? 
+        var customerId = root.TryGetProperty("customerId", out var customerElement) ? 
             customerElement.GetInt32() : (int?)null;
 
         var query = _context.SalesOrders

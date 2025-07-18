@@ -18,14 +18,22 @@ export interface Role {
 }
 
 export interface Company {
-  id: string;
+  id: number;
   name: string;
   israelTaxId: string;
-  address: string;
-  currency: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
+  country?: string;
   phone?: string;
   email?: string;
   website?: string;
+  currency: string;
+  fiscalYearStartMonth: number;
+  timeZone: string;
+  isActive: boolean;
+  subscriptionPlan?: string;
+  subscriptionExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -60,15 +68,22 @@ export interface Customer {
 }
 
 export interface Supplier {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   name: string;
-  address: string;
-  contact: string;
-  taxId?: string;
-  email?: string;
+  address?: string;
+  contact?: string;
   phone?: string;
+  email?: string;
+  website?: string;
+  taxId?: string;
+  vatNumber?: string;
+  paymentTermsDays: number;
   isActive: boolean;
+  bankName?: string;
+  bankAccount?: string;
+  bankBranch?: string;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -221,26 +236,115 @@ export interface SalesSummary {
   uniqueCustomers: number;
 }
 
+export type PurchaseOrderStatus = 
+  | 'Draft' 
+  | 'Confirmed' 
+  | 'Received' 
+  | 'Invoiced' 
+  | 'Paid' 
+  | 'Cancelled';
+
+export type PurchaseInvoiceStatus = 'Draft' | 'Received' | 'Approved' | 'Paid' | 'Cancelled';
+
 export interface PurchaseOrder {
-  id: string;
-  companyId: string;
-  supplierId: string;
-  date: Date;
+  id: number;
+  companyId: number;
+  supplierId: number;
+  supplierName?: string;
+  orderNumber: string;
+  supplierInvoiceNumber?: string;
+  orderDate: Date;
+  dueDate?: Date;
+  deliveryDate?: Date;
+  status: PurchaseOrderStatus;
+  subtotalAmount: number;
+  discountAmount: number;
+  taxAmount: number;
   totalAmount: number;
-  status: 'draft' | 'sent' | 'received' | 'paid' | 'cancelled';
+  paidAmount: number;
+  currency: string;
+  exchangeRate: number;
   notes?: string;
+  deliveryAddress?: string;
+  lines: PurchaseOrderLine[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface PurchaseOrderLine {
-  id: string;
-  purchaseId: string;
-  itemId: string;
+  id: number;
+  purchaseOrderId: number;
+  itemId: number;
+  itemName?: string;
+  itemSku?: string;
+  lineNumber: number;
+  description?: string;
   quantity: number;
   unitCost: number;
+  taxRate: number;
+  taxAmount: number;
   lineTotal: number;
+  receivedQuantity: number;
+}
+
+export interface PurchaseInvoice {
+  id: number;
+  companyId: number;
+  supplierId: number;
+  supplierName: string;
+  purchaseOrderId?: number;
+  supplierInvoiceNumber: string;
+  internalReferenceNumber: string;
+  invoiceDate: Date;
+  dueDate?: Date;
+  receivedDate?: Date;
+  status: PurchaseInvoiceStatus;
+  subtotalAmount: number;
+  discountAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  currency: string;
+  notes?: string;
   description?: string;
+  vatRate: number;
+  isFullyPaid: boolean;
+  isOverdue: boolean;
+  lines?: PurchaseInvoiceLine[];
+  payments?: SupplierPayment[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PurchaseInvoiceLine {
+  id: number;
+  purchaseInvoiceId: number;
+  itemId?: number;
+  itemName?: string;
+  itemSKU?: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unitCost: number;
+  discountPercent: number;
+  discountAmount: number;
+  taxRate: number;
+  lineTotal: number;
+  subtotalAmount: number;
+  taxAmount: number;
+}
+
+export interface SupplierPayment {
+  id: number;
+  purchaseInvoiceId: number;
+  supplierId: number;
+  paymentNumber: string;
+  paymentDate: Date;
+  amount: number;
+  paymentMethod: string;
+  referenceNumber?: string;
+  notes?: string;
 }
 
 export interface StandingOrder {
@@ -325,11 +429,19 @@ export interface CustomerDocumentStats {
 
 export interface CreateSupplierForm {
   name: string;
-  address: string;
-  contact: string;
-  taxId?: string;
-  email?: string;
+  address?: string;
+  contact?: string;
   phone?: string;
+  email?: string;
+  website?: string;
+  taxId?: string;
+  vatNumber?: string;
+  paymentTermsDays: number;
+  isActive: boolean;
+  bankName?: string;
+  bankAccount?: string;
+  bankBranch?: string;
+  notes?: string;
 }
 
 export interface CreateItemForm {

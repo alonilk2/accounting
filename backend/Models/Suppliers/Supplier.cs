@@ -39,6 +39,12 @@ public class Supplier : TenantEntity
     [EmailAddress]
     public string? Email { get; set; }
 
+    [MaxLength(100)]
+    public string? Contact { get; set; }
+
+    [MaxLength(200)]
+    public string? Website { get; set; }
+
     /// <summary>
     /// Israeli tax ID number (תעודת זהות / ח.פ.)
     /// </summary>
@@ -78,4 +84,6 @@ public class Supplier : TenantEntity
 
     // Navigation properties
     public virtual ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();
+    public virtual ICollection<PurchaseInvoice> PurchaseInvoices { get; set; } = new List<PurchaseInvoice>();
+    public virtual ICollection<SupplierPayment> SupplierPayments { get; set; } = new List<SupplierPayment>();
 }

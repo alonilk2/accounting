@@ -60,6 +60,7 @@ namespace backend.Controllers
             {
                 // Log the exception here
                 // TODO: Add proper logging
+                Console.WriteLine($"Error in customer statement: {ex.Message}");
                 return StatusCode(500, "שגיאה פנימית בשרת");
             }
         }

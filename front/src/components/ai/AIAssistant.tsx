@@ -637,59 +637,85 @@ export const AIAssistant: React.FC = () => {
 
 // Floating Action Button for opening the assistant
 export const AIAssistantFab: React.FC = () => {
-  const { openAssistant, isOpen } = useAIAssistantStore();
+  const { toggleAssistant, isOpen } = useAIAssistantStore();
   const { language } = useUIStore();
   const isHebrew = language === 'he';
   const theme = useTheme();
 
-  // Hide FAB when assistant is open
-  if (isOpen) return null;
+  // Don't hide FAB when assistant is open, just move it
+  // if (isOpen) return null;
 
   return (
-    <Fab
-      className="ai-fab"
-      onClick={openAssistant}
+    <Box
       sx={{
         position: 'fixed',
         bottom: 32,
-        ...(isHebrew ? { left: 32 } : { right: 32 }),
+        ...(isHebrew 
+          ? { left: isOpen ? 420 : 32 } // כשפתוח - מחוץ לDrawer (400px + 20px), כשסגור - רגיל
+          : { right: isOpen ? 420 : 32 }
+        ),
         zIndex: 1200,
-        width: 64,
-        height: 64,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
-        border: '3px solid',
-        borderColor: theme.palette.background.paper,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        '&:hover': {
-          background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
-          transform: 'translateY(-4px) scale(1.05)',
-          boxShadow: '0 12px 40px rgba(102, 126, 234, 0.5)',
-        },
-        '&:active': {
-          transform: 'translateY(-2px) scale(1.02)',
-        },
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: -2,
-          left: -2,
-          right: -2,
-          bottom: -2,
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
-          borderRadius: 'inherit',
-          zIndex: -1,
-          opacity: 0,
-          transition: 'opacity 0.3s ease',
-        },
-        '&:hover::before': {
-          opacity: 0.3,
-        },
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 1,
       }}
-      title="פתח עוזר חכם"
     >
-      <ChatIcon sx={{ fontSize: 28 }} />
-    </Fab>
+      <Fab
+        className="ai-fab"
+        onClick={toggleAssistant}
+        sx={{
+          width: 64,
+          height: 64,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
+          border: '3px solid',
+          borderColor: theme.palette.background.paper,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+            transform: 'translateY(-4px) scale(1.05)',
+            boxShadow: '0 12px 40px rgba(102, 126, 234, 0.5)',
+          },
+          '&:active': {
+            transform: 'translateY(-2px) scale(1.02)',
+          },
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: -2,
+            left: -2,
+            right: -2,
+            bottom: -2,
+            background: 'linear-gradient(135deg, #667eea, #764ba2)',
+            borderRadius: 'inherit',
+            zIndex: -1,
+            opacity: 0,
+            transition: 'opacity 0.3s ease',
+          },
+          '&:hover::before': {
+            opacity: 0.3,
+          },
+        }}
+        title={isHebrew ? (isOpen ? "סגור עוזר חכם" : "פתח עוזר חכם") : (isOpen ? "Close AI Assistant" : "Open AI Assistant")}
+      >
+        <ChatIcon sx={{ fontSize: 28 }} />
+      </Fab>
+      
+      <Typography 
+        variant="caption" 
+        sx={{ 
+          fontWeight: 600, 
+          color: '#667eea',
+          textAlign: 'center',
+          fontSize: '0.75rem',
+          lineHeight: 1,
+        }}
+      >
+        {isHebrew ? (isOpen ? 'סגור צ\'ט' : 'עוזר חכם') : (isOpen ? 'Close Chat' : 'AI Assistant')}
+      </Typography>
+    </Box>
   );
 };

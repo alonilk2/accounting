@@ -484,18 +484,105 @@ public class JournalEntryService : IJournalEntryService
 
     private async Task<ChartOfAccount> GetAccountByTypeAsync(int companyId, string accountName, AccountType accountType, CancellationToken cancellationToken)
     {
+        // First try exact name match
         var account = await _context.ChartOfAccounts
             .FirstOrDefaultAsync(a => a.CompanyId == companyId && 
-                                      a.Name.Contains(accountName) && 
+                                      a.Name == accountName && 
                                       a.Type == accountType && 
-                                      a.IsActive, cancellationToken);
+                                      a.IsActive && 
+                                      !a.IsDeleted, cancellationToken);
+
+        // If not found, try contains match
+        if (account == null)
+        {
+            account = await _context.ChartOfAccounts
+                .FirstOrDefaultAsync(a => a.CompanyId == companyId && 
+                                          a.Name.Contains(accountName) && 
+                                          a.Type == accountType && 
+                                          a.IsActive && 
+                                          !a.IsDeleted, cancellationToken);
+        }
 
         if (account == null)
         {
-            throw new InvalidOperationException($"Account '{accountName}' of type '{accountType}' not found for company {companyId}");
+            // Log available accounts for debugging
+            var availableAccounts = await _context.ChartOfAccounts
+                .Where(a => a.CompanyId == companyId && a.Type == accountType && a.IsActive && !a.IsDeleted)
+                .Select(a => new { a.Name, a.Type })
+                .ToListAsync(cancellationToken);
+
+            _logger.LogError("Account '{AccountName}' of type '{AccountType}' not found for company {CompanyId}. Available accounts of type {AccountType}: {AvailableAccounts}", 
+                accountName, accountType, companyId, accountType, string.Join(", ", availableAccounts.Select(a => a.Name)));
+
+            // Try to create the missing account automatically if it's a standard account
+            account = await CreateMissingStandardAccountAsync(companyId, accountName, accountType, cancellationToken);
+            
+            if (account == null)
+            {
+                throw new InvalidOperationException($"Account '{accountName}' of type '{accountType}' not found for company {companyId}. Available accounts: {string.Join(", ", availableAccounts.Select(a => a.Name))}");
+            }
         }
 
         return account;
+    }
+
+    private async Task<ChartOfAccount?> CreateMissingStandardAccountAsync(int companyId, string accountName, AccountType accountType, CancellationToken cancellationToken)
+    {
+        // Only auto-create standard accounts that are essential for operations
+        var standardAccounts = new Dictionary<string, (string AccountNumber, string NameHebrew)>
+        {
+            ["Cash"] = ("1100", "מזומן"),
+            ["Checking Account"] = ("1110", "חשבון עובר ושב"),
+            ["Accounts Receivable"] = ("1200", "חייבים"),
+            ["Inventory"] = ("1300", "מלאי"),
+            ["VAT Receivable"] = ("1400", "מע\"מ ניתן לקיזוז"),
+            ["Accounts Payable"] = ("2100", "זכאים"),
+            ["VAT Payable"] = ("2200", "מע\"מ לתשלום"),
+            ["Sales Revenue"] = ("4100", "הכנסות ממכירות"),
+            ["Cost of Goods Sold"] = ("5100", "עלות המכר")
+        };
+
+        if (!standardAccounts.ContainsKey(accountName))
+        {
+            _logger.LogWarning("Cannot auto-create non-standard account '{AccountName}'", accountName);
+            return null;
+        }
+
+        var (accountNumber, nameHebrew) = standardAccounts[accountName];
+        
+        // Check if an account with this number already exists
+        var existingByNumber = await _context.ChartOfAccounts
+            .FirstOrDefaultAsync(a => a.CompanyId == companyId && a.AccountNumber == accountNumber, cancellationToken);
+        
+        if (existingByNumber != null)
+        {
+            _logger.LogWarning("Account number {AccountNumber} already exists for company {CompanyId}", accountNumber, companyId);
+            return null;
+        }
+
+        var newAccount = new ChartOfAccount
+        {
+            CompanyId = companyId,
+            AccountNumber = accountNumber,
+            Name = accountName,
+            NameHebrew = nameHebrew,
+            Type = accountType,
+            Level = 2,
+            IsActive = true,
+            IsDeleted = false,
+            IsControlAccount = false,
+            IsDebitNormal = accountType == AccountType.Asset || accountType == AccountType.Expense,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "System"
+        };
+
+        _context.ChartOfAccounts.Add(newAccount);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Auto-created missing account '{AccountName}' ({AccountNumber}) for company {CompanyId}", 
+            accountName, accountNumber, companyId);
+
+        return newAccount;
     }
 
     private async Task<ChartOfAccount> GetCashAccountByPaymentMethodAsync(int companyId, string paymentMethod, CancellationToken cancellationToken)

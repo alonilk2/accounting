@@ -42,9 +42,7 @@ public class PurchaseOrderService : BaseService<PurchaseOrder>, IPurchaseOrderSe
 
     public async Task<PurchaseOrder> CreatePurchaseOrderAsync(PurchaseOrder purchaseOrder, int companyId, string userId, CancellationToken cancellationToken = default)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        
-        try
+        return await TransactionHelper.ExecuteInTransactionAsync(_context, async (transaction, ct) =>
         {
             _logger.LogInformation("Creating purchase order for supplier {SupplierId} in company {CompanyId}", 
                 purchaseOrder.SupplierId, companyId);
@@ -52,7 +50,7 @@ public class PurchaseOrderService : BaseService<PurchaseOrder>, IPurchaseOrderSe
             // Validate supplier exists
             var supplier = await _context.Suppliers
                 .Where(s => s.Id == purchaseOrder.SupplierId && s.CompanyId == companyId && !s.IsDeleted)
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(ct);
 
             if (supplier == null)
             {
@@ -62,11 +60,11 @@ public class PurchaseOrderService : BaseService<PurchaseOrder>, IPurchaseOrderSe
             // Generate order number if not provided
             if (string.IsNullOrEmpty(purchaseOrder.OrderNumber))
             {
-                purchaseOrder.OrderNumber = await GenerateOrderNumberAsync(companyId, cancellationToken);
+                purchaseOrder.OrderNumber = await GenerateOrderNumberAsync(companyId, ct);
             }
 
             // Validate and process line items
-            await ValidateAndProcessLineItemsAsync(purchaseOrder.Lines, companyId, cancellationToken);
+            await ValidateAndProcessLineItemsAsync(purchaseOrder.Lines, companyId, ct);
 
             // Calculate totals
             purchaseOrder = CalculateTotals(purchaseOrder);
@@ -93,28 +91,20 @@ public class PurchaseOrderService : BaseService<PurchaseOrder>, IPurchaseOrderSe
 
             // Add to context
             _context.PurchaseOrders.Add(purchaseOrder);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(ct);
 
             // Create accounting entries
-            await CreateAccountingEntriesAsync(purchaseOrder, userId, cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
+            await CreateAccountingEntriesAsync(purchaseOrder, userId, ct);
 
             // Log audit trail
             await LogAuditAsync(purchaseOrder.Id, companyId, userId, "CREATE", 
-                $"Created purchase order {purchaseOrder.OrderNumber} for supplier {supplier.Name}", cancellationToken);
+                $"Created purchase order {purchaseOrder.OrderNumber} for supplier {supplier.Name}", ct);
 
             _logger.LogInformation("Successfully created purchase order {OrderId} with number {OrderNumber}", 
                 purchaseOrder.Id, purchaseOrder.OrderNumber);
 
             return purchaseOrder;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(ex, "Error creating purchase order for supplier {SupplierId}", purchaseOrder.SupplierId);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     public async Task<PurchaseOrder> UpdateStatusAsync(int purchaseOrderId, PurchaseOrderStatus status, int companyId, string userId, CancellationToken cancellationToken = default)
@@ -155,16 +145,14 @@ public class PurchaseOrderService : BaseService<PurchaseOrder>, IPurchaseOrderSe
 
     public async Task<PurchaseOrder> ReceiveGoodsAsync(int purchaseOrderId, List<ReceivedItem> receivedItems, int companyId, string userId, CancellationToken cancellationToken = default)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        
-        try
+        return await TransactionHelper.ExecuteInTransactionAsync(_context, async (transaction, ct) =>
         {
             _logger.LogInformation("Receiving goods for purchase order {OrderId}", purchaseOrderId);
 
             var purchaseOrder = await _context.PurchaseOrders
                 .Include(po => po.Lines)
                 .Where(po => po.Id == purchaseOrderId && po.CompanyId == companyId && !po.IsDeleted)
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(ct);
 
             if (purchaseOrder == null)
             {
@@ -240,33 +228,24 @@ public class PurchaseOrderService : BaseService<PurchaseOrder>, IPurchaseOrderSe
             purchaseOrder.UpdatedAt = DateTime.UtcNow;
             purchaseOrder.UpdatedBy = userId;
 
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await _context.SaveChangesAsync(ct);
 
             await LogAuditAsync(purchaseOrderId, companyId, userId, "RECEIVE_GOODS", 
-                $"Received {receivedItems.Count} items", cancellationToken);
+                $"Received {receivedItems.Count} items", ct);
 
             _logger.LogInformation("Successfully received goods for purchase order {OrderId}", purchaseOrderId);
 
             return purchaseOrder;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(ex, "Error receiving goods for purchase order {OrderId}", purchaseOrderId);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     public async Task<Payment> ProcessPaymentAsync(int purchaseOrderId, decimal paymentAmount, string paymentMethod, int companyId, string userId, CancellationToken cancellationToken = default)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        
-        try
+        return await TransactionHelper.ExecuteInTransactionAsync(_context, async (transaction, ct) =>
         {
             var purchaseOrder = await _context.PurchaseOrders
                 .Where(po => po.Id == purchaseOrderId && po.CompanyId == companyId && !po.IsDeleted)
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(ct);
 
             if (purchaseOrder == null)
             {
@@ -291,7 +270,7 @@ public class PurchaseOrderService : BaseService<PurchaseOrder>, IPurchaseOrderSe
                 PaymentDate = DateTime.UtcNow,
                 Amount = paymentAmount,
                 PaymentMethod = paymentMethod,
-                PaymentNumber = await GeneratePaymentNumberAsync(companyId, cancellationToken),
+                PaymentNumber = await GeneratePaymentNumberAsync(companyId, ct),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 CreatedBy = userId,
@@ -304,7 +283,7 @@ public class PurchaseOrderService : BaseService<PurchaseOrder>, IPurchaseOrderSe
             // Update purchase order status based on payment
             var totalPaid = await _context.Payments
                 .Where(p => p.PurchaseOrderId == purchaseOrderId && !p.IsDeleted)
-                .SumAsync(p => p.Amount, cancellationToken) + paymentAmount;
+                .SumAsync(p => p.Amount, ct) + paymentAmount;
 
             if (totalPaid >= purchaseOrder.TotalAmount)
             {
@@ -318,27 +297,19 @@ public class PurchaseOrderService : BaseService<PurchaseOrder>, IPurchaseOrderSe
             purchaseOrder.UpdatedAt = DateTime.UtcNow;
             purchaseOrder.UpdatedBy = userId;
 
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(ct);
 
             // Create accounting entries for payment
-            await CreatePaymentAccountingEntriesAsync(payment, purchaseOrder, userId, cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
+            await CreatePaymentAccountingEntriesAsync(payment, purchaseOrder, userId, ct);
 
             await LogAuditAsync(purchaseOrderId, companyId, userId, "PAYMENT", 
-                $"Processed payment of {paymentAmount:C} via {paymentMethod}", cancellationToken);
+                $"Processed payment of {paymentAmount:C} via {paymentMethod}", ct);
 
             _logger.LogInformation("Processed payment of {Amount:C} for purchase order {OrderId}", 
                 paymentAmount, purchaseOrderId);
 
             return payment;
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(ex, "Error processing payment for purchase order {OrderId}", purchaseOrderId);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     public async Task<IEnumerable<PurchaseOrder>> GetBySupplierAsync(int supplierId, int companyId, CancellationToken cancellationToken = default)
