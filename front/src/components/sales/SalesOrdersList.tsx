@@ -50,12 +50,13 @@ import type { SalesOrder, SalesOrderStatus, Customer } from '../../types/entitie
 import salesOrdersApi from '../../services/salesOrdersApi';
 import { customersApi } from '../../services/customersApi';
 import CreateSalesOrderDialog from './CreateSalesOrderDialog';
+import { SALES_ORDER_STATUS_LABELS } from '../../constants';
 
 interface SalesOrdersListProps {
   companyId?: number;
 }
 
-// Status colors mapping
+// Status colors mapping - now using shared constants
 const getStatusColor = (status: SalesOrderStatus): 'default' | 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success' => {
   switch (status) {
     case 'Quote': return 'info';
@@ -67,16 +68,10 @@ const getStatusColor = (status: SalesOrderStatus): 'default' | 'primary' | 'seco
   }
 };
 
-// Status labels
+// Status labels - now using shared constants
 const getStatusLabel = (status: SalesOrderStatus, isHebrew: boolean): string => {
-  const labels = {
-    Quote: isHebrew ? 'הצעת מחיר' : 'Quote',
-    Confirmed: isHebrew ? 'מאושר' : 'Confirmed',
-    Shipped: isHebrew ? 'נשלח' : 'Shipped',
-    Completed: isHebrew ? 'הושלם' : 'Completed',
-    Cancelled: isHebrew ? 'בוטל' : 'Cancelled'
-  };
-  return labels[status] || status;
+  const language = isHebrew ? 'he' : 'en';
+  return SALES_ORDER_STATUS_LABELS[language][status] || status;
 };
 
 export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps): React.ReactElement {

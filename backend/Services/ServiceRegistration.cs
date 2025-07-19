@@ -2,7 +2,6 @@ using backend.Services.Interfaces;
 using backend.Services.Core;
 using backend.Services.Sales;
 using backend.Services.Purchasing;
-using backend.Services.Suppliers;
 using backend.Services.Inventory;
 using backend.Services.Accounting;
 using backend.Services.Printing;
@@ -39,7 +38,7 @@ public static class ServiceRegistration
         
         // Purchasing services
         services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
-        services.AddScoped<ISupplierService, backend.Services.Suppliers.SupplierService>();
+        services.AddScoped<ISupplierService, backend.Services.Core.SupplierService>();
         
         // Inventory services
         services.AddScoped<IInventoryService, InventoryService>();

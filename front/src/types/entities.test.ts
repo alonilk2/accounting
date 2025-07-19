@@ -36,11 +36,14 @@ describe('Entity Types', () => {
   describe('Company interface', () => {
     it('should have all required properties', () => {
       const company: Company = {
-        id: 'company-1',
+        id: 1,
         name: 'Test Company Ltd',
         israelTaxId: '123456789',
         address: '123 Test St, Tel Aviv',
         currency: 'ILS',
+        fiscalYearStartMonth: 1,
+        timeZone: 'Asia/Jerusalem',
+        isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -54,7 +57,7 @@ describe('Entity Types', () => {
 
     it('should allow optional properties', () => {
       const company: Company = {
-        id: 'company-1',
+        id: 1,
         name: 'Test Company Ltd',
         israelTaxId: '123456789',
         address: '123 Test St, Tel Aviv',
@@ -62,6 +65,9 @@ describe('Entity Types', () => {
         phone: '+972-123-456789',
         email: 'info@testcompany.co.il',
         website: 'https://testcompany.co.il',
+        fiscalYearStartMonth: 1,
+        timeZone: 'Asia/Jerusalem',
+        isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -100,17 +106,24 @@ describe('Entity Types', () => {
         sku: 'SKU-001',
         name: 'Test Item',
         unit: 'piece',
-        cost: 10.50,
-        price: 15.75,
+        costPrice: 10.50,
+        sellPrice: 15.75,
         currentStockQty: 100,
         reorderPoint: 10,
+        maxStockLevel: 1000,
+        itemType: 'product',
+        isInventoryTracked: true,
         isActive: true,
+        isSellable: true,
+        isPurchasable: true,
+        cost: 10.50,
+        price: 15.75,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
-      expect(typeof item.cost).toBe('number');
-      expect(typeof item.price).toBe('number');
+      expect(typeof item.costPrice).toBe('number');
+      expect(typeof item.sellPrice).toBe('number');
       expect(typeof item.currentStockQty).toBe('number');
       expect(typeof item.reorderPoint).toBe('number');
       expect(item.cost).toBe(10.50);

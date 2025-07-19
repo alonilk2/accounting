@@ -67,7 +67,7 @@ const CustomerStatementGenerator: React.FC = () => {
     try {
       setLoadingCustomers(true);
       const customerList = await customersAPI.getAll();
-      setCustomers(customerList);
+      setCustomers(customerList.data || []);
     } catch (error) {
       console.error('Error loading customers:', error);
       setError('שגיאה בטעינת רשימת הלקוחות');
