@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './Dashboard.css';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -17,6 +17,8 @@ import {
   IconButton,
   Avatar,
   Fade,
+  Button,
+  Alert,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -24,14 +26,14 @@ import {
   AccountBalance,
   Receipt,
   Inventory as InventoryIcon,
-  Warning,
   Refresh,
   SmartToy as AIIcon,
   Send as SendIcon,
   AutoAwesome as SparkleIcon,
+  Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import { useUIStore, useAIAssistantStore } from '../stores';
-import { ModernButton } from '../components/ui';
+import { paperStyles, buttonStyles, cardStyles } from '../styles/formStyles';
 
 interface DashboardMetric {
   title: string;
@@ -54,6 +56,7 @@ interface RecentActivity {
 const Dashboard = () => {
   const { language } = useUIStore();
   const { sendMessage, messages, isLoading } = useAIAssistantStore();
+  const navigate = useNavigate();
   const [metrics, setMetrics] = useState<DashboardMetric[]>([]);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [alerts, setAlerts] = useState<string[]>([]);
@@ -170,75 +173,48 @@ const Dashboard = () => {
   return (
     <Box 
       sx={{
+        p: { xs: 3, md: 4 },
+        backgroundColor: 'background.default',
         minHeight: '100vh',
-        backgroundColor: '#f5f5f5',
-        p: 3,
       }}
     >
       {/* Header */}
-      <Box 
-        display="flex" 
-        justifyContent="space-between" 
-        alignItems="center" 
-        mb={4}
-        sx={{
-          backgroundColor: 'white',
-          border: '1px solid #e0e0e0',
-          borderRadius: 2,
-          p: 3,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <Typography 
-          variant="h4" 
-          component="h1"
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Typography
+          variant="h3"
           sx={{
-            color: '#333',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
             fontWeight: 600,
+            color: 'primary.main',
           }}
         >
+          <DashboardIcon sx={{ fontSize: 40 }} />
           {language === 'he' ? 'לוח בקרה' : 'Dashboard'}
         </Typography>
-        <ModernButton
-          variant="outline"
-          icon={<Refresh />}
-          onClick={handleRefresh}
-          sx={{
-            backgroundColor: 'white',
-            border: '1px solid #ddd',
-            color: '#666',
-            '&:hover': {
-              backgroundColor: '#f5f5f5',
-              border: '1px solid #bbb',
-            },
-          }}
-        >
-          {language === 'he' ? 'רענן' : 'Refresh'}
-        </ModernButton>
+        <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={handleRefresh}
+            sx={buttonStyles.secondary}
+          >
+            {language === 'he' ? 'רענן' : 'Refresh'}
+          </Button>
+        </Box>
       </Box>
 
       {/* Metrics Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} sx={{ mb: 4 }}>
         {metrics.map((metric, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-            <Card
-              sx={{
-                backgroundColor: 'white',
-                border: '1px solid #e0e0e0',
-                borderRadius: 2,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
-                },
-              }}
-            >
+          <Grid key={index} size={{ xs: 4, sm: 2, md: 3 }}>
+            <Card sx={cardStyles}>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Typography 
-                      color="#666" 
+                      color="text.secondary" 
                       gutterBottom 
                       variant="body2"
                       sx={{ fontWeight: 500 }}
@@ -249,7 +225,7 @@ const Dashboard = () => {
                       variant="h5" 
                       component="div"
                       sx={{ 
-                        color: '#333',
+                        color: 'text.primary',
                         fontWeight: 700,
                       }}
                     >
@@ -258,14 +234,14 @@ const Dashboard = () => {
                     {metric.change !== 0 && (
                       <Box display="flex" alignItems="center" mt={1}>
                         {metric.change > 0 ? (
-                          <TrendingUp sx={{ color: '#4caf50', fontSize: 20 }} />
+                          <TrendingUp sx={{ color: 'success.main', fontSize: 20 }} />
                         ) : (
-                          <TrendingDown sx={{ color: '#f44336', fontSize: 20 }} />
+                          <TrendingDown sx={{ color: 'error.main', fontSize: 20 }} />
                         )}
                         <Typography
                           variant="body2"
                           sx={{
-                            color: metric.change > 0 ? '#4caf50' : '#f44336',
+                            color: metric.change > 0 ? 'success.main' : 'error.main',
                             fontWeight: 600,
                             ml: 0.5,
                           }}
@@ -277,22 +253,13 @@ const Dashboard = () => {
                   </Box>
                   <Box
                     sx={{
-                      color: metric.color === 'success' ? '#4caf50' :
-                             metric.color === 'warning' ? '#ff9800' :
-                             metric.color === 'error' ? '#f44336' :
-                             '#2196f3',
+                      color: `${metric.color}.main`,
                       display: 'flex',
                       alignItems: 'center',
                       p: 2,
                       borderRadius: '50%',
-                      backgroundColor: metric.color === 'success' ? 'rgba(76, 175, 80, 0.1)' :
-                                      metric.color === 'warning' ? 'rgba(255, 152, 0, 0.1)' :
-                                      metric.color === 'error' ? 'rgba(244, 67, 54, 0.1)' :
-                                      'rgba(33, 150, 243, 0.1)',
-                      border: `1px solid ${metric.color === 'success' ? 'rgba(76, 175, 80, 0.3)' :
-                                         metric.color === 'warning' ? 'rgba(255, 152, 0, 0.3)' :
-                                         metric.color === 'error' ? 'rgba(244, 67, 54, 0.3)' :
-                                         'rgba(33, 150, 243, 0.3)'}`,
+                      backgroundColor: (theme) => `${theme.palette[metric.color].main}15`,
+                      border: (theme) => `1px solid ${theme.palette[metric.color].main}30`,
                     }}
                   >
                     {metric.icon}
@@ -304,23 +271,15 @@ const Dashboard = () => {
         ))}
       </Grid>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} sx={{ mb: 4 }}>
         {/* Recent Activities */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Paper 
-            sx={{ 
-              backgroundColor: 'white',
-              border: '1px solid #e0e0e0',
-              borderRadius: 2,
-              p: 3,
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-            }}
-          >
+        <Grid size={{ xs: 4, sm: 8, md: 8 }}>
+          <Paper sx={paperStyles}>
             <Typography 
               variant="h6" 
               gutterBottom
               sx={{ 
-                color: '#333',
+                color: 'text.primary',
                 fontWeight: 600,
               }}
             >
@@ -331,13 +290,17 @@ const Dashboard = () => {
                 <ListItem 
                   key={activity.id}
                   sx={{
-                    backgroundColor: '#f9f9f9',
-                    border: '1px solid #e0e0e0',
+                    backgroundColor: (theme) => theme.palette.mode === 'light'
+                      ? 'rgba(0,0,0,0.02)'
+                      : 'rgba(255,255,255,0.05)',
+                    border: (theme) => `1px solid ${theme.palette.divider}`,
                     borderRadius: 2,
                     mb: 1,
                     transition: 'all 0.2s ease',
                     '&:hover': {
-                      backgroundColor: '#f0f0f0',
+                      backgroundColor: (theme) => theme.palette.mode === 'light'
+                        ? 'rgba(25, 118, 210, 0.04)'
+                        : 'rgba(59, 130, 246, 0.08)',
                     },
                   }}
                 >
@@ -346,27 +309,31 @@ const Dashboard = () => {
                       sx={{
                         p: 1,
                         borderRadius: '50%',
-                        backgroundColor: activity.type === 'sale' ? 'rgba(76, 175, 80, 0.1)' :
-                                        activity.type === 'payment' ? 'rgba(33, 150, 243, 0.1)' :
-                                        'rgba(255, 152, 0, 0.1)',
-                        border: activity.type === 'sale' ? '1px solid rgba(76, 175, 80, 0.3)' :
-                               activity.type === 'payment' ? '1px solid rgba(33, 150, 243, 0.3)' :
-                               '1px solid rgba(255, 152, 0, 0.3)',
+                        backgroundColor: (theme) => activity.type === 'sale' 
+                          ? `${theme.palette.success.main}15`
+                          : activity.type === 'payment' 
+                          ? `${theme.palette.primary.main}15`
+                          : `${theme.palette.warning.main}15`,
+                        border: (theme) => activity.type === 'sale' 
+                          ? `1px solid ${theme.palette.success.main}30`
+                          : activity.type === 'payment' 
+                          ? `1px solid ${theme.palette.primary.main}30`
+                          : `1px solid ${theme.palette.warning.main}30`,
                       }}
                     >
-                      {activity.type === 'sale' && <Receipt sx={{ color: '#4caf50' }} />}
-                      {activity.type === 'payment' && <AccountBalance sx={{ color: '#2196f3' }} />}
-                      {activity.type === 'purchase' && <TrendingDown sx={{ color: '#ff9800' }} />}
+                      {activity.type === 'sale' && <Receipt sx={{ color: 'success.main' }} />}
+                      {activity.type === 'payment' && <AccountBalance sx={{ color: 'primary.main' }} />}
+                      {activity.type === 'purchase' && <TrendingDown sx={{ color: 'warning.main' }} />}
                     </Box>
                   </ListItemIcon>
                   <ListItemText
                     primary={
-                      <Typography sx={{ color: '#333', fontWeight: 500 }}>
+                      <Typography sx={{ color: 'text.primary', fontWeight: 500 }}>
                         {language === 'he' ? activity.descriptionHe : activity.description}
                       </Typography>
                     }
                     secondary={
-                      <Typography sx={{ color: '#666' }}>
+                      <Typography sx={{ color: 'text.secondary' }}>
                         {new Date(activity.date).toLocaleDateString(
                           language === 'he' ? 'he-IL' : 'en-US'
                         )}
@@ -376,7 +343,7 @@ const Dashboard = () => {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: activity.amount > 0 ? '#4caf50' : '#f44336',
+                      color: activity.amount > 0 ? 'success.main' : 'error.main',
                       fontWeight: 700,
                     }}
                   >
@@ -389,21 +356,13 @@ const Dashboard = () => {
         </Grid>
 
         {/* Alerts */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Paper 
-            sx={{ 
-              backgroundColor: 'white',
-              border: '1px solid #e0e0e0',
-              borderRadius: 2,
-              p: 3,
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-            }}
-          >
+        <Grid size={{ xs: 4, sm: 8, md: 4 }}>
+          <Paper sx={paperStyles}>
             <Typography 
               variant="h6" 
               gutterBottom
               sx={{ 
-                color: '#333',
+                color: 'text.primary',
                 fontWeight: 600,
               }}
             >
@@ -411,30 +370,20 @@ const Dashboard = () => {
             </Typography>
             <Box>
               {alerts.map((alert, index) => (
-                <Chip
+                <Alert
                   key={index}
-                  icon={<Warning sx={{ color: '#ff9800' }} />}
-                  label={alert}
+                  severity="warning"
                   sx={{
                     mb: 2,
-                    width: '100%',
-                    justifyContent: 'flex-start',
-                    backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                    border: '1px solid rgba(255, 152, 0, 0.3)',
-                    color: '#333',
-                    fontWeight: 500,
-                    p: 2,
-                    height: 'auto',
-                    '& .MuiChip-label': {
-                      whiteSpace: 'normal',
+                    borderRadius: 2,
+                    '& .MuiAlert-message': {
+                      fontWeight: 500,
                       textAlign: language === 'he' ? 'right' : 'left',
                     },
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 152, 0, 0.2)',
-                    },
                   }}
-                />
+                >
+                  {alert}
+                </Alert>
               ))}
             </Box>
           </Paper>
@@ -442,29 +391,34 @@ const Dashboard = () => {
       </Grid>
 
       {/* AI Assistant Card - Central placement for AI-first experience */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12 }}>
+      <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} sx={{ mb: 4 }}>
+        <Grid size={{ xs: 4, sm: 8, md: 12 }}>
           <Card 
             className="ai-assistant-card"
             sx={{ 
-              background: 'white',
-              border: '1px solid #e0e0e0',
+              background: (theme) => theme.palette.mode === 'light'
+                ? `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.primary.main}02)`
+                : `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.primary.main}08)`,
+              border: (theme) => `1px solid ${theme.palette.divider}`,
               borderRadius: 3,
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+              boxShadow: (theme) => theme.palette.mode === 'light'
+                ? '0 4px 16px rgba(0, 0, 0, 0.08)'
+                : '0 4px 20px rgba(0, 0, 0, 0.3)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
             <CardContent sx={{ p: 4 }}>
               <Box display="flex" alignItems="center" gap={2} mb={3}>
                 <Avatar 
                   sx={{ 
-                    bgcolor: 'rgba(102, 126, 234, 0.1)', 
-                    border: '2px solid rgba(102, 126, 234, 0.3)',
+                    bgcolor: (theme) => `${theme.palette.primary.main}15`, 
+                    border: (theme) => `2px solid ${theme.palette.primary.main}30`,
                     width: 56,
                     height: 56,
-                    boxShadow: '0 4px 16px rgba(102, 126, 234, 0.2)',
+                    boxShadow: (theme) => `0 4px 16px ${theme.palette.primary.main}20`,
                   }}
                 >
-                  <AIIcon sx={{ fontSize: 32, color: 'rgba(102, 126, 234, 0.8)' }} />
+                  <AIIcon sx={{ fontSize: 32, color: 'primary.main' }} />
                 </Avatar>
                 <Box>
                   <Typography 
@@ -472,7 +426,7 @@ const Dashboard = () => {
                     sx={{ 
                       fontWeight: 700, 
                       mb: 0.5, 
-                      color: '#333',
+                      color: 'text.primary',
                     }}
                   >
                     {language === 'he' ? 'עוזר חכם פיננסי' : 'AI Financial Assistant'}
@@ -480,7 +434,7 @@ const Dashboard = () => {
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      color: '#666',
+                      color: 'text.secondary',
                     }}
                   >
                     {language === 'he' 
@@ -505,28 +459,30 @@ const Dashboard = () => {
                   dir={language === 'he' ? 'rtl' : 'ltr'}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      bgcolor: '#f9f9f9',
+                      bgcolor: 'background.paper',
                       borderRadius: 2,
-                      color: '#333',
-                      border: '1px solid #ddd',
+                      color: 'text.primary',
+                      border: (theme) => `1px solid ${theme.palette.divider}`,
                       '& fieldset': {
                         border: 'none',
                       },
                       '&:hover': {
-                        backgroundColor: '#f0f0f0',
-                        border: '1px solid #bbb',
+                        backgroundColor: (theme) => theme.palette.mode === 'light'
+                          ? 'rgba(0,0,0,0.02)'
+                          : 'rgba(255,255,255,0.05)',
+                        border: (theme) => `1px solid ${theme.palette.text.secondary}`,
                       },
                       '&.Mui-focused': {
-                        backgroundColor: 'white',
-                        border: '1px solid #2196f3',
-                        boxShadow: '0 0 0 2px rgba(33, 150, 243, 0.2)',
+                        backgroundColor: 'background.paper',
+                        border: (theme) => `1px solid ${theme.palette.primary.main}`,
+                        boxShadow: (theme) => `0 0 0 2px ${theme.palette.primary.main}20`,
                       },
                     },
                     '& .MuiOutlinedInput-input': {
-                      color: '#333',
+                      color: 'text.primary',
                       fontSize: '1.1rem',
                       '&::placeholder': {
-                        color: '#999',
+                        color: 'text.secondary',
                         opacity: 1,
                       },
                     },
@@ -538,16 +494,20 @@ const Dashboard = () => {
                           type="submit"
                           disabled={!aiInput.trim() || isLoading}
                           sx={{ 
-                            color: '#2196f3',
-                            bgcolor: '#f0f0f0',
-                            border: '1px solid #ddd',
+                            color: 'primary.main',
+                            bgcolor: (theme) => theme.palette.mode === 'light'
+                              ? 'rgba(0,0,0,0.04)'
+                              : 'rgba(255,255,255,0.08)',
+                            border: (theme) => `1px solid ${theme.palette.divider}`,
                             width: 48,
                             height: 48,
                             '&:hover': {
-                              bgcolor: '#e0e0e0',
+                              bgcolor: (theme) => theme.palette.mode === 'light'
+                                ? 'rgba(0,0,0,0.08)'
+                                : 'rgba(255,255,255,0.12)',
                             },
                             '&:disabled': {
-                              color: '#999',
+                              color: 'text.secondary',
                             },
                           }}
                         >
@@ -571,7 +531,7 @@ const Dashboard = () => {
                   variant="body2" 
                   sx={{ 
                     mb: 2, 
-                    color: '#666',
+                    color: 'text.secondary',
                     fontWeight: 500,
                   }}
                 >
@@ -585,14 +545,18 @@ const Dashboard = () => {
                       label={language === 'he' ? question.textHe : question.text}
                       onClick={() => setAiInput(language === 'he' ? question.textHe : question.text)}
                       sx={{
-                        bgcolor: '#f0f0f0',
-                        color: '#333',
-                        border: '1px solid #ddd',
+                        bgcolor: (theme) => theme.palette.mode === 'light'
+                          ? 'rgba(0,0,0,0.04)'
+                          : 'rgba(255,255,255,0.08)',
+                        color: 'text.primary',
+                        border: (theme) => `1px solid ${theme.palette.divider}`,
                         borderRadius: 2,
                         fontWeight: 500,
                         cursor: 'pointer',
                         '&:hover': {
-                          bgcolor: '#e0e0e0',
+                          bgcolor: (theme) => theme.palette.mode === 'light'
+                            ? 'rgba(0,0,0,0.08)'
+                            : 'rgba(255,255,255,0.12)',
                         },
                       }}
                     />
@@ -603,12 +567,12 @@ const Dashboard = () => {
               {/* Recent AI Messages Preview */}
               {messages.length > 0 && (
                 <Fade in timeout={500}>
-                  <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid #e0e0e0' }}>
+                  <Box sx={{ mt: 4, pt: 3, borderTop: (theme) => `1px solid ${theme.palette.divider}` }}>
                     <Typography 
                       variant="body2" 
                       sx={{ 
                         mb: 2, 
-                        color: '#666',
+                        color: 'text.secondary',
                         fontWeight: 500,
                       }}
                     >
@@ -622,20 +586,24 @@ const Dashboard = () => {
                           sx={{
                             p: 3,
                             mb: 2,
-                            bgcolor: '#f9f9f9',
-                            border: '1px solid #e0e0e0',
+                            bgcolor: (theme) => theme.palette.mode === 'light'
+                              ? 'rgba(0,0,0,0.02)'
+                              : 'rgba(255,255,255,0.05)',
+                            border: (theme) => `1px solid ${theme.palette.divider}`,
                             borderRadius: 2,
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                            boxShadow: (theme) => theme.palette.mode === 'light'
+                              ? '0 2px 8px rgba(0, 0, 0, 0.05)'
+                              : '0 2px 8px rgba(0, 0, 0, 0.2)',
                           }}
                         >
                           <Typography 
                             variant="body2" 
                             sx={{ 
                               fontSize: '0.9rem',
-                              color: '#333',
+                              color: 'text.primary',
                               lineHeight: 1.5,
                               '& strong': {
-                                color: '#555',
+                                color: 'text.primary',
                               },
                             }}
                           >
@@ -650,6 +618,19 @@ const Dashboard = () => {
                   </Box>
                 </Fade>
               )}
+
+              {/* Button to Full AI Assistant */}
+              <Box sx={{ mt: 3, pt: 3, borderTop: (theme) => `1px solid ${theme.palette.divider}`, textAlign: 'center' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => navigate('/ai-assistant')}
+                  startIcon={<AIIcon />}
+                  sx={buttonStyles.primary}
+                >
+                  {language === 'he' ? 'פתח עוזר AI מלא' : 'Open Full AI Assistant'}
+                </Button>
+              </Box>
             </CardContent>
           </Card>
         </Grid>

@@ -357,7 +357,7 @@ const Company = () => {
   return (
     <Box sx={{ 
       p: { xs: 3, md: 4 }, 
-      backgroundColor: '#fafafa',
+      backgroundColor: 'background.default',
       minHeight: '100vh'
     }}>
       {/* Header */}
@@ -368,9 +368,12 @@ const Company = () => {
           alignItems: "center",
           mb: 4,
           p: 3,
-          backgroundColor: 'white',
+          backgroundColor: 'background.paper',
           borderRadius: 3,
-          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+          border: (theme) => `1px solid ${theme.palette.divider}`,
+          boxShadow: (theme) => theme.palette.mode === 'light' 
+            ? '0 2px 12px rgba(0,0,0,0.04)' 
+            : '0 4px 20px rgba(0,0,0,0.3)',
         }}
       >
         <Typography
@@ -488,7 +491,15 @@ const Company = () => {
         mb: 4,
         borderRadius: 3,
         overflow: 'hidden',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
+        backgroundColor: 'background.paper',
+        border: (theme) => `1px solid ${
+          theme.palette.mode === 'light' 
+            ? 'rgba(0,0,0,0.08)' 
+            : theme.palette.divider
+        }`,
+        boxShadow: (theme) => theme.palette.mode === 'light' 
+          ? '0 2px 12px rgba(0,0,0,0.04)' 
+          : '0 4px 20px rgba(0,0,0,0.3)',
       }}>
         <Tabs
           value={activeTab}
@@ -638,8 +649,15 @@ const Company = () => {
               p: 4, 
               mb: 4,
               borderRadius: 3,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              backgroundColor: 'white'
+              backgroundColor: 'background.paper',
+              border: (theme) => `1px solid ${
+                theme.palette.mode === 'light' 
+                  ? 'rgba(0,0,0,0.08)' 
+                  : theme.palette.divider
+              }`,
+              boxShadow: (theme) => theme.palette.mode === 'light' 
+                ? '0 2px 12px rgba(0,0,0,0.04)' 
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
               <Typography 
                 variant="h5" 
@@ -658,7 +676,9 @@ const Company = () => {
                   sx={{ 
                     width: 100, 
                     height: 100,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    boxShadow: (theme) => theme.palette.mode === 'light' 
+                      ? '0 4px 12px rgba(0,0,0,0.1)' 
+                      : '0 4px 20px rgba(0,0,0,0.4)',
                   }}
                 >
                   <BusinessIcon sx={{ fontSize: 50 }} />
@@ -712,8 +732,15 @@ const Company = () => {
             <Paper sx={{ 
               p: 4,
               borderRadius: 3,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              backgroundColor: 'white'
+              backgroundColor: 'background.paper',
+              border: (theme) => `1px solid ${
+                theme.palette.mode === 'light' 
+                  ? 'rgba(0,0,0,0.08)' 
+                  : theme.palette.divider
+              }`,
+              boxShadow: (theme) => theme.palette.mode === 'light' 
+                ? '0 2px 12px rgba(0,0,0,0.04)' 
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
               <Typography 
                 variant="h5" 
@@ -1020,8 +1047,15 @@ const Company = () => {
           <Paper sx={{ 
             p: 4,
             borderRadius: 3,
-            boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-            backgroundColor: 'white'
+            backgroundColor: 'background.paper',
+            border: (theme) => `1px solid ${
+              theme.palette.mode === 'light' 
+                ? 'rgba(0,0,0,0.08)' 
+                : theme.palette.divider
+            }`,
+            boxShadow: (theme) => theme.palette.mode === 'light' 
+              ? '0 2px 12px rgba(0,0,0,0.04)' 
+              : '0 4px 20px rgba(0,0,0,0.3)',
           }}>
             <Typography
               variant="h5"
@@ -1264,8 +1298,15 @@ const Company = () => {
             <Paper sx={{ 
               p: 4,
               borderRadius: 3,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              backgroundColor: 'white'
+              backgroundColor: 'background.paper',
+              border: (theme) => `1px solid ${
+                theme.palette.mode === 'light' 
+                  ? 'rgba(0,0,0,0.08)' 
+                  : theme.palette.divider
+              }`,
+              boxShadow: (theme) => theme.palette.mode === 'light' 
+                ? '0 2px 12px rgba(0,0,0,0.04)' 
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
               <Typography 
                 variant="h5" 
@@ -1363,8 +1404,15 @@ const Company = () => {
             <Paper sx={{ 
               p: 4,
               borderRadius: 3,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              backgroundColor: 'white'
+              backgroundColor: 'background.paper',
+              border: (theme) => `1px solid ${
+                theme.palette.mode === 'light' 
+                  ? 'rgba(0,0,0,0.08)' 
+                  : theme.palette.divider
+              }`,
+              boxShadow: (theme) => theme.palette.mode === 'light' 
+                ? '0 2px 12px rgba(0,0,0,0.04)' 
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
               <Typography 
                 variant="h5" 
@@ -1456,8 +1504,15 @@ const Company = () => {
             <Paper sx={{ 
               p: 4,
               borderRadius: 3,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              backgroundColor: 'white'
+              backgroundColor: 'background.paper',
+              border: (theme) => `1px solid ${
+                theme.palette.mode === 'light' 
+                  ? 'rgba(0,0,0,0.08)' 
+                  : theme.palette.divider
+              }`,
+              boxShadow: (theme) => theme.palette.mode === 'light' 
+                ? '0 2px 12px rgba(0,0,0,0.04)' 
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
               <Typography 
                 variant="h5" 
@@ -1532,8 +1587,15 @@ const Company = () => {
             <Paper sx={{ 
               p: 4,
               borderRadius: 3,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              backgroundColor: 'white'
+              backgroundColor: 'background.paper',
+              border: (theme) => `1px solid ${
+                theme.palette.mode === 'light' 
+                  ? 'rgba(0,0,0,0.08)' 
+                  : theme.palette.divider
+              }`,
+              boxShadow: (theme) => theme.palette.mode === 'light' 
+                ? '0 2px 12px rgba(0,0,0,0.04)' 
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
               <Typography 
                 variant="h5" 
@@ -1629,8 +1691,15 @@ const Company = () => {
             <Paper sx={{ 
               p: 4,
               borderRadius: 3,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              backgroundColor: 'white'
+              backgroundColor: 'background.paper',
+              border: (theme) => `1px solid ${
+                theme.palette.mode === 'light' 
+                  ? 'rgba(0,0,0,0.08)' 
+                  : theme.palette.divider
+              }`,
+              boxShadow: (theme) => theme.palette.mode === 'light' 
+                ? '0 2px 12px rgba(0,0,0,0.04)' 
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
               <Typography
                 variant="h5"
@@ -1867,7 +1936,9 @@ const Company = () => {
                   <Box sx={{ 
                     mt: 3, 
                     p: 2, 
-                    backgroundColor: 'grey.50', 
+                    backgroundColor: (theme) => theme.palette.mode === 'light' 
+                      ? 'grey.50' 
+                      : 'rgba(255,255,255,0.05)', 
                     borderRadius: 2,
                     textAlign: 'center'
                   }}>
@@ -1916,8 +1987,15 @@ const Company = () => {
             <Paper sx={{ 
               p: 4,
               borderRadius: 3,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              backgroundColor: 'white'
+              backgroundColor: 'background.paper',
+              border: (theme) => `1px solid ${
+                theme.palette.mode === 'light' 
+                  ? 'rgba(0,0,0,0.08)' 
+                  : theme.palette.divider
+              }`,
+              boxShadow: (theme) => theme.palette.mode === 'light' 
+                ? '0 2px 12px rgba(0,0,0,0.04)' 
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
               <Typography
                 variant="h5"
@@ -2015,8 +2093,15 @@ const Company = () => {
             <Paper sx={{ 
               p: 4,
               borderRadius: 3,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              backgroundColor: 'white'
+              backgroundColor: 'background.paper',
+              border: (theme) => `1px solid ${
+                theme.palette.mode === 'light' 
+                  ? 'rgba(0,0,0,0.08)' 
+                  : theme.palette.divider
+              }`,
+              boxShadow: (theme) => theme.palette.mode === 'light' 
+                ? '0 2px 12px rgba(0,0,0,0.04)' 
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
               <Typography
                 variant="h5"
@@ -2096,8 +2181,15 @@ const Company = () => {
             <Paper sx={{ 
               p: 4,
               borderRadius: 3,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-              backgroundColor: 'white'
+              backgroundColor: 'background.paper',
+              border: (theme) => `1px solid ${
+                theme.palette.mode === 'light' 
+                  ? 'rgba(0,0,0,0.08)' 
+                  : theme.palette.divider
+              }`,
+              boxShadow: (theme) => theme.palette.mode === 'light' 
+                ? '0 2px 12px rgba(0,0,0,0.04)' 
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
               <Typography
                 variant="h5"
@@ -2123,8 +2215,11 @@ const Company = () => {
                     sx={{ 
                       borderRadius: 2,
                       transition: 'all 0.2s ease-in-out',
+                      backgroundColor: 'background.paper',
                       '&:hover': {
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        boxShadow: (theme) => theme.palette.mode === 'light' 
+                          ? '0 4px 12px rgba(0,0,0,0.08)' 
+                          : '0 8px 24px rgba(0,0,0,0.3)',
                         transform: 'translateY(-1px)'
                       }
                     }}
@@ -2180,7 +2275,9 @@ const Company = () => {
                   <Box sx={{ 
                     textAlign: "center", 
                     py: 6,
-                    backgroundColor: 'grey.50',
+                    backgroundColor: (theme) => theme.palette.mode === 'light' 
+                      ? 'grey.50' 
+                      : 'rgba(255,255,255,0.05)',
                     borderRadius: 2
                   }}>
                     <Typography 
@@ -2200,7 +2297,19 @@ const Company = () => {
 
       {/* Company Status */}
       {company && activeTab === 0 && (
-        <Paper sx={{ p: 3, mt: 3 }}>
+        <Paper sx={{ 
+          p: 3, 
+          mt: 3,
+          backgroundColor: 'background.paper',
+          border: (theme) => `1px solid ${
+            theme.palette.mode === 'light' 
+              ? 'rgba(0,0,0,0.08)' 
+              : theme.palette.divider
+          }`,
+          boxShadow: (theme) => theme.palette.mode === 'light' 
+            ? '0 2px 12px rgba(0,0,0,0.04)' 
+            : '0 4px 20px rgba(0,0,0,0.3)',
+        }}>
           <Typography variant="h6" gutterBottom>
             סטטוס החברה
           </Typography>

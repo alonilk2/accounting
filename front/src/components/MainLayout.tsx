@@ -1,15 +1,12 @@
 import { useState } from 'react';
 import {
-  AppBar,
   Box,
   Drawer,
-  IconButton,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Toolbar,
   Typography,
   useTheme,
   useMediaQuery,
@@ -74,6 +71,7 @@ interface NavItem {
 
 const navigationItems: NavItem[] = [
   { text: 'Dashboard', textHe: 'לוח בקרה', icon: <Dashboard />, path: '/', isAI: true },
+  { text: 'AI Assistant', textHe: 'עוזר AI', icon: <SmartToy />, path: '/ai-assistant', section: 'AI Analytics', isAI: true, badge: 'AI' },
   { text: 'AI Insights', textHe: 'תובנות AI', icon: <Insights />, path: '/ai-insights', section: 'AI Analytics', isAI: true, badge: 'AI' },
   { text: 'Smart Analytics', textHe: 'אנליטיקה חכמה', icon: <TrendingUp />, path: '/smart-analytics', section: 'AI Analytics', isAI: true, badge: 'AI' },
   { text: 'Customers', textHe: 'לקוחות', icon: <People />, path: '/customers', section: 'Sales' },
@@ -88,7 +86,6 @@ const navigationItems: NavItem[] = [
   { text: 'Chart of Accounts', textHe: 'תרשים חשבונות', icon: <AccountBalance />, path: '/accounts', section: 'Accounting' },
   { text: 'Reports', textHe: 'דוחות', icon: <BarChart />, path: '/reports', section: 'Reports' },
   { text: 'Company Management', textHe: 'ניהול חברה', icon: <CorporateFare />, path: '/company-management', section: 'System' },
-  { text: 'AI Assistant', textHe: 'עוזר AI', icon: <SmartToy />, path: '/ai-assistant', section: 'System', isAI: true, badge: 'AI' },
   { text: 'Settings', textHe: 'הגדרות', icon: <Settings />, path: '/settings', section: 'System' },
 ];
 
@@ -113,7 +110,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   
-  const { user, company, logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { 
     theme: currentTheme, 
     setTheme, 
@@ -281,115 +278,75 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
 
   const drawerContent = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Company Header */}
+      {/* Profile Section */}
       <Box sx={{ 
         p: 1.5, 
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}10, ${theme.palette.secondary.main}05)`,
+        background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.secondary.main}10)`,
         borderBottom: `1px solid ${theme.palette.divider}`,
         position: 'relative',
         overflow: 'visible',
-        minHeight: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: `linear-gradient(45deg, ${theme.palette.primary.main}05, transparent)`,
-          zIndex: 0,
-        },
       }}>
-        <Box sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, mb: 1.5 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 700,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                flexShrink: 0,
-              }}
-            >
-              {company?.name?.charAt(0) || 'A'}
-            </Box>
-            <Box sx={{ textAlign: 'center', width: '100%' }}>
-              <Typography 
-                variant="caption" 
-                component="div" 
-                sx={{ 
-                  fontWeight: 700, 
-                  lineHeight: 1.2,
-                  fontSize: '0.7rem',
-                  textAlign: 'center',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  maxWidth: '100%',
-                }}
-                title={company?.name || 'AI Accounting System'}
-              >
-                {company?.name || 'AI System'}
-              </Typography>
-              <Typography 
-                variant="caption" 
-                color="text.secondary" 
-                sx={{ 
-                  lineHeight: 1.2,
-                  fontSize: '0.6rem',
-                  textAlign: 'center',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  maxWidth: '100%',
-                }}
-                title={company?.israelTaxId ? `Tax ID: ${company.israelTaxId}` : 'Smart Business Management'}
-              >
-                {company?.israelTaxId ? `Tax: ${company.israelTaxId.slice(-4)}` : 'Smart Mgmt'}
-              </Typography>
-            </Box>
-          </Box>
-          
-          {/* AI Status Indicator */}
-          <Box sx={{ 
+        <Box 
+          sx={{ 
             display: 'flex', 
             flexDirection: 'column',
             alignItems: 'center', 
-            gap: 0.5, 
+            gap: 1,
+            cursor: 'pointer',
             p: 1,
             borderRadius: 2,
-            background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-            border: `1px solid ${theme.palette.primary.main}30`,
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': {
+              background: `linear-gradient(135deg, ${theme.palette.primary.main}20, ${theme.palette.secondary.main}15)`,
+              transform: 'scale(1.02)',
+            },
+          }}
+          onClick={handleProfileMenuOpen}
+        >
+          <Avatar sx={{ 
+            width: 42, 
+            height: 42, 
+            background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+            fontWeight: 700,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+            border: `2px solid ${theme.palette.primary.main}30`,
           }}>
-            <SmartToy sx={{ 
-              fontSize: 16, 
-              color: theme.palette.primary.main,
-              animation: 'pulse 2s infinite',
-            }} />
-            <Typography variant="caption" sx={{ 
-              fontWeight: 600, 
-              color: theme.palette.primary.main,
-              fontSize: '0.65rem',
-              textAlign: 'center',
-            }}>
-              {language === 'he' ? 'AI פעיל' : 'AI Active'}
+            {user?.name?.charAt(0) || <AccountCircle />}
+          </Avatar>
+          <Box sx={{ textAlign: 'center', width: '100%' }}>
+            <Typography 
+              variant="caption" 
+              component="div" 
+              sx={{ 
+                fontWeight: 700, 
+                lineHeight: 1.2,
+                fontSize: '0.8rem',
+                textAlign: 'center',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100%',
+              }}
+              title={user?.name || (language === 'he' ? 'משתמש' : 'User')}
+            >
+              {user?.name || (language === 'he' ? 'משתמש' : 'User')}
             </Typography>
-            <Box sx={{ 
-              width: 6, 
-              height: 6, 
-              borderRadius: '50%', 
-              bgcolor: 'success.main',
-              animation: 'pulse 1.5s infinite',
-            }} />
+            <Typography 
+              variant="caption" 
+              color="text.secondary" 
+              sx={{ 
+                lineHeight: 1.2,
+                fontSize: '0.65rem',
+                textAlign: 'center',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100%',
+              }}
+              title={user?.email || (language === 'he' ? 'מנהל מערכת' : 'System Admin')}
+            >
+              {user?.email || (language === 'he' ? 'מנהל מערכת' : 'System Admin')}
+            </Typography>
           </Box>
         </Box>
       </Box>
@@ -514,77 +471,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
 
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
-      {/* App Bar */}
-      <AppBar
-        position="fixed"
-        elevation={0}
-        sx={{
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          ...(isRTL ? {
-            mr: { md: `${drawerWidth}px` },
-          } : {
-            ml: { md: `${drawerWidth}px` },
-          }),
-          transition: theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-          }),
-          background: theme.palette.mode === 'dark' 
-            ? `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.primary.main}10)`
-            : `linear-gradient(135deg, rgba(255,255,255,0.95), ${theme.palette.primary.main}05)`,
-          backdropFilter: 'blur(20px)',
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-        }}
-      >
-        <Toolbar sx={{ minHeight: '70px !important', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoAwesome sx={{ 
-              color: theme.palette.primary.main, 
-              fontSize: 24,
-              animation: 'pulse 2s infinite',
-            }} />
-            <Typography variant="h6" noWrap component="div" sx={{ 
-              fontWeight: 700,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>
-              {language === 'he' ? 'מערכת הנהלת חשבונות חכמה' : 'Smart Accounting System'}
-            </Typography>
-          </Box>
-
-          {/* Space for DocumentCreationFab - מקום ל-FAB */}
-          <Box sx={{ width: 170 }} />
-
-          <IconButton
-            color="inherit"
-            onClick={handleProfileMenuOpen}
-            aria-label="account of current user"
-            sx={{
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}20, ${theme.palette.secondary.main}20)`,
-              border: `2px solid ${theme.palette.primary.main}30`,
-              '&:hover': {
-                background: `linear-gradient(135deg, ${theme.palette.primary.main}30, ${theme.palette.secondary.main}30)`,
-                transform: 'scale(1.05)',
-              },
-              transition: 'all 0.2s ease-in-out',
-            }}
-          >
-            <Avatar sx={{ 
-              width: 36, 
-              height: 36, 
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              fontWeight: 700,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-            }}>
-              {user?.name?.charAt(0) || <AccountCircle />}
-            </Avatar>
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-
       {/* Profile Menu */}
       <Menu
         anchorEl={anchorEl}
@@ -731,11 +617,10 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
           minHeight: '100vh',
         }}
       >
-        <Toolbar sx={{ minHeight: '70px !important' }} /> {/* Spacer for AppBar */}
         <Box sx={{ 
           px: { xs: 1, sm: 2, md: 3, lg: 5, xl: 7 }, // רווחים רספונסיביים מימין ומשמאל
           py: 1.5, 
-          height: 'calc(100vh - 70px)', 
+          height: '100vh', // שינוי ל-100vh כי אין יותר AppBar
           overflow: 'auto',
           position: 'relative',
           '&::before': {

@@ -20,6 +20,7 @@ import {
   Company,
   Settings,
   Login,
+  AIAssistantPage,
 } from './pages';
 import Quotes from './pages/Quotes';
 
@@ -58,6 +59,7 @@ function App() {
             <Route path="/accounts" element={<ChartOfAccounts />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/company-management" element={<Company />} />
+            <Route path="/ai-assistant" element={<AIAssistantPage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

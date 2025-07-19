@@ -3,16 +3,9 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
   Button,
   Chip,
-  IconButton,
   TextField,
   FormControl,
   InputLabel,
@@ -20,7 +13,6 @@ import {
   MenuItem,
   Card,
   CardContent,
-  Toolbar,
   Divider,
   Menu,
   ListItemIcon,
@@ -29,7 +21,8 @@ import {
   Skeleton,
   Tooltip,
   Stack,
-  Grid
+  Grid,
+  Snackbar
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -44,7 +37,8 @@ import {
   Visibility as ViewIcon,
   Assessment as AssessmentIcon
 } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
+import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -52,7 +46,9 @@ import type { SalesOrder, SalesOrderStatus, Customer } from '../../types/entitie
 import salesOrdersApi from '../../services/salesOrdersApi';
 import { customersApi } from '../../services/customersApi';
 import CreateSalesOrderDialog from './CreateSalesOrderDialog';
-import { textFieldStyles, paperStyles, buttonStyles, tableStyles, cardStyles } from '../../styles/formStyles';
+import { textFieldStyles, paperStyles, buttonStyles, cardStyles } from '../../styles/formStyles';
+import { enhancedDataGridStyles } from '../../styles/enhancedStyles';
+import { useUIStore } from '../../stores';
 
 interface SalesOrdersListProps {
   companyId?: number;
@@ -93,8 +89,8 @@ export default function SalesOrdersList({
   initialOrderStatus = null,
   onDialogClose
 }: SalesOrdersListProps): React.ReactElement {
-  const theme = useTheme();
-  const isHebrew = theme.direction === 'rtl';
+  const { language } = useUIStore();
+  const isHebrew = language === 'he';
 
   // Data state
   const [orders, setOrders] = useState<SalesOrder[]>([]);
@@ -109,6 +105,15 @@ export default function SalesOrdersList({
   const [customerFilter, setCustomerFilter] = useState<number | ''>('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 25,
+  });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'warning' | 'info',
+  });
 
   // Load data
   const loadOrders = useCallback(async () => {
@@ -149,6 +154,20 @@ export default function SalesOrdersList({
       setCreateDialogOpen(true);
     }
   }, [shouldOpenCreateDialog]);
+
+  // Snackbar functions
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const closeSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  // Pagination functions
+  const handlePaginationChange = (newPaginationModel: { page: number; pageSize: number }) => {
+    setPaginationModel(newPaginationModel);
+  };
 
   // Filter orders based on search term
   const filteredOrders = orders.filter(order => {
@@ -203,9 +222,11 @@ export default function SalesOrdersList({
       try {
         await salesOrdersApi.deleteSalesOrder(order.id, companyId);
         setOrders(orders.filter(o => o.id !== order.id));
+        showSnackbar(isHebrew ? 'ההזמנה נמחקה בהצלחה' : 'Order deleted successfully');
       } catch (err) {
         console.error('Error deleting order:', err);
         setError(isHebrew ? 'שגיאה במחיקת ההזמנה' : 'Error deleting order');
+        showSnackbar(isHebrew ? 'שגיאה במחיקת ההזמנה' : 'Error deleting order', 'error');
       }
     }
     handleMenuClose();
@@ -228,6 +249,142 @@ export default function SalesOrdersList({
     console.log('Copy order:', order);
     handleMenuClose();
   };
+
+  // DataGrid columns definition
+  const columns: GridColDef[] = [
+    {
+      field: 'orderNumber',
+      headerName: isHebrew ? 'מספר הזמנה' : 'Order #',
+      width: 150,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {isHebrew ? 'מספר הזמנה' : 'Order #'}
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: '1rem' }}>
+          {params.value}
+        </Typography>
+      ),
+    },
+    {
+      field: 'customerName',
+      headerName: isHebrew ? 'לקוח' : 'Customer',
+      flex: 1,
+      minWidth: 200,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {isHebrew ? 'לקוח' : 'Customer'}
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+          {params.value}
+        </Typography>
+      ),
+    },
+    {
+      field: 'orderDate',
+      headerName: isHebrew ? 'תאריך' : 'Date',
+      width: 130,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {isHebrew ? 'תאריך' : 'Date'}
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '1rem' }}>
+          {format(new Date(params.value), 'dd/MM/yyyy', { 
+            locale: isHebrew ? he : undefined 
+          })}
+        </Typography>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: isHebrew ? 'סטטוס' : 'Status',
+      width: 150,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {isHebrew ? 'סטטוס' : 'Status'}
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Chip
+          label={getStatusLabel(params.value as SalesOrderStatus, isHebrew)}
+          color={getStatusColor(params.value as SalesOrderStatus)}
+          size="small"
+          sx={{ fontSize: '0.875rem', fontWeight: 500, borderRadius: 2 }}
+        />
+      ),
+    },
+    {
+      field: 'totalAmount',
+      headerName: isHebrew ? 'סכום' : 'Amount',
+      width: 130,
+      align: 'right',
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {isHebrew ? 'סכום' : 'Amount'}
+        </Typography>
+      ),
+      renderCell: (params) => {
+        const order = params.row as SalesOrder;
+        return (
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: '1rem' }}>
+            {order.currency === 'ILS' ? '₪' : order.currency} {params.value.toLocaleString()}
+          </Typography>
+        );
+      },
+    },
+    {
+      field: 'requiredDate',
+      headerName: isHebrew ? 'תאריך נדרש' : 'Required Date',
+      width: 140,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {isHebrew ? 'תאריך נדרש' : 'Required Date'}
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            color: params.value && new Date(params.value) < new Date() ? 'error.main' : 'text.secondary',
+            fontWeight: params.value && new Date(params.value) < new Date() ? 600 : 400,
+            fontSize: '1rem'
+          }}
+        >
+          {params.value ? format(new Date(params.value), 'dd/MM/yyyy', { 
+            locale: isHebrew ? he : undefined 
+          }) : '-'}
+        </Typography>
+      ),
+    },
+    {
+      field: 'actions',
+      type: 'actions',
+      headerName: isHebrew ? 'פעולות' : 'Actions',
+      width: 80,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          {isHebrew ? 'פעולות' : 'Actions'}
+        </Typography>
+      ),
+      getActions: (params) => [
+        <GridActionsCellItem
+          key="menu"
+          icon={
+            <Tooltip title={isHebrew ? 'פעולות' : 'Actions'}>
+              <MoreVertIcon />
+            </Tooltip>
+          }
+          label={isHebrew ? 'פעולות' : 'Actions'}
+          onClick={(event) => handleMenuOpen(event as React.MouseEvent<HTMLElement>, params.row as SalesOrder)}
+        />,
+      ],
+    },
+  ];
 
   if (loading) {
     return (
@@ -396,109 +553,54 @@ export default function SalesOrdersList({
         </Grid>
       </Grid>
 
-      {/* Orders Table */}
+      {/* Orders DataGrid */}
       <Paper sx={paperStyles}>
-        <TableContainer>
-          <Table sx={tableStyles}>
-            <TableHead>
-              <TableRow>
-                <TableCell>{isHebrew ? 'מספר הזמנה' : 'Order #'}</TableCell>
-                <TableCell>{isHebrew ? 'לקוח' : 'Customer'}</TableCell>
-                <TableCell>{isHebrew ? 'תאריך' : 'Date'}</TableCell>
-                <TableCell>{isHebrew ? 'סטטוס' : 'Status'}</TableCell>
-                <TableCell align="right">{isHebrew ? 'סכום' : 'Amount'}</TableCell>
-                <TableCell>{isHebrew ? 'תאריך נדרש' : 'Required Date'}</TableCell>
-                <TableCell align="center" width={80}>{isHebrew ? 'פעולות' : 'Actions'}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredOrders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                    <Box sx={{ 
-                      display: "flex", justifyContent: "center", alignItems: "center", 
-                      minHeight: 200, flexDirection: "column", gap: 2 
-                    }}>
-                      <AssessmentIcon sx={{ fontSize: 64, color: 'text.secondary', opacity: 0.5 }} />
-                      <Typography variant="h6" color="textSecondary" sx={{ fontWeight: 500 }}>
-                        {isHebrew ? 'לא נמצאו הזמנות' : 'No orders found'}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary" sx={{ maxWidth: 400, textAlign: 'center' }}>
-                        {isHebrew ? 'לחץ על "הזמנה חדשה" כדי ליצור הזמנה ראשונה או נסה לשנות את המסננים שלך' : 'Click "New Order" to create your first order or try adjusting your filters'}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredOrders.map((order) => (
-                  <TableRow key={order.id} hover>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                        {order.orderNumber}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: 'text.primary' }}>
-                        {order.customerName}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {format(order.orderDate, 'dd/MM/yyyy', { 
-                          locale: isHebrew ? he : undefined 
-                        })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={getStatusLabel(order.status, isHebrew)}
-                        color={getStatusColor(order.status)}
-                        size="small"
-                        sx={{ fontSize: '0.875rem', fontWeight: 500, borderRadius: 2 }}
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                        {order.currency === 'ILS' ? '₪' : order.currency} {order.totalAmount.toLocaleString()}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: order.requiredDate && order.requiredDate < new Date() ? 'error.main' : 'text.secondary',
-                          fontWeight: order.requiredDate && order.requiredDate < new Date() ? 600 : 400
-                        }}
-                      >
-                        {order.requiredDate ? format(order.requiredDate, 'dd/MM/yyyy', { 
-                          locale: isHebrew ? he : undefined 
-                        }) : '-'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Tooltip title={isHebrew ? 'פעולות' : 'Actions'}>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => handleMenuOpen(e, order)}
-                          sx={{
-                            '&:hover': {
-                              backgroundColor: (theme) => theme.palette.mode === 'light'
-                                ? 'rgba(25, 118, 210, 0.08)' : 'rgba(59, 130, 246, 0.12)',
-                              transform: 'scale(1.1)',
-                            },
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                          }}
-                        >
-                          <MoreVertIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        {/* Search Bar */}
+        <Box sx={{ p: 3, pb: 0 }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            label={isHebrew ? 'חיפוש' : 'Search'}
+            placeholder={isHebrew ? 'חיפוש לפי מספר הזמנה, לקוח או הערות...' : 'Search by order number, customer or notes...'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{
+              ...textFieldStyles,
+              '& .MuiInputLabel-root': {
+                fontSize: '1rem'
+              }
+            }}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+            }}
+          />
+        </Box>
+
+        {/* Data Grid */}
+        <Box sx={enhancedDataGridStyles}>
+          <DataGrid
+            rows={filteredOrders}
+            columns={columns}
+            loading={loading}
+            pagination
+            paginationMode="client"
+            rowCount={filteredOrders.length}
+            paginationModel={paginationModel}
+            onPaginationModelChange={handlePaginationChange}
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
+            localeText={
+              isHebrew
+                ? {
+                    noRowsLabel: loading ? 'טוען...' : 'אין הזמנות',
+                    paginationRowsPerPage: 'שורות בעמוד:',
+                  }
+                : {
+                    noRowsLabel: loading ? 'Loading...' : 'No orders found',
+                  }
+            }
+          />
+        </Box>
       </Paper>
 
       {/* Actions Menu */}
@@ -635,6 +737,17 @@ export default function SalesOrdersList({
         companyId={companyId}
         initialStatus={initialOrderStatus}
       />
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={closeSnackbar}
+      >
+        <Alert onClose={closeSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

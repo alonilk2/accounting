@@ -70,6 +70,16 @@ public class ChatResponse
     /// List of function names that were executed
     /// </summary>
     public List<string>? ExecutedFunctions { get; set; }
+    
+    /// <summary>
+    /// Type of message - text or interactive
+    /// </summary>
+    public string Type { get; set; } = "text";
+    
+    /// <summary>
+    /// Interactive message data for forms, confirmations, etc.
+    /// </summary>
+    public InteractiveMessageData? InteractiveData { get; set; }
 }
 
 /// <summary>
@@ -148,4 +158,125 @@ public class ChatMessageDto
     public int? ResponseTimeMs { get; set; }
     public string? EntityType { get; set; }
     public int? EntityId { get; set; }
+}
+
+/// <summary>
+/// Chat session DTO
+/// </summary>
+public class ChatSessionDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public int MessageCount { get; set; }
+    public string? LastMessage { get; set; }
+}
+
+/// <summary>
+/// Chat sessions response
+/// </summary>
+public class ChatSessionsResponse
+{
+    public List<ChatSessionDto> Sessions { get; set; } = new();
+    public int TotalCount { get; set; }
+}
+
+/// <summary>
+/// Interactive message data for complex UI interactions
+/// </summary>
+public class InteractiveMessageData
+{
+    /// <summary>
+    /// Type of interactive component
+    /// </summary>
+    public string ComponentType { get; set; } = string.Empty; // "confirmation", "form", "selection", "action"
+    
+    /// <summary>
+    /// Message title
+    /// </summary>
+    public string Title { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Optional description
+    /// </summary>
+    public string? Description { get; set; }
+    
+    /// <summary>
+    /// Additional data for the component
+    /// </summary>
+    public object? Data { get; set; }
+    
+    /// <summary>
+    /// Available actions for the user
+    /// </summary>
+    public List<InteractiveAction>? Actions { get; set; }
+    
+    /// <summary>
+    /// Form fields for form-type messages
+    /// </summary>
+    public List<FormField>? Fields { get; set; }
+    
+    /// <summary>
+    /// Selection options for selection-type messages
+    /// </summary>
+    public List<SelectionOption>? Options { get; set; }
+}
+
+/// <summary>
+/// Interactive action definition
+/// </summary>
+public class InteractiveAction
+{
+    public string Id { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public string Variant { get; set; } = "contained"; // "contained", "outlined", "text"
+    public string? Color { get; set; } = "primary"; // "primary", "secondary", "error", etc.
+    public string Action { get; set; } = string.Empty;
+    public object? Data { get; set; }
+}
+
+/// <summary>
+/// Form field definition for interactive forms
+/// </summary>
+public class FormField
+{
+    public string Id { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public string Type { get; set; } = "text"; // "text", "number", "email", "select", "date", etc.
+    public bool Required { get; set; } = false;
+    public object? DefaultValue { get; set; }
+    public List<FieldOption>? Options { get; set; }
+    public FieldValidation? Validation { get; set; }
+}
+
+/// <summary>
+/// Field option for select fields
+/// </summary>
+public class FieldOption
+{
+    public object Value { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Field validation rules
+/// </summary>
+public class FieldValidation
+{
+    public int? Min { get; set; }
+    public int? Max { get; set; }
+    public string? Pattern { get; set; }
+    public string? Message { get; set; }
+}
+
+/// <summary>
+/// Selection option for selection-type messages
+/// </summary>
+public class SelectionOption
+{
+    public string Id { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public object Value { get; set; } = string.Empty;
 }

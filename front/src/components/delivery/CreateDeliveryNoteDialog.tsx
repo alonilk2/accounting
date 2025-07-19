@@ -42,6 +42,7 @@ import { deliveryNotesApi, type CreateDeliveryNoteRequest, type DeliveryNoteStat
 import { customersApi } from '../../services/customersApi';
 import { itemsApi } from '../../services/itemsApi';
 import type { Customer, Item, SalesOrder, DeliveryNote } from '../../types/entities';
+import { textFieldStyles, dialogStyles, buttonStyles } from '../../styles/formStyles';
 
 export interface CreateDeliveryNoteDialogProps {
   open: boolean;
@@ -336,13 +337,14 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
         onClose={handleClose} 
         maxWidth="lg" 
         fullWidth
+        sx={dialogStyles}
         PaperProps={{
           sx: { minHeight: '80vh' }
         }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ fontSize: '1.5rem', fontWeight: 600, color: 'text.primary', pb: 2 }}>
           <Box display="flex" alignItems="center">
-            <ShippingIcon sx={{ mr: 1, color: 'primary.main' }} />
+            <ShippingIcon sx={{ mr: 1, color: 'primary.main', fontSize: 32 }} />
             {fromSalesOrder 
               ? `תעודת משלוח מהזמנה ${fromSalesOrder.orderNumber}`
               : 'תעודת משלוח חדשה'
@@ -378,6 +380,7 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
                       onChange={(e) => setFormData({ ...formData, customerId: e.target.value as number })}
                       label="לקוח"
                       disabled={!!fromSalesOrder}
+                      sx={textFieldStyles}
                     >
                       {customers.map((customer) => (
                         <MenuItem key={customer.id} value={customer.id}>
@@ -459,6 +462,7 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
                     value={formData.deliveryAddress}
                     onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
                     placeholder={selectedCustomer?.address || 'הזן כתובת משלוח'}
+                    sx={textFieldStyles}
                   />
                 </Grid>
 
@@ -468,6 +472,7 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
                     label="איש קשר"
                     value={formData.contactPerson}
                     onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
+                    sx={textFieldStyles}
                   />
                 </Grid>
 
@@ -477,6 +482,7 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
                     label="טלפון איש קשר"
                     value={formData.contactPhone}
                     onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                    sx={textFieldStyles}
                   />
                 </Grid>
               </Grid>
@@ -496,6 +502,7 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
                     label="שם נהג"
                     value={formData.driverName}
                     onChange={(e) => setFormData({ ...formData, driverName: e.target.value })}
+                    sx={textFieldStyles}
                   />
                 </Grid>
 
@@ -505,6 +512,7 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
                     label="מספר רכב"
                     value={formData.vehiclePlate}
                     onChange={(e) => setFormData({ ...formData, vehiclePlate: e.target.value })}
+                    sx={textFieldStyles}
                   />
                 </Grid>
 
@@ -514,6 +522,7 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
                     label="מספר מעקב"
                     value={formData.trackingNumber}
                     onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
+                    sx={textFieldStyles}
                   />
                 </Grid>
 
@@ -523,6 +532,7 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
                     label="שירות שליחות"
                     value={formData.courierService}
                     onChange={(e) => setFormData({ ...formData, courierService: e.target.value })}
+                    sx={textFieldStyles}
                   />
                 </Grid>
 
@@ -534,6 +544,7 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
                     label="הוראות משלוח"
                     value={formData.deliveryInstructions}
                     onChange={(e) => setFormData({ ...formData, deliveryInstructions: e.target.value })}
+                    sx={textFieldStyles}
                   />
                 </Grid>
 
@@ -545,6 +556,7 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
                     label="הערות"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    sx={textFieldStyles}
                   />
                 </Grid>
               </Grid>
@@ -664,14 +676,18 @@ const CreateDeliveryNoteDialog: React.FC<CreateDeliveryNoteDialogProps> = ({
           )}
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleClose}>
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <Button 
+            onClick={handleClose}
+            sx={buttonStyles.secondary}
+          >
             ביטול
           </Button>
           <Button
             onClick={handleSubmit}
             variant="contained"
             disabled={loading || loadingData || !formData.customerId || lines.length === 0}
+            sx={buttonStyles.primary}
           >
             {loading ? 'יוצר...' : 'צור תעודת משלוח'}
           </Button>

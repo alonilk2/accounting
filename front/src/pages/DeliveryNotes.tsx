@@ -4,20 +4,10 @@ import {
   Box,
   Typography,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
   Chip,
-  IconButton,
-  Menu,
-  MenuItem,
   Alert,
   Snackbar,
-  TablePagination,
   TextField,
   InputAdornment,
   FormControl,
@@ -29,16 +19,14 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  ListItemIcon,
-  ListItemText,
   useTheme,
-  Divider
 } from '@mui/material';
+import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
-  MoreVert as MoreVertIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Print as PrintIcon,
@@ -50,7 +38,8 @@ import {
   Route as RouteIcon,
   Person as PersonIcon,
   LocationOn as LocationIcon,
-  Today as TodayIcon
+  Today as TodayIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -61,6 +50,9 @@ import { deliveryNotesApi } from '../services/deliveryNotesApi';
 import { customersApi } from '../services/customersApi';
 import type { DeliveryNote, Customer } from '../types/entities';
 import { useAuthStore } from '../stores';
+import CreateDeliveryNoteDialog from '../components/delivery/CreateDeliveryNoteDialog';
+import { dialogStyles, paperStyles, buttonStyles } from '../styles/formStyles';
+import { enhancedDataGridStyles } from '../styles/enhancedStyles';
 
 // Helper function to get status label
 const getStatusLabel = (status: string): string => {
@@ -110,15 +102,16 @@ const DeliveryNotesPage: React.FC = () => {
   const [toDate, setToDate] = useState<Date | null>(null);
   
   // Pagination
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 25,
+  });
   const [totalCount, setTotalCount] = useState(0);
 
   // UI State
-  const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<DeliveryNote | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [selectedDeliveryNote, setSelectedDeliveryNote] = useState<DeliveryNote | null>(null);
 
   // Load data
   const loadDeliveryNotes = useCallback(async () => {
@@ -137,8 +130,8 @@ const DeliveryNotesPage: React.FC = () => {
       const data = await deliveryNotesApi.getDeliveryNotes(
         currentCompany?.id || 1,
         filters,
-        page + 1,
-        rowsPerPage
+        paginationModel.page + 1,
+        paginationModel.pageSize
       );
       
       setDeliveryNotes(data);
@@ -150,7 +143,7 @@ const DeliveryNotesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentCompany, customerFilter, statusFilter, fromDate, toDate, searchTerm, page, rowsPerPage]);
+  }, [currentCompany, customerFilter, statusFilter, fromDate, toDate, searchTerm, paginationModel]);
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -178,22 +171,28 @@ const DeliveryNotesPage: React.FC = () => {
     }
   }, [searchParams]);
 
+  // Handle pagination changes
+  const handlePaginationChange = (newPaginationModel: { page: number; pageSize: number }) => {
+    setPaginationModel(newPaginationModel);
+  };
+
+  // Handle search with debouncing
+  const handleSearch = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+    const newPaginationModel = { ...paginationModel, page: 0 };
+    setPaginationModel(newPaginationModel);
+  };
+
+  // Handle refresh
+  const handleRefresh = () => {
+    loadDeliveryNotes();
+  };
+
   // Action handlers
-  const handleActionMenuOpen = (event: React.MouseEvent<HTMLElement>, deliveryNote: DeliveryNote) => {
-    setActionMenuAnchor(event.currentTarget);
-    setSelectedDeliveryNote(deliveryNote);
-  };
-
-  const handleActionMenuClose = () => {
-    setActionMenuAnchor(null);
-    setSelectedDeliveryNote(null);
-  };
-
   const handleEdit = (deliveryNote: DeliveryNote) => {
     // TODO: Implement edit functionality
     console.log('Edit delivery note:', deliveryNote.id);
     setSuccess(`עריכת תעודת משלוח ${deliveryNote.deliveryNoteNumber}`);
-    handleActionMenuClose();
   };
 
   const handleDelete = async () => {
@@ -215,12 +214,10 @@ const DeliveryNotesPage: React.FC = () => {
     }
   };
 
-  const handleStatusUpdate = async (status: 'Draft' | 'Prepared' | 'InTransit' | 'Delivered' | 'Returned' | 'Cancelled') => {
-    if (!selectedDeliveryNote) return;
-
+  const handleStatusUpdate = async (status: 'Draft' | 'Prepared' | 'InTransit' | 'Delivered' | 'Returned' | 'Cancelled', deliveryNote: DeliveryNote) => {
     try {
       await deliveryNotesApi.updateDeliveryNoteStatus(
-        selectedDeliveryNote.id,
+        deliveryNote.id,
         status,
         currentCompany?.id || 1,
         status === 'Delivered' ? {
@@ -229,8 +226,7 @@ const DeliveryNotesPage: React.FC = () => {
         } : undefined
       );
       
-      setSuccess(`סטטוס תעודת משלוח ${selectedDeliveryNote.deliveryNoteNumber} עודכן ל${getStatusLabel(status)}`);
-      handleActionMenuClose();
+      setSuccess(`סטטוס תעודת משלוח ${deliveryNote.deliveryNoteNumber} עודכן ל${getStatusLabel(status)}`);
       loadDeliveryNotes();
     } catch (err) {
       console.error('Error updating status:', err);
@@ -242,14 +238,12 @@ const DeliveryNotesPage: React.FC = () => {
     // TODO: Implement print functionality
     console.log('Print delivery note:', deliveryNote.id);
     setSuccess(`הדפסת תעודת משלוח ${deliveryNote.deliveryNoteNumber}`);
-    handleActionMenuClose();
   };
 
   const handleEmail = (deliveryNote: DeliveryNote) => {
     // TODO: Implement email functionality
     console.log('Email delivery note:', deliveryNote.id);
     setSuccess(`שליחת תעודת משלוח ${deliveryNote.deliveryNoteNumber} במייל`);
-    handleActionMenuClose();
   };
 
   // Filter handlers
@@ -259,16 +253,8 @@ const DeliveryNotesPage: React.FC = () => {
     setCustomerFilter('');
     setFromDate(null);
     setToDate(null);
-    setPage(0);
-  };
-
-  const handlePageChange = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    const newPaginationModel = { ...paginationModel, page: 0 };
+    setPaginationModel(newPaginationModel);
   };
 
   const canEdit = (deliveryNote: DeliveryNote) => {
@@ -287,46 +273,319 @@ const DeliveryNotesPage: React.FC = () => {
     return deliveryNote.status === 'Prepared';
   };
 
-  if (loading && deliveryNotes.length === 0) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Typography>טוען תעודות משלוח...</Typography>
-      </Box>
-    );
-  }
+  // Define DataGrid columns
+  const columns: GridColDef[] = [
+    {
+      field: 'deliveryNoteNumber',
+      headerName: 'מספר תעודה',
+      flex: 1,
+      minWidth: 150,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          מספר תעודה
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center">
+          <AssignmentIcon sx={{ mr: 1, color: 'primary.main' }} />
+          <Typography variant="body1" sx={{ fontSize: '1rem', fontWeight: 'medium' }}>
+            {params.value}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'customerName',
+      headerName: 'לקוח',
+      flex: 1,
+      minWidth: 180,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          לקוח
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center">
+          <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />
+          <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+            {params.value}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'deliveryDate',
+      headerName: 'תאריך משלוח',
+      width: 130,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          תאריך משלוח
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center">
+          <TodayIcon sx={{ mr: 1, color: 'text.secondary' }} />
+          <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+            {new Date(params.value).toLocaleDateString('he-IL')}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: 'סטטוס',
+      width: 120,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          סטטוס
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Chip
+          label={getStatusLabel(params.value)}
+          color={getStatusColor(params.value)}
+          size="small"
+          sx={{ 
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            borderRadius: 2
+          }}
+        />
+      ),
+    },
+    {
+      field: 'deliveryAddress',
+      headerName: 'כתובת משלוח',
+      flex: 1,
+      minWidth: 200,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          כתובת משלוח
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center">
+          <LocationIcon sx={{ mr: 1, color: 'text.secondary' }} />
+          <Typography variant="body1" sx={{ fontSize: '1rem' }} noWrap>
+            {params.value || 'לא צוין'}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'driverName',
+      headerName: 'נהג',
+      width: 120,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          נהג
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+          {params.value || 'לא צוין'}
+        </Typography>
+      ),
+    },
+    {
+      field: 'totalQuantity',
+      headerName: 'כמות כוללת',
+      width: 120,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          כמות כוללת
+        </Typography>
+      ),
+      renderCell: (params) => (
+        <Typography variant="body1" sx={{ fontSize: '1rem', fontWeight: 'medium' }}>
+          {params.value}
+        </Typography>
+      ),
+    },
+    {
+      field: 'actions',
+      type: 'actions',
+      headerName: 'פעולות',
+      width: 150,
+      renderHeader: () => (
+        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+          פעולות
+        </Typography>
+      ),
+      getActions: (params) => {
+        const deliveryNote = params.row as DeliveryNote;
+        const actions = [];
+
+        // Edit action for draft and prepared orders
+        if (canEdit(deliveryNote)) {
+          actions.push(
+            <GridActionsCellItem
+              key="edit"
+              icon={<EditIcon sx={{ fontSize: 20 }} />}
+              label="עריכה"
+              onClick={() => handleEdit(deliveryNote)}
+            />
+          );
+        }
+
+        // Status update actions
+        if (canMarkInTransit(deliveryNote)) {
+          actions.push(
+            <GridActionsCellItem
+              key="in-transit"
+              icon={<RouteIcon sx={{ fontSize: 20 }} />}
+              label="סמן כבדרך"
+              onClick={() => handleStatusUpdate('InTransit', deliveryNote)}
+            />
+          );
+        }
+
+        if (canMarkAsDelivered(deliveryNote)) {
+          actions.push(
+            <GridActionsCellItem
+              key="delivered"
+              icon={<CheckCircleIcon sx={{ fontSize: 20 }} />}
+              label="סמן כנמסר"
+              onClick={() => handleStatusUpdate('Delivered', deliveryNote)}
+            />
+          );
+        }
+
+        // Print action
+        actions.push(
+          <GridActionsCellItem
+            key="print"
+            icon={<PrintIcon sx={{ fontSize: 20 }} />}
+            label="הדפסה"
+            onClick={() => handlePrint(deliveryNote)}
+          />
+        );
+
+        // Email action
+        actions.push(
+          <GridActionsCellItem
+            key="email"
+            icon={<EmailIcon sx={{ fontSize: 20 }} />}
+            label="שליחה במייל"
+            onClick={() => handleEmail(deliveryNote)}
+          />
+        );
+
+        // Cancel action
+        if (canCancel(deliveryNote)) {
+          actions.push(
+            <GridActionsCellItem
+              key="cancel"
+              icon={<CancelIcon sx={{ fontSize: 20, color: 'error.main' }} />}
+              label="ביטול"
+              onClick={() => handleStatusUpdate('Cancelled', deliveryNote)}
+            />
+          );
+        }
+
+        // Delete action for draft and prepared orders
+        if (canEdit(deliveryNote)) {
+          actions.push(
+            <GridActionsCellItem
+              key="delete"
+              icon={<DeleteIcon sx={{ fontSize: 20, color: 'error.main' }} />}
+              label="מחיקה"
+              onClick={() => {
+                setSelectedDeliveryNote(deliveryNote);
+                setDeleteDialogOpen(true);
+              }}
+            />
+          );
+        }
+
+        return actions;
+      },
+    },
+  ];
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
-      <Box p={3} dir={isRTL ? 'rtl' : 'ltr'}>
+      <Box sx={{ 
+        p: { xs: 3, md: 4 }, 
+        backgroundColor: 'background.default',
+        minHeight: '100vh'
+      }} dir={isRTL ? 'rtl' : 'ltr'}>
         {/* Header */}
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4" component="h1" fontWeight="bold">
-            <ShippingIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+          <Typography
+            variant="h3"
+            sx={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: 2,
+              fontWeight: 600,
+              color: 'primary.main'
+            }}
+          >
+            <ShippingIcon sx={{ fontSize: 40 }} />
             תעודות משלוח
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
-            size="large"
-          >
-            תעודת משלוח חדשה
-          </Button>
+          
+          <Box display="flex" gap={2}>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={handleRefresh}
+              disabled={loading}
+              sx={buttonStyles.secondary}
+            >
+              רענן
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreateDialogOpen(true)}
+              disabled={loading}
+              sx={buttonStyles.primary}
+            >
+              תעודת משלוח חדשה
+            </Button>
+          </Box>
         </Box>
 
-        {/* Filters */}
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+        <Paper sx={paperStyles}>
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+
+          {/* Filters */}
+          <Box display="flex" gap={2} flexWrap="wrap" alignItems="center" mb={4}>
             <TextField
               placeholder="חיפוש תעודות משלוח..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               size="small"
-              sx={{ minWidth: 200 }}
+              sx={{
+                minWidth: 200,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1.1rem',
+                  backgroundColor: 'background.paper',
+                  '&:hover': {
+                    backgroundColor: (theme) => theme.palette.mode === 'light' 
+                      ? 'rgba(0,0,0,0.02)' 
+                      : 'rgba(255,255,255,0.05)',
+                  },
+                  '&.Mui-focused': {
+                    backgroundColor: 'background.paper',
+                  }
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: '1rem'
+                }
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon sx={{ color: 'text.secondary' }} />
                   </InputAdornment>
                 ),
               }}
@@ -387,169 +646,38 @@ const DeliveryNotesPage: React.FC = () => {
               נקה מסננים
             </Button>
           </Box>
+
+          {/* Data Grid */}
+          <Box sx={enhancedDataGridStyles}>
+            <DataGrid
+              rows={deliveryNotes}
+              columns={columns}
+              loading={loading}
+              pagination
+              paginationMode="server"
+              rowCount={totalCount}
+              paginationModel={paginationModel}
+              onPaginationModelChange={handlePaginationChange}
+              pageSizeOptions={[10, 25, 50]}
+              disableRowSelectionOnClick
+              localeText={{
+                noRowsLabel: loading ? 'טוען...' : 'אין תעודות משלוח',
+                paginationRowsPerPage: 'שורות בעמוד:',
+              }}
+            />
+          </Box>
         </Paper>
 
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Table */}
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>מספר תעודה</TableCell>
-                <TableCell>לקוח</TableCell>
-                <TableCell>תאריך משלוח</TableCell>
-                <TableCell>סטטוס</TableCell>
-                <TableCell>כתובת משלוח</TableCell>
-                <TableCell>נהג</TableCell>
-                <TableCell>כמות כוללת</TableCell>
-                <TableCell align="center">פעולות</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {deliveryNotes.map((deliveryNote) => (
-                <TableRow key={deliveryNote.id} hover>
-                  <TableCell>
-                    <Box display="flex" alignItems="center">
-                      <AssignmentIcon sx={{ mr: 1, color: 'primary.main' }} />
-                      <Typography variant="body2" fontWeight="medium">
-                        {deliveryNote.deliveryNoteNumber}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box display="flex" alignItems="center">
-                      <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                      {deliveryNote.customerName}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box display="flex" alignItems="center">
-                      <TodayIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                      {deliveryNote.deliveryDate.toLocaleDateString('he-IL')}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getStatusLabel(deliveryNote.status)}
-                      color={getStatusColor(deliveryNote.status)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box display="flex" alignItems="center">
-                      <LocationIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                      <Typography variant="body2" noWrap>
-                        {deliveryNote.deliveryAddress || 'לא צוין'}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {deliveryNote.driverName || 'לא צוין'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="medium">
-                      {deliveryNote.totalQuantity}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      onClick={(e) => handleActionMenuOpen(e, deliveryNote)}
-                      size="small"
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {/* Pagination */}
-        <TablePagination
-          component="div"
-          count={totalCount}
-          page={page}
-          onPageChange={handlePageChange}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          labelRowsPerPage="שורות בעמוד:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} מתוך ${count}`}
-        />
-
-        {/* Action Menu */}
-        <Menu
-          anchorEl={actionMenuAnchor}
-          open={Boolean(actionMenuAnchor)}
-          onClose={handleActionMenuClose}
-        >
-          {selectedDeliveryNote && canEdit(selectedDeliveryNote) && (
-            <MenuItem onClick={() => handleEdit(selectedDeliveryNote)}>
-              <ListItemIcon><EditIcon /></ListItemIcon>
-              <ListItemText>עריכה</ListItemText>
-            </MenuItem>
-          )}
-
-          {selectedDeliveryNote && canMarkInTransit(selectedDeliveryNote) && (
-            <MenuItem onClick={() => handleStatusUpdate('InTransit')}>
-              <ListItemIcon><RouteIcon /></ListItemIcon>
-              <ListItemText>סמן כבדרך</ListItemText>
-            </MenuItem>
-          )}
-
-          {selectedDeliveryNote && canMarkAsDelivered(selectedDeliveryNote) && (
-            <MenuItem onClick={() => handleStatusUpdate('Delivered')}>
-              <ListItemIcon><CheckCircleIcon /></ListItemIcon>
-              <ListItemText>סמן כנמסר</ListItemText>
-            </MenuItem>
-          )}
-
-          <Divider />
-
-          <MenuItem onClick={() => selectedDeliveryNote && handlePrint(selectedDeliveryNote)}>
-            <ListItemIcon><PrintIcon /></ListItemIcon>
-            <ListItemText>הדפסה</ListItemText>
-          </MenuItem>
-
-          <MenuItem onClick={() => selectedDeliveryNote && handleEmail(selectedDeliveryNote)}>
-            <ListItemIcon><EmailIcon /></ListItemIcon>
-            <ListItemText>שליחה במייל</ListItemText>
-          </MenuItem>
-
-          <Divider />
-
-          {selectedDeliveryNote && canCancel(selectedDeliveryNote) && (
-            <MenuItem 
-              onClick={() => handleStatusUpdate('Cancelled')}
-              sx={{ color: 'error.main' }}
-            >
-              <ListItemIcon><CancelIcon color="error" /></ListItemIcon>
-              <ListItemText>ביטול</ListItemText>
-            </MenuItem>
-          )}
-
-          {selectedDeliveryNote && canEdit(selectedDeliveryNote) && (
-            <MenuItem 
-              onClick={() => setDeleteDialogOpen(true)}
-              sx={{ color: 'error.main' }}
-            >
-              <ListItemIcon><DeleteIcon color="error" /></ListItemIcon>
-              <ListItemText>מחיקה</ListItemText>
-            </MenuItem>
-          )}
-        </Menu>
-
         {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-          <DialogTitle>אישור מחיקה</DialogTitle>
+        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} sx={dialogStyles}>
+          <DialogTitle sx={{ 
+            fontSize: '1.5rem',
+            fontWeight: 600,
+            color: 'text.primary',
+            pb: 2
+          }}>
+            אישור מחיקה
+          </DialogTitle>
           <DialogContent>
             <DialogContentText>
               האם אתה בטוח שברצונך למחוק את תעודת המשלוח{' '}
@@ -558,9 +686,19 @@ const DeliveryNotesPage: React.FC = () => {
               פעולה זו אינה הפיכה.
             </DialogContentText>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDeleteDialogOpen(false)}>ביטול</Button>
-            <Button onClick={handleDelete} color="error" variant="contained">
+          <DialogActions sx={{ p: 3, gap: 2 }}>
+            <Button 
+              onClick={() => setDeleteDialogOpen(false)}
+              sx={buttonStyles.secondary}
+            >
+              ביטול
+            </Button>
+            <Button 
+              onClick={handleDelete} 
+              color="error" 
+              variant="contained"
+              sx={buttonStyles.primary}
+            >
               מחק
             </Button>
           </DialogActions>
@@ -571,42 +709,28 @@ const DeliveryNotesPage: React.FC = () => {
           open={Boolean(success)}
           autoHideDuration={6000}
           onClose={() => setSuccess(null)}
-          message={success}
-        />
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert 
+            onClose={() => setSuccess(null)} 
+            severity="success" 
+            sx={{ width: '100%' }}
+          >
+            {success}
+          </Alert>
+        </Snackbar>
 
-        {/* TODO: Add Create/Edit Dialog */}
-        <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="md" fullWidth>
-          <DialogTitle>תעודת משלוח חדשה</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              פונקציונליות יצירת תעודת משלוח תתווסף בקרוב...
-              <br />
-              API: /api/delivery-notes
-              <br />
-              הטופס יכלול:
-              <br />
-              • בחירת לקוח
-              <br />
-              • פרטי משלוח (כתובת, תאריך, נהג)
-              <br />
-              • רשימת פריטים למשלוח
-              <br />
-              • הערות והוראות משלוח
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCreateDialogOpen(false)}>סגור</Button>
-            <Button 
-              variant="contained" 
-              onClick={() => {
-                setSuccess('תעודת משלוח דוגמא נוצרה בהצלחה');
-                setCreateDialogOpen(false);
-              }}
-            >
-              צור תעודה (דוגמא)
-            </Button>
-          </DialogActions>
-        </Dialog>
+        {/* Create Delivery Note Dialog */}
+        <CreateDeliveryNoteDialog
+          open={createDialogOpen}
+          onClose={() => setCreateDialogOpen(false)}
+          onSuccess={(deliveryNote) => {
+            setSuccess(`תעודת משלוח ${deliveryNote.deliveryNoteNumber} נוצרה בהצלחה`);
+            setCreateDialogOpen(false);
+            loadDeliveryNotes(); // Refresh the list
+          }}
+          companyId={currentCompany?.id || 0}
+        />
       </Box>
     </LocalizationProvider>
   );

@@ -37,6 +37,15 @@ public interface IAIAssistantService
     Task ClearChatHistoryAsync(string sessionId, int companyId, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Get chat sessions for a company
+    /// </summary>
+    /// <param name="companyId">Company ID for multi-tenant filtering</param>
+    /// <param name="userId">User ID (optional, for filtering user's sessions)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Chat sessions response</returns>
+    Task<ChatSessionsResponse> GetChatSessionsAsync(int companyId, int? userId = null, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Get AI assistant configuration for a company
     /// </summary>
     /// <param name="companyId">Company ID</param>

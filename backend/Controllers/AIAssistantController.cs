@@ -156,6 +156,36 @@ public class AIAssistantController : ControllerBase
     }
 
     /// <summary>
+    /// Get chat sessions for the current company
+    /// </summary>
+    /// <returns>List of chat sessions</returns>
+    [HttpGet("sessions")]
+    [AllowAnonymous] // Allow anonymous access for development
+    public async Task<ActionResult<ChatSessionsResponse>> GetChatSessions()
+    {
+        try
+        {
+            var companyId = GetCompanyIdFromClaims();
+            var userId = GetUserIdFromClaims();
+
+            // For development: use default company ID if not available from claims
+            if (companyId == 0)
+            {
+                companyId = 1; // Development default company ID
+                _logger.LogWarning("Using development default company ID: {CompanyId}", companyId);
+            }
+
+            var response = await _aiAssistantService.GetChatSessionsAsync(companyId, userId);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving chat sessions");
+            return StatusCode(500, new { message = "שגיאה פנימית בשרת" });
+        }
+    }
+
+    /// <summary>
     /// Check if AI assistant is available for the current company
     /// </summary>
     /// <returns>Availability status</returns>

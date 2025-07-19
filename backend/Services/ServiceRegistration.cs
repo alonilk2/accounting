@@ -60,6 +60,7 @@ public static class ServiceRegistration
         services.AddScoped<IOpenAIService, OpenAIService>();
         // AI Function Services for function calling
         services.AddScoped<ICustomerFunctionService, CustomerFunctionService>();
+        services.AddScoped<IInvoiceFunctionService, InvoiceFunctionService>();
         
         // Azure Identity and Key Vault
         services.AddScoped<DefaultAzureCredential>();

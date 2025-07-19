@@ -19,6 +19,7 @@ interface AIAssistantActions {
   addMessage: (message: ChatMessage) => void;
   clearMessages: () => void;
   setTyping: (isTyping: boolean) => void;
+  handleInteractiveAction: (messageId: string, actionId: string, result?: unknown) => Promise<void>;
   
   // Session management
   createNewSession: () => void;
@@ -93,12 +94,19 @@ export const useAIAssistantStore = create<AIAssistantStore>()(
 
             const response = await aiAssistantAPI.sendMessage(request);
 
+            // Check if the response was successful
+            if (!response.isSuccess && !response.isSuccessful) {
+              throw new Error(response.errorMessage || 'שגיאה בשליחת ההודעה');
+            }
+
             // Create assistant message
             const assistantMessage: ChatMessage = {
               id: generateMessageId(),
               content: response.message,
               sender: 'assistant',
               timestamp: new Date(),
+              type: response.type === 'interactive' ? 'interactive' : 'text',
+              interactiveData: response.interactiveData
             };
 
             // Update state with response
@@ -134,6 +142,78 @@ export const useAIAssistantStore = create<AIAssistantStore>()(
           set({ isTyping }, false, 'ai/set-typing');
         },
 
+        handleInteractiveAction: async (messageId: string, actionId: string, result?: unknown) => {
+          set({ isLoading: true, error: null }, false, 'ai/interactive-action-start');
+          
+          try {
+            const state = get();
+            
+            // Find the interactive message and update it to show the user's choice
+            const updatedMessages = state.messages.map(msg => {
+              if (msg.id === messageId && msg.type === 'interactive') {
+                return {
+                  ...msg,
+                  type: 'text' as const,
+                  content: `${msg.interactiveData?.title}\n\n✅ ${actionId === 'confirm' ? 'אושר' : actionId === 'cancel' ? 'בוטל' : 'נבחר'}: ${JSON.stringify(result) || actionId}`
+                };
+              }
+              return msg;
+            });
+
+            set({ messages: updatedMessages }, false, 'ai/update-interactive-message');
+
+            // Send the action result to the AI
+            let actionMessage = '';
+            if (actionId === 'confirm') {
+              actionMessage = 'המשתמש אישר את הפעולה';
+            } else if (actionId === 'cancel') {
+              actionMessage = 'המשתמש ביטל את הפעולה';
+            } else if (actionId === 'submit' || actionId === 'select') {
+              actionMessage = `המשתמש שלח: ${JSON.stringify(result)}`;
+            } else {
+              actionMessage = `המשתמש בחר: ${actionId}`;
+            }
+
+            // Send follow-up message to AI
+            const request: ChatRequest = {
+              message: actionMessage,
+              sessionId: state.currentSession || undefined,
+              context: {
+                currentPage: 'ai-assistant',
+                metadata: { 
+                  interactiveResponse: true,
+                  originalMessageId: messageId,
+                  actionId,
+                  result 
+                }
+              }
+            };
+
+            const response = await aiAssistantAPI.sendMessage(request);
+
+            // Create assistant response message
+            const assistantMessage: ChatMessage = {
+              id: generateMessageId(),
+              content: response.message,
+              sender: 'assistant',
+              timestamp: new Date(),
+            };
+
+            set(state => ({
+              messages: [...state.messages, assistantMessage],
+              currentSession: response.sessionId,
+              isLoading: false,
+            }), false, 'ai/interactive-action-success');
+
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'שגיאה בעיבוד הפעולה';
+            set({
+              isLoading: false,
+              error: errorMessage
+            }, false, 'ai/interactive-action-error');
+          }
+        },
+
         // Session actions
         createNewSession: () => {
           const sessionId = generateSessionId();
@@ -147,11 +227,11 @@ export const useAIAssistantStore = create<AIAssistantStore>()(
           set({ isLoading: true, error: null }, false, 'ai/load-session-start');
           
           try {
-            const messages = await aiAssistantAPI.getSessionMessages(sessionId);
-            const chatMessages: ChatMessage[] = messages.map(msg => ({
-              id: generateMessageId(),
+            const response = await aiAssistantAPI.getSessionMessages(sessionId);
+            const chatMessages: ChatMessage[] = response.map((msg, index) => ({
+              id: `${sessionId}_${index}`,
               content: msg.message,
-              sender: 'assistant', // Assuming all stored messages are from assistant
+              sender: index % 2 === 0 ? 'user' : 'assistant',
               timestamp: new Date(),
             }));
 

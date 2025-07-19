@@ -27,17 +27,60 @@ import {
 import { useAIAssistantStore, useUIStore } from '../../stores';
 import { QuickQuestions } from './QuickQuestions';
 import { AISettings } from './AISettings';
+import InteractiveMessage from '../chat/InteractiveMessage';
 import type { ChatMessage } from '../../types/ai';
 
 const DRAWER_WIDTH = 400;
 
 interface MessageBubbleProps {
   message: ChatMessage;
+  onInteractiveAction?: (actionId: string, result?: unknown) => void;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onInteractiveAction }) => {
   const theme = useTheme();
   const isUser = message.sender === 'user';
+  
+  // Handle interactive messages
+  if (message.type === 'interactive' && message.interactiveData) {
+    return (
+      <Box
+        className="message-bubble"
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          gap: 1.5,
+          mb: 3,
+          px: 1,
+        }}
+      >
+        <Avatar
+          sx={{
+            width: 36,
+            height: 36,
+            bgcolor: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            border: '2px solid',
+            borderColor: theme.palette.background.paper,
+          }}
+        >
+          <AIIcon fontSize="small" />
+        </Avatar>
+        
+        <Box sx={{ flex: 1, maxWidth: '85%' }}>
+          <InteractiveMessage
+            data={message.interactiveData}
+            onAction={(actionId, result) => {
+              if (onInteractiveAction) {
+                onInteractiveAction(actionId, result);
+              }
+            }}
+          />
+        </Box>
+      </Box>
+    );
+  }
   
   return (
     <Box
@@ -368,6 +411,41 @@ export const AIAssistant: React.FC = () => {
   const { language } = useUIStore();
   const isHebrew = language === 'he';
 
+  const handleInteractiveAction = async (actionId: string, result?: unknown) => {
+    if (actionId === 'submit' && result) {
+      // Handle form submission
+      const formData = result as Record<string, unknown>;
+      let message = '';
+      
+      // Detect the type of form based on available fields
+      if (formData.name && formData.taxId) {
+        // Customer creation form
+        message = `צור לקוח חדש עם הפרטים הבאים:\n`;
+        message += `שם: ${formData.name}\n`;
+        message += `מספר זהות: ${formData.taxId}\n`;
+        if (formData.email) message += `אימייל: ${formData.email}\n`;
+        if (formData.phone) message += `טלפון: ${formData.phone}\n`;
+        if (formData.address) message += `כתובת: ${formData.address}\n`;
+        if (formData.contactPerson) message += `איש קשר: ${formData.contactPerson}\n`;
+        if (formData.paymentTerms) message += `תנאי תשלום: ${formData.paymentTerms} ימים\n`;
+      } else if (formData.customerId) {
+        // Invoice creation form  
+        message = `צור חשבונית חדשה עם הפרטים הבאים:\n`;
+        message += `לקוח: ${formData.customerId}\n`;
+        if (formData.dueDate) message += `תאריך פירעון: ${formData.dueDate}\n`;
+        if (formData.description) message += `תיאור: ${formData.description}\n`;
+        if (formData.notes) message += `הערות: ${formData.notes}\n`;
+      }
+      
+      if (message) {
+        await handleSendMessage(message);
+      }
+    } else if (actionId === 'cancel') {
+      // Handle cancellation - maybe show a message or just close
+      console.log('Interactive action cancelled');
+    }
+  };
+
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -606,7 +684,11 @@ export const AIAssistant: React.FC = () => {
         ) : (
           <>
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble 
+                key={message.id} 
+                message={message} 
+                onInteractiveAction={handleInteractiveAction}
+              />
             ))}
             
             <TypingIndicator show={isTyping} />

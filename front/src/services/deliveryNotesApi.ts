@@ -269,23 +269,23 @@ export class DeliveryNotesApi {
         params.append('searchTerm', filters.searchTerm);
       }
 
-      const response = await api.get<DeliveryNotesListResponse>(
+      const response = await api.get<DeliveryNoteResponse[]>(
         `${this.baseUrl}?${params.toString()}`
       );
 
-      // Check if response data exists and has deliveryNotes array
-      if (!response.data || !response.data.deliveryNotes) {
+      // Check if response data exists
+      if (!response.data) {
         console.warn('No delivery notes data received from server');
         return [];
       }
 
-      // Ensure deliveryNotes is an array
-      if (!Array.isArray(response.data.deliveryNotes)) {
-        console.warn('Delivery notes data is not an array:', response.data.deliveryNotes);
+      // Ensure response data is an array
+      if (!Array.isArray(response.data)) {
+        console.warn('Delivery notes data is not an array:', response.data);
         return [];
       }
 
-      return response.data.deliveryNotes.map(mapDeliveryNoteResponseToEntity);
+      return response.data.map(mapDeliveryNoteResponseToEntity);
     } catch (error) {
       console.error('Error fetching delivery notes:', error);
       throw error;

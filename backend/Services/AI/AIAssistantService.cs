@@ -16,17 +16,20 @@ public class AIAssistantService : IAIAssistantService
     private readonly AccountingDbContext _context;
     private readonly IOpenAIService _openAIService;
     private readonly ICustomerFunctionService _customerFunctionService;
+    private readonly IInvoiceFunctionService _invoiceFunctionService;
     private readonly ILogger<AIAssistantService> _logger;
 
     public AIAssistantService(
         AccountingDbContext context,
         IOpenAIService openAIService,
         ICustomerFunctionService customerFunctionService,
+        IInvoiceFunctionService invoiceFunctionService,
         ILogger<AIAssistantService> logger)
     {
         _context = context;
         _openAIService = openAIService;
         _customerFunctionService = customerFunctionService;
+        _invoiceFunctionService = invoiceFunctionService;
         _logger = logger;
     }
 
@@ -53,6 +56,20 @@ public class AIAssistantService : IAIAssistantService
 
             // Get or create session ID
             var sessionId = request.SessionId ?? Guid.NewGuid().ToString();
+
+            // Check if the user is requesting to create a customer or invoice
+            var interactiveResponse = await CheckForInteractiveRequestAsync(request.Message, companyId);
+            if (interactiveResponse != null)
+            {
+                return new ChatResponse
+                {
+                    Message = interactiveResponse.Title,
+                    SessionId = sessionId,
+                    IsSuccess = true,
+                    Type = "interactive",
+                    InteractiveData = interactiveResponse
+                };
+            }
 
             // Get AI configuration for the company
             var config = await GetConfigAsync(companyId, cancellationToken);
@@ -261,6 +278,41 @@ public class AIAssistantService : IAIAssistantService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<ChatSessionsResponse> GetChatSessionsAsync(int companyId, int? userId = null, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Set<ChatMessage>()
+            .Where(m => m.CompanyId == companyId);
+
+        if (userId.HasValue)
+        {
+            query = query.Where(m => m.UserId == userId.Value || m.Role == "assistant");
+        }
+
+        var sessions = await query
+            .GroupBy(m => m.SessionId)
+            .Select(g => new ChatSessionDto
+            {
+                Id = g.Key,
+                Title = g.OrderBy(m => m.Timestamp).First().Content.Length > 50 
+                    ? g.OrderBy(m => m.Timestamp).First().Content.Substring(0, 50) + "..."
+                    : g.OrderBy(m => m.Timestamp).First().Content,
+                CreatedAt = g.Min(m => m.Timestamp),
+                UpdatedAt = g.Max(m => m.Timestamp),
+                MessageCount = g.Count(),
+                LastMessage = g.OrderByDescending(m => m.Timestamp).First().Content.Length > 100
+                    ? g.OrderByDescending(m => m.Timestamp).First().Content.Substring(0, 100) + "..."
+                    : g.OrderByDescending(m => m.Timestamp).First().Content
+            })
+            .OrderByDescending(s => s.UpdatedAt)
+            .ToListAsync(cancellationToken);
+
+        return new ChatSessionsResponse
+        {
+            Sessions = sessions,
+            TotalCount = sessions.Count
+        };
+    }
+
     public async Task<AIAssistantConfig> GetConfigAsync(int companyId, CancellationToken cancellationToken = default)
     {
         var config = await _context.Set<AIAssistantConfig>()
@@ -269,7 +321,7 @@ public class AIAssistantService : IAIAssistantService
         if (config == null)
         {
             // Create default configuration with dynamic function list
-            var systemPrompt = BuildSystemPrompt();
+            var systemPrompt = BuildSystemPrompt(companyId);
             
             config = new AIAssistantConfig
             {
@@ -288,7 +340,7 @@ public class AIAssistantService : IAIAssistantService
         else
         {
             // Update system prompt with current functions if needed
-            var currentPrompt = BuildSystemPrompt();
+            var currentPrompt = BuildSystemPrompt(companyId);
             if (config.SystemPrompt != currentPrompt)
             {
                 config.SystemPrompt = currentPrompt;
@@ -488,13 +540,12 @@ public class AIAssistantService : IAIAssistantService
 
         // Always include customer functions for accounting context
         functions.AddRange(_customerFunctionService.GetCustomerFunctions());
+        
+        // Always include invoice functions for accounting context
+        functions.AddRange(_invoiceFunctionService.GetInvoiceFunctions());
 
         // Add more function categories based on context
-        if (context?.CurrentModule == "invoices")
-        {
-            // TODO: Add invoice-related functions
-        }
-        else if (context?.CurrentModule == "sales")
+        if (context?.CurrentModule == "sales")
         {
             // TODO: Add sales-related functions
         }
@@ -523,9 +574,10 @@ public class AIAssistantService : IAIAssistantService
                 "Customer" => await _customerFunctionService.ExecuteCustomerFunctionAsync(
                     functionCall, companyId, cancellationToken),
                 
+                "Invoice" => await _invoiceFunctionService.ExecuteInvoiceFunctionAsync(
+                    functionCall, companyId, cancellationToken),
+                
                 // Add more service types here
-                // "Invoice" => await _invoiceFunctionService.ExecuteInvoiceFunctionAsync(
-                //     functionCall, companyId, cancellationToken),
                 // "Sales" => await _salesFunctionService.ExecuteSalesFunctionAsync(
                 //     functionCall, companyId, cancellationToken),
                 
@@ -566,6 +618,20 @@ public class AIAssistantService : IAIAssistantService
     }
 
     /// <summary>
+    /// Check if a function name belongs to invoice functions
+    /// </summary>
+    /// <param name="functionName">Function name</param>
+    /// <returns>True if invoice function</returns>
+    private bool IsInvoiceFunction(string functionName)
+    {
+        // Get function names dynamically from the invoice function service
+        var invoiceFunctions = _invoiceFunctionService.GetInvoiceFunctions();
+        var invoiceFunctionNames = invoiceFunctions.Select(f => f.Name).ToArray();
+        
+        return invoiceFunctionNames.Contains(functionName);
+    }
+
+    /// <summary>
     /// Get function service type based on function name
     /// </summary>
     /// <param name="functionName">Function name</param>
@@ -575,9 +641,10 @@ public class AIAssistantService : IAIAssistantService
         if (IsCustomerFunction(functionName))
             return "Customer";
         
+        if (IsInvoiceFunction(functionName))
+            return "Invoice";
+        
         // Add more function service types here in the future
-        // if (IsInvoiceFunction(functionName))
-        //     return "Invoice";
         // if (IsSalesFunction(functionName))
         //     return "Sales";
         
@@ -587,25 +654,37 @@ public class AIAssistantService : IAIAssistantService
     /// <summary>
     /// Build system prompt dynamically with current available functions
     /// </summary>
+    /// <param name="companyId">Company ID to include in the prompt</param>
     /// <returns>Complete system prompt</returns>
-    private string BuildSystemPrompt()
+    private string BuildSystemPrompt(int companyId)
     {
-        var basePrompt = @"
+        var basePrompt = $@"
 אתה עוזר חכם לחשבונאות עבור עסק ישראלי עם גישה לנתונים בזמן אמת.
 אתה עוזר עם שאלות פיננסיות, ניתוח נתונים ומשימות חשבונאות כלליות.
 תמיד תענה בעברית אלא אם מבקשים ממך במפורש להשתמש באנגלית.
 היה מקצועי, מדויק, תמציתי ומועיל.
 
-יש לך גישה לפונקציות הבאות לקבלת מידע:
+מזהה החברה הנוכחית: {companyId}
+
+הנחיות חשובות:
+- כאשר משתמש מבקש ליצור לקוח חדש או חשבונית חדשה, הצג טופס אינטרקטיבי למילוי הפרטים
+- השתמש בפונקציות המערכת רק לאחר שקיבלת את כל הפרטים הנדרשים מהמשתמש
+- עדכן את המשתמש על תוצאות הפעולות בצורה ברורה ומקצועית
+- אם יש שגיאות, הסבר אותן בצורה מובנת ותן הצעות לפתרון
+
+יש לך גישה לפונקציות הבאות לקבלת מידע וביצוע פעולות:
 
 פונקציות לקוחות:";
 
         // Get customer functions dynamically
         var customerFunctions = _customerFunctionService.GetCustomerFunctions();
         
-        // Categorize functions
-        var readOnlyFunctions = new List<string>();
-        var managementFunctions = new List<string>();
+        // Get invoice functions dynamically
+        var invoiceFunctions = _invoiceFunctionService.GetInvoiceFunctions();
+        
+        // Categorize customer functions
+        var customerReadOnlyFunctions = new List<string>();
+        var customerManagementFunctions = new List<string>();
         
         foreach (var function in customerFunctions)
         {
@@ -613,34 +692,74 @@ public class AIAssistantService : IAIAssistantService
             
             if (function.Name.StartsWith("create") || function.Name.StartsWith("update") || function.Name.StartsWith("add"))
             {
-                managementFunctions.Add(functionLine);
+                customerManagementFunctions.Add(functionLine);
             }
             else
             {
-                readOnlyFunctions.Add(functionLine);
+                customerReadOnlyFunctions.Add(functionLine);
+            }
+        }
+        
+        // Categorize invoice functions
+        var invoiceReadOnlyFunctions = new List<string>();
+        var invoiceManagementFunctions = new List<string>();
+        
+        foreach (var function in invoiceFunctions)
+        {
+            var functionLine = $"- {function.Name}: {function.Description}";
+            
+            if (function.Name.StartsWith("create") || function.Name.StartsWith("update") || function.Name.StartsWith("process"))
+            {
+                invoiceManagementFunctions.Add(functionLine);
+            }
+            else
+            {
+                invoiceReadOnlyFunctions.Add(functionLine);
             }
         }
         
         // Build the complete prompt
         var promptBuilder = new System.Text.StringBuilder(basePrompt);
         
-        foreach (var func in readOnlyFunctions)
+        // Add customer read-only functions
+        foreach (var func in customerReadOnlyFunctions)
         {
             promptBuilder.AppendLine(func);
         }
         
-        if (managementFunctions.Any())
+        // Add customer management functions
+        if (customerManagementFunctions.Any())
         {
             promptBuilder.AppendLine();
             promptBuilder.AppendLine("פונקציות ניהול לקוחות:");
-            foreach (var func in managementFunctions)
+            foreach (var func in customerManagementFunctions)
+            {
+                promptBuilder.AppendLine(func);
+            }
+        }
+        
+        // Add invoice functions
+        promptBuilder.AppendLine();
+        promptBuilder.AppendLine("פונקציות חשבוניות:");
+        
+        foreach (var func in invoiceReadOnlyFunctions)
+        {
+            promptBuilder.AppendLine(func);
+        }
+        
+        if (invoiceManagementFunctions.Any())
+        {
+            promptBuilder.AppendLine();
+            promptBuilder.AppendLine("פונקציות ניהול חשבוניות:");
+            foreach (var func in invoiceManagementFunctions)
             {
                 promptBuilder.AppendLine(func);
             }
         }
         
         promptBuilder.AppendLine();
-        promptBuilder.AppendLine("כאשר המשתמש שואל על לקוחות, חובות, או פרטים פיננסיים - השתמש בפונקציות המתאימות כדי לספק מידע מדויק ועדכני.");
+        promptBuilder.AppendLine("כאשר המשתמש שואל על לקוחות, חובות, חשבוניות, תשלומים או פרטים פיננסיים - השתמש בפונקציות המתאימות כדי לספק מידע מדויק ועדכני.");
+        promptBuilder.AppendLine("אתה יכול גם ליצור חשבוניות חדשות, לעדכן סטטוסים ולעבד תשלומים כאשר המשתמש מבקש זאת.");
         promptBuilder.AppendLine();
         promptBuilder.AppendLine("אם אתה לא בטוח לגבי תקנות מס ספציפיות, המלץ להתייעץ עם רואה חשבון מוסמך.");
         promptBuilder.AppendLine("תמיד ציין מקורות אמינים כשאתה נותן מידע על תקנות או חוקים.");
@@ -648,5 +767,207 @@ public class AIAssistantService : IAIAssistantService
         promptBuilder.AppendLine("כשאתה מקבל נתונים מהפונקציות, ארגן אותם בצורה ברורה וקריאה למשתמש.");
         
         return promptBuilder.ToString();
+    }
+
+    /// <summary>
+    /// Check if the user message requires an interactive response
+    /// </summary>
+    private async Task<InteractiveMessageData?> CheckForInteractiveRequestAsync(string message, int companyId)
+    {
+        var lowerMessage = message.ToLowerInvariant();
+        
+        // Check for customer creation requests
+        if (IsCustomerCreationRequest(lowerMessage))
+        {
+            return CreateCustomerForm();
+        }
+        
+        // Check for invoice creation requests
+        if (IsInvoiceCreationRequest(lowerMessage))
+        {
+            return await CreateInvoiceFormAsync(companyId);
+        }
+        
+        return null;
+    }
+
+    /// <summary>
+    /// Check if message is requesting to create a new customer
+    /// </summary>
+    private bool IsCustomerCreationRequest(string message)
+    {
+        var customerKeywords = new[] { "לקוח", "customer", "לקוחה" };
+        var createKeywords = new[] { "צור", "הוסף", "יצור", "חדש", "create", "add", "new" };
+        
+        return customerKeywords.Any(keyword => message.Contains(keyword)) &&
+               createKeywords.Any(keyword => message.Contains(keyword));
+    }
+
+    /// <summary>
+    /// Check if message is requesting to create a new invoice
+    /// </summary>
+    private bool IsInvoiceCreationRequest(string message)
+    {
+        var invoiceKeywords = new[] { "חשבונית", "invoice", "חשבון" };
+        var createKeywords = new[] { "צור", "הוסף", "יצור", "חדש", "create", "add", "new" };
+        
+        return invoiceKeywords.Any(keyword => message.Contains(keyword)) &&
+               createKeywords.Any(keyword => message.Contains(keyword));
+    }
+
+    /// <summary>
+    /// Create interactive form for customer creation
+    /// </summary>
+    private InteractiveMessageData CreateCustomerForm()
+    {
+        return new InteractiveMessageData
+        {
+            ComponentType = "form",
+            Title = "יצירת לקוח חדש",
+            Description = "אנא מלא את הפרטים הבאים ליצירת לקוח חדש במערכת:",
+            Fields = new List<FormField>
+            {
+                new FormField
+                {
+                    Id = "name",
+                    Label = "שם הלקוח",
+                    Type = "text",
+                    Required = true,
+                    Validation = new FieldValidation
+                    {
+                        Min = 2,
+                        Max = 100,
+                        Message = "שם הלקוח חייב להכיל בין 2 ל-100 תווים"
+                    }
+                },
+                new FormField
+                {
+                    Id = "taxId",
+                    Label = "מספר זהות/חברה",
+                    Type = "text",
+                    Required = true,
+                    Validation = new FieldValidation
+                    {
+                        Pattern = @"^\d{9}(\d{2})?$",
+                        Message = "מספר זהות חייב להכיל 9 או 11 ספרות"
+                    }
+                },
+                new FormField
+                {
+                    Id = "email",
+                    Label = "כתובת אימייל",
+                    Type = "email",
+                    Required = false,
+                    Validation = new FieldValidation
+                    {
+                        Pattern = @"^[^\s@]+@[^\s@]+\.[^\s@]+$",
+                        Message = "כתובת אימייל לא תקינה"
+                    }
+                },
+                new FormField
+                {
+                    Id = "phone",
+                    Label = "טלפון",
+                    Type = "text",
+                    Required = false,
+                    Validation = new FieldValidation
+                    {
+                        Pattern = @"^[\d\-\+\(\)\s]+$",
+                        Message = "מספר טלפון לא תקין"
+                    }
+                },
+                new FormField
+                {
+                    Id = "address",
+                    Label = "כתובת",
+                    Type = "textarea",
+                    Required = false
+                },
+                new FormField
+                {
+                    Id = "contactPerson",
+                    Label = "איש קשר",
+                    Type = "text",
+                    Required = false
+                },
+                new FormField
+                {
+                    Id = "paymentTerms",
+                    Label = "תנאי תשלום (ימים)",
+                    Type = "number",
+                    Required = false,
+                    DefaultValue = 30,
+                    Validation = new FieldValidation
+                    {
+                        Min = 0,
+                        Max = 365,
+                        Message = "תנאי תשלום חייבים להיות בין 0 ל-365 ימים"
+                    }
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Create interactive form for invoice creation
+    /// </summary>
+    private async Task<InteractiveMessageData> CreateInvoiceFormAsync(int companyId)
+    {
+        // Get list of active customers for the select field
+        var customers = await _context.Customers
+            .Where(c => c.CompanyId == companyId && c.IsActive)
+            .OrderBy(c => c.Name)
+            .Select(c => new FieldOption 
+            { 
+                Value = c.Id, 
+                Label = $"{c.Name} ({c.TaxId})" 
+            })
+            .ToListAsync();
+
+        var customerOptions = new List<FieldOption>
+        {
+            new FieldOption { Value = "", Label = "בחר לקוח..." }
+        };
+        customerOptions.AddRange(customers);
+
+        return new InteractiveMessageData
+        {
+            ComponentType = "form",
+            Title = "יצירת חשבונית חדשה",
+            Description = "אנא מלא את הפרטים הבאים ליצירת חשבונית חדשה:",
+            Fields = new List<FormField>
+            {
+                new FormField
+                {
+                    Id = "customerId",
+                    Label = "לקוח",
+                    Type = "select",
+                    Required = true,
+                    Options = customerOptions
+                },
+                new FormField
+                {
+                    Id = "dueDate",
+                    Label = "תאריך פירעון",
+                    Type = "date",
+                    Required = true,
+                    DefaultValue = DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")
+                },
+                new FormField
+                {
+                    Id = "description",
+                    Label = "תיאור",
+                    Type = "textarea",
+                    Required = false
+                },
+                new FormField
+                {
+                    Id = "notes",
+                    Label = "הערות",
+                    Type = "textarea",
+                    Required = false
+                }
+            }
+        };
     }
 }
