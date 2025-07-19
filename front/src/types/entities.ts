@@ -128,6 +128,7 @@ export interface Item {
   // Backward compatibility aliases
   cost: number;
   price: number;
+  purchasePrice?: number; // Added for purchasing operations
   createdAt: Date;
   updatedAt: Date;
 }
@@ -201,6 +202,8 @@ export interface SalesOrder {
   notes?: string;
   shippingMethod?: string;
   quoteId?: number; // Reference to original quote if converted
+  dueDate?: Date;
+  deliveryDate?: Date;
   lines: SalesOrderLine[];
   createdAt: Date;
   updatedAt: Date;
@@ -222,7 +225,7 @@ export interface SalesOrderLine {
   lineTotal: number;
 }
 
-export type SalesOrderStatus = 'Draft' | 'Confirmed' | 'PartiallyShipped' | 'Shipped' | 'Completed' | 'Cancelled';
+export type SalesOrderStatus = 'Draft' | 'Quote' | 'Confirmed' | 'PartiallyShipped' | 'Shipped' | 'Completed' | 'Cancelled';
 
 // Delivery Note entities
 export interface DeliveryNote {

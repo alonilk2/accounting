@@ -99,7 +99,7 @@ const SalesDocumentDialogs: React.FC<SalesDocumentDialogsProps> = ({
   const loadItems = async () => {
     try {
       const data = await itemsAPI.getAll({ isActive: true });
-      setItems(data);
+      setItems(data.data || []);
     } catch (err) {
       console.error('Error loading items:', err);
     }

@@ -70,8 +70,10 @@ const getStatusColor = (status: SalesOrderStatus): 'default' | 'primary' | 'seco
 // Status labels
 const getStatusLabel = (status: SalesOrderStatus, isHebrew: boolean): string => {
   const labels = {
+    Draft: isHebrew ? 'טיוטה' : 'Draft',
     Quote: isHebrew ? 'הצעת מחיר' : 'Quote',
     Confirmed: isHebrew ? 'מאושר' : 'Confirmed',
+    PartiallyShipped: isHebrew ? 'נשלח חלקית' : 'Partially Shipped',
     Shipped: isHebrew ? 'נשלח' : 'Shipped',
     Completed: isHebrew ? 'הושלם' : 'Completed',
     Cancelled: isHebrew ? 'בוטל' : 'Cancelled'

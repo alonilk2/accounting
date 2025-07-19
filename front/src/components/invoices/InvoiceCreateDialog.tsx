@@ -107,8 +107,8 @@ export default function InvoiceCreateDialog({
         customersAPI.getAll(),
         itemsAPI.getAll(),
       ]);
-      setCustomers(customersData);
-      setItems(itemsData);
+      setCustomers(customersData.data || []);
+      setItems(itemsData.data || []);
     } catch (err) {
       console.error("Failed to load initial data:", err);
       setError("שגיאה בטעינת נתונים");
