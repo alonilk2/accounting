@@ -15,13 +15,23 @@ import type {
   CustomerDocumentStats,
   Invoice,
   InvoiceStatus,
-  CreateInvoiceForm
+  CreateInvoiceForm,
+  PurchaseInvoice,
+  PurchaseInvoiceStatus,
+  SupplierPayment
 } from '../types/entities';
 import type { 
   CustomerStatement, 
   CustomerStatementRequest,
   CustomerTransaction 
 } from '../types/reports';
+import type {
+  PaginatedResponse,
+  CustomerFilters,
+  SupplierFilters,
+  ItemFilters,
+  QuoteFilters
+} from '../types/pagination';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -79,13 +89,29 @@ export const authAPI = {
 
 // Customers API
 export const customersAPI = {
-  getAll: async (): Promise<Customer[]> => {
-    const response = await api.get('/customers');
-    return response.data.map((customer: Customer) => ({
-      ...customer,
-      createdAt: new Date(customer.createdAt),
-      updatedAt: new Date(customer.updatedAt),
-    }));
+  getAll: async (filters?: CustomerFilters): Promise<PaginatedResponse<Customer>> => {
+    const params = new URLSearchParams();
+    
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.pageSize) params.append('pageSize', filters.pageSize.toString());
+    if (filters?.searchTerm) params.append('searchTerm', filters.searchTerm);
+    if (filters?.isActive !== undefined) params.append('isActive', filters.isActive.toString());
+    
+    const response = await api.get(`/customers?${params.toString()}`);
+    return {
+      ...response.data,
+      data: response.data.data.map((customer: Customer) => ({
+        ...customer,
+        createdAt: new Date(customer.createdAt),
+        updatedAt: new Date(customer.updatedAt),
+      }))
+    };
+  },
+
+  // Keep legacy method for compatibility
+  getCustomers: async (): Promise<Customer[]> => {
+    const response = await customersAPI.getAll({ page: 1, pageSize: 1000 });
+    return response.data;
   },
 
   getById: async (id: number): Promise<Customer> => {
@@ -159,30 +185,118 @@ export const customersAPI = {
   },
 };
 
+// Supplier API Interfaces
+export interface SupplierStats {
+  totalSuppliers: number;
+  activeSuppliers: number;
+  inactiveSuppliers: number;
+  totalPurchaseOrders: number;
+  outstandingPayables: number;
+  lastUpdated: Date;
+}
+
+export interface CreateSupplierRequest {
+  name: string;
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  taxId?: string;
+  address?: string;
+  website?: string;
+  isActive?: boolean;
+  companyId?: number;
+}
+
+export interface UpdateSupplierRequest {
+  name?: string;
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  taxId?: string;
+  address?: string;
+  website?: string;
+  isActive?: boolean;
+  companyId?: number;
+}
+
+export interface SupplierPurchaseOrder {
+  id: number;
+  orderNumber: string;
+  orderDate: Date;
+  status: string;
+  totalAmount: number;
+  currency: string;
+  linesCount: number;
+}
+
 // Suppliers API
 export const suppliersAPI = {
-  getAll: async (): Promise<Supplier[]> => {
-    const response = await api.get('/suppliers');
+  getAll: async (filters: SupplierFilters = {}): Promise<PaginatedResponse<Supplier>> => {
+    const params = new URLSearchParams();
+    
+    if (filters.companyId) params.append('companyId', filters.companyId.toString());
+    if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
+    if (filters.searchTerm) params.append('searchTerm', filters.searchTerm);
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
+
+    const queryString = params.toString();
+    const url = `/suppliers${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await api.get(url);
     return response.data;
   },
 
-  getById: async (id: string): Promise<Supplier> => {
-    const response = await api.get(`/suppliers/${id}`);
+  getById: async (id: number, companyId?: number): Promise<Supplier> => {
+    const params = new URLSearchParams();
+    if (companyId) params.append('companyId', companyId.toString());
+    
+    const queryString = params.toString();
+    const url = `/suppliers/${id}${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await api.get(url);
     return response.data;
   },
 
-  create: async (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>): Promise<Supplier> => {
+  create: async (supplier: CreateSupplierRequest): Promise<Supplier> => {
     const response = await api.post('/suppliers', supplier);
     return response.data;
   },
 
-  update: async (id: string, supplier: Partial<Supplier>): Promise<Supplier> => {
+  update: async (id: number, supplier: UpdateSupplierRequest): Promise<Supplier> => {
     const response = await api.put(`/suppliers/${id}`, supplier);
     return response.data;
   },
 
-  delete: async (id: string): Promise<void> => {
-    await api.delete(`/suppliers/${id}`);
+  delete: async (id: number, companyId?: number): Promise<void> => {
+    const params = new URLSearchParams();
+    if (companyId) params.append('companyId', companyId.toString());
+    
+    const queryString = params.toString();
+    const url = `/suppliers/${id}${queryString ? `?${queryString}` : ''}`;
+    
+    await api.delete(url);
+  },
+
+  getPurchaseOrders: async (id: number, companyId?: number): Promise<SupplierPurchaseOrder[]> => {
+    const params = new URLSearchParams();
+    if (companyId) params.append('companyId', companyId.toString());
+    
+    const queryString = params.toString();
+    const url = `/suppliers/${id}/purchase-orders${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  getActive: async (companyId?: number): Promise<Supplier[]> => {
+    const response = await suppliersAPI.getAll({ companyId, isActive: true });
+    return response.data;
+  },
+
+  search: async (searchTerm: string, companyId?: number): Promise<Supplier[]> => {
+    const response = await suppliersAPI.getAll({ companyId, searchTerm });
+    return response.data;
   },
 };
 
@@ -194,7 +308,7 @@ export const itemsAPI = {
     isActive?: boolean;
     page?: number;
     pageSize?: number;
-  }): Promise<Item[]> => {
+  }): Promise<PaginatedResponse<Item>> => {
     const searchParams = new URLSearchParams();
     if (params?.search) searchParams.append('search', params.search);
     if (params?.category) searchParams.append('category', params.category);
@@ -203,11 +317,14 @@ export const itemsAPI = {
     if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString());
     
     const response = await api.get(`/items?${searchParams.toString()}`);
-    return response.data.map((item: Item) => ({
-      ...item,
-      createdAt: new Date(item.createdAt),
-      updatedAt: new Date(item.updatedAt),
-    }));
+    return {
+      ...response.data,
+      data: response.data.data.map((item: Item) => ({
+        ...item,
+        createdAt: new Date(item.createdAt),
+        updatedAt: new Date(item.updatedAt),
+      })),
+    };
   },
 
   getById: async (id: number): Promise<Item> => {
@@ -547,6 +664,126 @@ export const reportsAPI = {
       }))
     };
   },
+};
+
+// Purchase Invoice API Interfaces
+export interface PurchaseInvoiceFilters {
+  status?: PurchaseInvoiceStatus;
+  supplierId?: number;
+  searchTerm?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CreatePurchaseInvoiceDto {
+  supplierId: number;
+  purchaseOrderId?: number;
+  supplierInvoiceNumber: string;
+  invoiceDate: string;
+  dueDate?: string;
+  receivedDate?: string;
+  currency?: string;
+  notes?: string;
+  description?: string;
+  vatRate?: number;
+  lines?: CreatePurchaseInvoiceLineDto[];
+}
+
+export interface CreatePurchaseInvoiceLineDto {
+  itemId?: number;
+  description: string;
+  quantity: number;
+  unit?: string;
+  unitCost: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  taxRate?: number;
+}
+
+export interface CreateSupplierPaymentDto {
+  paymentDate: string;
+  amount: number;
+  paymentMethod: string;
+  referenceNumber?: string;
+  notes?: string;
+}
+
+export interface UpdatePurchaseInvoiceStatusDto {
+  status: PurchaseInvoiceStatus;
+}
+
+// Purchase Invoices API
+export const purchaseInvoicesAPI = {
+  async getAll(filters?: PurchaseInvoiceFilters): Promise<PurchaseInvoice[]> {
+    const params = new URLSearchParams();
+    
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.supplierId) params.append('supplierId', filters.supplierId.toString());
+    if (filters?.searchTerm) params.append('searchTerm', filters.searchTerm);
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.pageSize) params.append('pageSize', filters.pageSize.toString());
+
+    const response = await api.get(`/purchaseinvoices?${params.toString()}`);
+    return response.data.map((invoice: Record<string, unknown>) => ({
+      ...invoice,
+      invoiceDate: new Date(invoice.invoiceDate as string),
+      dueDate: invoice.dueDate ? new Date(invoice.dueDate as string) : undefined,
+      receivedDate: invoice.receivedDate ? new Date(invoice.receivedDate as string) : undefined,
+      createdAt: new Date(invoice.createdAt as string),
+      updatedAt: new Date(invoice.updatedAt as string)
+    })) as PurchaseInvoice[];
+  },
+
+  async getById(id: number): Promise<PurchaseInvoice> {
+    const response = await api.get(`/purchaseinvoices/${id}`);
+    const invoice = response.data;
+    return {
+      ...invoice,
+      invoiceDate: new Date(invoice.invoiceDate),
+      dueDate: invoice.dueDate ? new Date(invoice.dueDate) : undefined,
+      receivedDate: invoice.receivedDate ? new Date(invoice.receivedDate) : undefined,
+      payments: invoice.payments?.map((payment: Record<string, unknown>) => ({
+        ...payment,
+        paymentDate: new Date(payment.paymentDate as string)
+      })) || [],
+      createdAt: new Date(invoice.createdAt),
+      updatedAt: new Date(invoice.updatedAt)
+    };
+  },
+
+  async create(data: CreatePurchaseInvoiceDto): Promise<PurchaseInvoice> {
+    const response = await api.post('/purchaseinvoices', data);
+    const invoice = response.data;
+    return {
+      ...invoice,
+      invoiceDate: new Date(invoice.invoiceDate),
+      dueDate: invoice.dueDate ? new Date(invoice.dueDate) : undefined,
+      receivedDate: invoice.receivedDate ? new Date(invoice.receivedDate) : undefined,
+      createdAt: new Date(invoice.createdAt),
+      updatedAt: new Date(invoice.updatedAt)
+    };
+  },
+
+  async updateStatus(id: number, data: UpdatePurchaseInvoiceStatusDto): Promise<void> {
+    await api.patch(`/purchaseinvoices/${id}/status`, data);
+  },
+
+  async addPayment(id: number, data: CreateSupplierPaymentDto): Promise<SupplierPayment> {
+    const response = await api.post(`/purchaseinvoices/${id}/payments`, data);
+    const payment = response.data;
+    return {
+      ...payment,
+      paymentDate: new Date(payment.paymentDate)
+    };
+  },
+
+  async delete(id: number): Promise<void> {
+    await api.delete(`/purchaseinvoices/${id}`);
+  }
 };
 
 export default api;

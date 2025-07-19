@@ -90,8 +90,8 @@ public class SalesController : ControllerBase
                     AgentName = so.Agent != null ? so.Agent.Name : null,
                     OrderNumber = so.OrderNumber,
                     OrderDate = so.OrderDate,
-                    DueDate = so.DueDate,
-                    DeliveryDate = so.DeliveryDate,
+                    RequiredDate = so.RequiredDate,
+                    PromisedDate = so.PromisedDate,
                     Status = so.Status,
                     SubtotalAmount = so.SubtotalAmount,
                     TaxAmount = so.TaxAmount,
@@ -163,8 +163,8 @@ public class SalesController : ControllerBase
                     AgentName = so.Agent != null ? so.Agent.Name : null,
                     OrderNumber = so.OrderNumber,
                     OrderDate = so.OrderDate,
-                    DueDate = so.DueDate,
-                    DeliveryDate = so.DeliveryDate,
+                    RequiredDate = so.RequiredDate,
+                    PromisedDate = so.PromisedDate,
                     Status = so.Status,
                     SubtotalAmount = so.SubtotalAmount,
                     TaxAmount = so.TaxAmount,
@@ -246,9 +246,9 @@ public class SalesController : ControllerBase
                 CustomerId = request.CustomerId,
                 AgentId = request.AgentId,
                 OrderDate = request.OrderDate ?? DateTime.UtcNow,
-                DueDate = request.DueDate,
-                DeliveryDate = request.DeliveryDate,
-                Status = request.Status ?? SalesOrderStatus.Quote,
+                RequiredDate = request.RequiredDate,
+                PromisedDate = request.PromisedDate,
+                Status = request.Status ?? SalesOrderStatus.Draft,
                 Currency = request.Currency ?? "ILS",
                 Notes = request.Notes,
                 Lines = request.Lines.Select((line, index) => new SalesOrderLine
@@ -402,8 +402,9 @@ public class SalesController : ControllerBase
             message = "Request is valid", 
             request = request,
             statusMapping = new {
-                Quote = SalesOrderStatus.Quote,
+                Draft = SalesOrderStatus.Draft,
                 Confirmed = SalesOrderStatus.Confirmed,
+                PartiallyShipped = SalesOrderStatus.PartiallyShipped,
                 Shipped = SalesOrderStatus.Shipped,
                 Completed = SalesOrderStatus.Completed,
                 Cancelled = SalesOrderStatus.Cancelled
@@ -423,8 +424,8 @@ public class SalesOrderDto
     public string? AgentName { get; set; }
     public string OrderNumber { get; set; } = string.Empty;
     public DateTime OrderDate { get; set; }
-    public DateTime? DueDate { get; set; }
-    public DateTime? DeliveryDate { get; set; }
+    public DateTime? RequiredDate { get; set; }
+    public DateTime? PromisedDate { get; set; }
     public SalesOrderStatus Status { get; set; }
     public decimal SubtotalAmount { get; set; }
     public decimal TaxAmount { get; set; }
@@ -499,9 +500,9 @@ public class CreateSalesOrderRequest
     
     public DateTime? OrderDate { get; set; }
     
-    public DateTime? DueDate { get; set; }
+    public DateTime? RequiredDate { get; set; }
     
-    public DateTime? DeliveryDate { get; set; }
+    public DateTime? PromisedDate { get; set; }
     
     public SalesOrderStatus? Status { get; set; }
     

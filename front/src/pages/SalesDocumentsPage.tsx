@@ -4,26 +4,14 @@ import {
   Card,
   CardContent,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
   Button,
   Chip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   TextField,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   Grid,
-  Tooltip,
   CircularProgress,
   Alert,
   Dialog,
@@ -31,11 +19,11 @@ import {
   DialogContent,
   DialogActions,
   Snackbar,
-  Badge,
   Fab
 } from '@mui/material';
+import type { GridColDef, GridRowParams } from '@mui/x-data-grid';
+import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import {
-  ExpandMore as ExpandMoreIcon,
   Print as PrintIcon,
   PictureAsPdf as PdfIcon,
   Receipt as ReceiptIcon,
@@ -51,11 +39,11 @@ import { salesDocumentsService } from '../services/salesDocumentsService';
 import type { 
   SalesDocument, 
   DocumentsFilter, 
-  MonthlyDocuments,
-  DocumentType,
-  SalesDocumentsResponse
+  DocumentType
 } from '../types/salesDocuments';
 import { STATUS_LABELS, STATUS_COLORS } from '../types/salesDocuments';
+import { textFieldStyles, paperStyles, buttonStyles } from '../styles/formStyles';
+import { enhancedDataGridStyles } from '../styles/enhancedStyles';
 
 // Email Dialog Component
 interface EmailDialogProps {
@@ -132,12 +120,18 @@ const EmailDialog: React.FC<EmailDialogProps> = ({ open, document, onClose, onSe
 };
 
 const SalesDocumentsPage: React.FC = () => {
-  const { isRTL, formatCurrency, formatDate } = useRTL();
+  const { formatCurrency, formatDate } = useRTL();
   
   // State
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [documentsResponse, setDocumentsResponse] = useState<SalesDocumentsResponse | null>(null);
+  const [documents, setDocuments] = useState<SalesDocument[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 25
+  });
   const [filters, setFilters] = useState<DocumentsFilter>({
     fromDate: new Date(new Date().getFullYear(), 0, 1), // Start of current year
     toDate: new Date() // Today
@@ -158,20 +152,29 @@ const SalesDocumentsPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await salesDocumentsService.getSalesDocuments(filters);
-      setDocumentsResponse(response);
+      
+      const filtersWithPagination = {
+        ...filters,
+        page: paginationModel.page,
+        pageSize: paginationModel.pageSize
+      };
+      
+      const response = await salesDocumentsService.getPaginatedSalesDocuments(filtersWithPagination);
+      setDocuments(response.documents);
+      setTotalCount(response.totalCount);
+      setTotalAmount(response.totalAmount);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת המסמכים');
       console.error('Error loading documents:', err);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, paginationModel]);
 
-  // Load documents on mount and when filters change
+  // Load documents on mount and when filters or pagination change
   useEffect(() => {
     loadDocuments();
-  }, [filters, loadDocuments]);
+  }, [loadDocuments]);
 
   // Handle document actions
   const handlePrint = async (document: SalesDocument) => {
@@ -244,7 +247,7 @@ const SalesDocumentsPage: React.FC = () => {
   // Get document type display name
   const getDocumentTypeDisplay = (type: DocumentType): string => {
     switch (type) {
-      case 'SalesOrder': return 'הזמנת מכירה';
+      case 'SalesOrder': return 'הזמנה';
       case 'Invoice': return 'חשבונית מס';
       case 'TaxInvoiceReceipt': return 'חשבונית מס-קבלה';
       case 'Receipt': return 'קבלה';
@@ -257,60 +260,144 @@ const SalesDocumentsPage: React.FC = () => {
     return STATUS_COLORS[status] || 'default';
   };
 
-  // Render document actions
-  const renderDocumentActions = (document: SalesDocument) => (
-    <Box sx={{ display: 'flex', gap: 0.5 }}>
-      {document.canPrint && (
-        <Tooltip title="הדפס">
-          <IconButton size="small" onClick={() => handlePrint(document)}>
-            <PrintIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      )}
-      
-      {document.canExportPdf && (
-        <Tooltip title="יצא ל-PDF">
-          <IconButton size="small" onClick={() => handleExportPdf(document)}>
-            <PdfIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      )}
-      
-      {document.canGenerateReceipt && (
-        <Tooltip title="צור קבלה">
-          <IconButton size="small" onClick={() => handleGenerateReceipt(document)}>
-            <ReceiptIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      )}
-      
-      {document.canCancel && (
-        <Tooltip title="בטל">
-          <IconButton size="small" onClick={() => handleCancel(document)}>
-            <CancelIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      )}
-      
-      {document.canEmail && (
-        <Tooltip title="שלח במייל">
-          <IconButton size="small" onClick={() => handleEmail(document)}>
-            <EmailIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      )}
-    </Box>
-  );
+  // Define DataGrid columns
+  const columns: GridColDef[] = [
+    {
+      field: 'type',
+      headerName: 'סוג',
+      width: 120,
+      renderCell: (params) => (
+        <Chip 
+          label={getDocumentTypeDisplay(params.value)}
+          size="small"
+          variant="outlined"
+        />
+      )
+    },
+    {
+      field: 'number',
+      headerName: 'מספר',
+      width: 120,
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="medium">
+          {params.value}
+        </Typography>
+      )
+    },
+    {
+      field: 'date',
+      headerName: 'תאריך',
+      width: 120,
+      type: 'date',
+      valueFormatter: (params) => formatDate(params)
+    },
+    {
+      field: 'customerName',
+      headerName: 'לקוח',
+      width: 200,
+      flex: 1
+    },
+    {
+      field: 'amount',
+      headerName: 'סכום',
+      width: 120,
+      type: 'number',
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="medium">
+          {formatCurrency(params.value)}
+        </Typography>
+      )
+    },
+    {
+      field: 'status',
+      headerName: 'סטטוס',
+      width: 120,
+      renderCell: (params) => (
+        <Chip
+          label={STATUS_LABELS[params.value] || params.value}
+          size="small"
+          color={getStatusColor(params.value)}
+          variant="outlined"
+        />
+      )
+    },
+    {
+      field: 'actions',
+      type: 'actions',
+      headerName: 'פעולות',
+      width: 200,
+      getActions: (params: GridRowParams) => {
+        const row = params.row as SalesDocument;
+        const actions = [];
+
+        if (row.canPrint) {
+          actions.push(
+            <GridActionsCellItem
+              key="print"
+              icon={<PrintIcon />}
+              label="הדפס"
+              onClick={() => handlePrint(row)}
+              showInMenu
+            />
+          );
+        }
+
+        if (row.canExportPdf) {
+          actions.push(
+            <GridActionsCellItem
+              key="pdf"
+              icon={<PdfIcon />}
+              label="יצא ל-PDF"
+              onClick={() => handleExportPdf(row)}
+              showInMenu
+            />
+          );
+        }
+
+        if (row.canGenerateReceipt) {
+          actions.push(
+            <GridActionsCellItem
+              key="receipt"
+              icon={<ReceiptIcon />}
+              label="צור קבלה"
+              onClick={() => handleGenerateReceipt(row)}
+              showInMenu
+            />
+          );
+        }
+
+        if (row.canEmail) {
+          actions.push(
+            <GridActionsCellItem
+              key="email"
+              icon={<EmailIcon />}
+              label="שלח במייל"
+              onClick={() => handleEmail(row)}
+              showInMenu
+            />
+          );
+        }
+
+        if (row.canCancel) {
+          actions.push(
+            <GridActionsCellItem
+              key="cancel"
+              icon={<CancelIcon />}
+              label="בטל"
+              onClick={() => handleCancel(row)}
+              showInMenu
+            />
+          );
+        }
+
+        return actions;
+      }
+    }
+  ];
 
   // Render filters
   const renderFilters = () => (
-    <Paper sx={{ 
-      p: 4,
-      borderRadius: 3,
-      boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-      backgroundColor: 'white',
-      mb: 4
-    }}>
+    <Box sx={paperStyles}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
         <FilterIcon sx={{ mr: 2, color: 'primary.main' }} />
         <Typography 
@@ -336,15 +423,7 @@ const SalesDocumentsPage: React.FC = () => {
               fromDate: e.target.value ? new Date(e.target.value) : undefined
             }))}
             InputLabelProps={{ shrink: true }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                fontSize: '1.1rem'
-              },
-              '& .MuiInputLabel-root': {
-                fontSize: '1rem'
-              }
-            }}
+            sx={textFieldStyles}
           />
         </Grid>
         
@@ -359,15 +438,7 @@ const SalesDocumentsPage: React.FC = () => {
               toDate: e.target.value ? new Date(e.target.value) : undefined
             }))}
             InputLabelProps={{ shrink: true }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                fontSize: '1.1rem'
-              },
-              '& .MuiInputLabel-root': {
-                fontSize: '1rem'
-              }
-            }}
+            sx={textFieldStyles}
           />
         </Grid>
         
@@ -405,86 +476,17 @@ const SalesDocumentsPage: React.FC = () => {
               ...prev,
               searchTerm: e.target.value || undefined
             }))}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                fontSize: '1.1rem'
-              },
-              '& .MuiInputLabel-root': {
-                fontSize: '1rem'
-              }
-            }}
+            sx={textFieldStyles}
           />
         </Grid>
       </Grid>
-    </Paper>
-  );
-
-  // Render document table for a month
-  const renderDocumentTable = (documents: SalesDocument[]) => (
-    <TableContainer component={Paper}>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ textAlign: isRTL ? 'right' : 'left' }}>סוג</TableCell>
-            <TableCell sx={{ textAlign: isRTL ? 'right' : 'left' }}>מספר</TableCell>
-            <TableCell sx={{ textAlign: isRTL ? 'right' : 'left' }}>תאריך</TableCell>
-            <TableCell sx={{ textAlign: isRTL ? 'right' : 'left' }}>לקוח</TableCell>
-            <TableCell sx={{ textAlign: isRTL ? 'right' : 'left' }}>סכום</TableCell>
-            <TableCell sx={{ textAlign: isRTL ? 'right' : 'left' }}>סטטוס</TableCell>
-            <TableCell sx={{ textAlign: isRTL ? 'right' : 'left' }}>פעולות</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {documents.map((document) => (
-            <TableRow key={`${document.type}-${document.id}`} hover>
-              <TableCell>
-                <Chip 
-                  label={getDocumentTypeDisplay(document.type)}
-                  size="small"
-                  variant="outlined"
-                />
-              </TableCell>
-              <TableCell>
-                <Typography variant="body2" fontWeight="medium">
-                  {document.number}
-                </Typography>
-              </TableCell>
-              <TableCell>
-                {formatDate(document.date)}
-              </TableCell>
-              <TableCell>
-                <Typography variant="body2">
-                  {document.customerName}
-                </Typography>
-              </TableCell>
-              <TableCell>
-                <Typography variant="body2" fontWeight="medium">
-                  {formatCurrency(document.amount)}
-                </Typography>
-              </TableCell>
-              <TableCell>
-                <Chip
-                  label={STATUS_LABELS[document.status] || document.status}
-                  size="small"
-                  color={getStatusColor(document.status)}
-                  variant="outlined"
-                />
-              </TableCell>
-              <TableCell>
-                {renderDocumentActions(document)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    </Box>
   );
 
   return (
     <Box sx={{ 
       p: { xs: 3, md: 4 }, 
-      backgroundColor: '#fafafa',
+      backgroundColor: 'background.default',
       minHeight: '100vh'
     }}>
       {/* Header */}
@@ -507,13 +509,7 @@ const SalesDocumentsPage: React.FC = () => {
             variant="outlined"
             startIcon={<FilterIcon />}
             onClick={() => setShowFilters(!showFilters)}
-            sx={{ 
-              borderRadius: 3,
-              px: 3,
-              py: 1.5,
-              fontSize: '1rem',
-              fontWeight: 500
-            }}
+            sx={buttonStyles.secondary}
           >
             {showFilters ? 'הסתר מסננים' : 'הצג מסננים'}
           </Button>
@@ -522,14 +518,7 @@ const SalesDocumentsPage: React.FC = () => {
             startIcon={<RefreshIcon />}
             onClick={loadDocuments}
             disabled={loading}
-            sx={{ 
-              borderRadius: 3,
-              px: 4,
-              py: 1.5,
-              fontSize: '1rem',
-              fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)'
-            }}
+            sx={buttonStyles.primary}
           >
             רענן
           </Button>
@@ -537,7 +526,7 @@ const SalesDocumentsPage: React.FC = () => {
       </Box>
 
       {/* Summary Cards */}
-      {documentsResponse && (
+      {totalCount > 0 && (
         <Grid container spacing={{ xs: 3, md: 4 }} columns={{ xs: 4, sm: 8, md: 12 }} sx={{ mb: 4 }}>
           <Grid size={{ xs: 4, sm: 4, md: 3 }}>
             <Card variant="outlined" sx={{ 
@@ -560,7 +549,7 @@ const SalesDocumentsPage: React.FC = () => {
                   variant="h5" 
                   sx={{ fontWeight: 600 }}
                 >
-                  {documentsResponse.totalDocuments}
+                  {totalCount}
                 </Typography>
               </CardContent>
             </Card>
@@ -586,7 +575,7 @@ const SalesDocumentsPage: React.FC = () => {
                   variant="h5" 
                   sx={{ fontWeight: 600 }}
                 >
-                  {formatCurrency(documentsResponse.totalAmount)}
+                  {formatCurrency(totalAmount)}
                 </Typography>
               </CardContent>
             </Card>
@@ -625,53 +614,34 @@ const SalesDocumentsPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* Content */}
-      {!loading && !error && documentsResponse && (
-        <>
-          {documentsResponse.monthlyGroups.length === 0 ? (
-            <Card sx={{ 
-              textAlign: "center", 
-              py: 6,
-              backgroundColor: 'grey.50',
-              borderRadius: 2
-            }}>
-              <CardContent>
-                <Typography 
-                  variant="body1" 
-                  color="text.secondary"
-                  sx={{ fontSize: '1.1rem' }}
-                >
-                  לא נמצאו מסמכים בתקופה הנבחרת
-                </Typography>
-              </CardContent>
-            </Card>
-          ) : (
-            documentsResponse.monthlyGroups.map((monthData: MonthlyDocuments) => (
-              <Accordion key={monthData.month} defaultExpanded>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', mr: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      {monthData.monthName}
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <Badge badgeContent={monthData.documents.length} color="primary">
-                        <Typography variant="body2" color="text.secondary">
-                          מסמכים
-                        </Typography>
-                      </Badge>
-                      <Typography variant="body2" fontWeight="medium">
-                        סה"כ: {formatCurrency(monthData.totalAmount)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </AccordionSummary>
-                <AccordionDetails sx={{ p: 0 }}>
-                  {renderDocumentTable(monthData.documents)}
-                </AccordionDetails>
-              </Accordion>
-            ))
-          )}
-        </>
+      {/* DataGrid */}
+      {!loading && !error && (
+        <Box sx={paperStyles}>
+          <DataGrid
+            rows={documents}
+            columns={columns}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            rowCount={totalCount}
+            paginationMode="server"
+            pageSizeOptions={[10, 25, 50, 100]}
+            disableRowSelectionOnClick
+            autoHeight
+            sx={enhancedDataGridStyles}
+            localeText={{
+              // Hebrew localization for DataGrid
+              noRowsLabel: 'לא נמצאו מסמכים',
+              noResultsOverlayLabel: 'לא נמצאו תוצאות',
+              footerRowSelected: (count) =>
+                count !== 1
+                  ? `${count.toLocaleString()} שורות נבחרו`
+                  : `${count.toLocaleString()} שורה נבחרה`,
+              footerTotalRows: 'סה"כ שורות:',
+              footerTotalVisibleRows: (visibleCount, totalCount) =>
+                `${visibleCount.toLocaleString()} מתוך ${totalCount.toLocaleString()}`,
+            }}
+          />
+        </Box>
       )}
 
       {/* Email Dialog */}

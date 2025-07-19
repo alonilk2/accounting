@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { itemsAPI } from '../services/api';
 import type { Item } from '../types/entities';
+import type { ItemFilters } from '../types/pagination';
 
 export const useItems = () => {
   const [items, setItems] = useState<Item[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchItems = useCallback(async (params?: {
+  const loadItems = useCallback(async (params?: {
     search?: string;
     category?: string;
     isActive?: boolean;
@@ -17,14 +19,25 @@ export const useItems = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await itemsAPI.getAll(params);
-      setItems(data);
+      const response = await itemsAPI.getAll(params);
+      setItems(response.data);
+      setTotalCount(response.totalCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת המוצרים');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const fetchItems = useCallback(async (params?: {
+    search?: string;
+    category?: string;
+    isActive?: boolean;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    return loadItems(params);
+  }, [loadItems]);
 
   const createItem = useCallback(async (itemData: Omit<Item, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>) => {
     try {
@@ -99,19 +112,21 @@ export const useItems = () => {
     }
   }, []);
 
-  const refreshItems = useCallback(() => {
-    fetchItems();
-  }, [fetchItems]);
+  const refreshItems = useCallback((params?: ItemFilters) => {
+    loadItems(params);
+  }, [loadItems]);
 
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    loadItems();
+  }, [loadItems]);
 
   return {
     items,
+    totalCount,
     loading,
     error,
     fetchItems,
+    loadItems,
     createItem,
     updateItem,
     deleteItem,

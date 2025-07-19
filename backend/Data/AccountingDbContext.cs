@@ -37,8 +37,12 @@ public class AccountingDbContext : DbContext
     // Sales
     public DbSet<Customer> Customers { get; set; } = null!;
     public DbSet<Agent> Agents { get; set; } = null!;
+    public DbSet<Quote> Quotes { get; set; } = null!;
+    public DbSet<QuoteLine> QuoteLines { get; set; } = null!;
     public DbSet<SalesOrder> SalesOrders { get; set; } = null!;
     public DbSet<SalesOrderLine> SalesOrderLines { get; set; } = null!;
+    public DbSet<DeliveryNote> DeliveryNotes { get; set; } = null!;
+    public DbSet<DeliveryNoteLine> DeliveryNoteLines { get; set; } = null!;
     public DbSet<Invoice> Invoices { get; set; } = null!;
     public DbSet<InvoiceLine> InvoiceLines { get; set; } = null!;
     public DbSet<Receipt> Receipts { get; set; } = null!;
@@ -211,6 +215,38 @@ public class AccountingDbContext : DbContext
 
     private static void ConfigureSales(ModelBuilder modelBuilder)
     {
+        // Quote relationships
+        modelBuilder.Entity<Quote>()
+            .HasOne(q => q.Customer)
+            .WithMany(c => c.Quotes)
+            .HasForeignKey(q => q.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Quote>()
+            .HasOne(q => q.Agent)
+            .WithMany(a => a.Quotes)
+            .HasForeignKey(q => q.AgentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Quote>()
+            .HasOne(q => q.ConvertedToSalesOrder)
+            .WithOne(so => so.Quote)
+            .HasForeignKey<Quote>(q => q.ConvertedToSalesOrderId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Quote Lines
+        modelBuilder.Entity<QuoteLine>()
+            .HasOne(ql => ql.Quote)
+            .WithMany(q => q.Lines)
+            .HasForeignKey(ql => ql.QuoteId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<QuoteLine>()
+            .HasOne(ql => ql.Item)
+            .WithMany(i => i.QuoteLines)
+            .HasForeignKey(ql => ql.ItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Sales Order relationships
         modelBuilder.Entity<SalesOrder>()
             .HasOne(so => so.Customer)
@@ -222,6 +258,12 @@ public class AccountingDbContext : DbContext
             .HasOne(so => so.Agent)
             .WithMany(a => a.SalesOrders)
             .HasForeignKey(so => so.AgentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<SalesOrder>()
+            .HasOne(so => so.Quote)
+            .WithOne(q => q.ConvertedToSalesOrder)
+            .HasForeignKey<SalesOrder>(so => so.QuoteId)
             .OnDelete(DeleteBehavior.SetNull);
 
         // Sales Order Lines
@@ -236,6 +278,38 @@ public class AccountingDbContext : DbContext
             .WithMany(i => i.SalesOrderLines)
             .HasForeignKey(sol => sol.ItemId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Delivery Note relationships
+        modelBuilder.Entity<DeliveryNote>()
+            .HasOne(dn => dn.Customer)
+            .WithMany(c => c.DeliveryNotes)
+            .HasForeignKey(dn => dn.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DeliveryNote>()
+            .HasOne(dn => dn.SalesOrder)
+            .WithMany(so => so.DeliveryNotes)
+            .HasForeignKey(dn => dn.SalesOrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Delivery Note Lines
+        modelBuilder.Entity<DeliveryNoteLine>()
+            .HasOne(dnl => dnl.DeliveryNote)
+            .WithMany(dn => dn.Lines)
+            .HasForeignKey(dnl => dnl.DeliveryNoteId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DeliveryNoteLine>()
+            .HasOne(dnl => dnl.Item)
+            .WithMany(i => i.DeliveryNoteLines)
+            .HasForeignKey(dnl => dnl.ItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DeliveryNoteLine>()
+            .HasOne(dnl => dnl.SalesOrderLine)
+            .WithMany(sol => sol.DeliveryNoteLines)
+            .HasForeignKey(dnl => dnl.SalesOrderLineId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Invoices
         modelBuilder.Entity<Invoice>()
@@ -298,8 +372,16 @@ public class AccountingDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         // Unique constraints
+        modelBuilder.Entity<Quote>()
+            .HasIndex(q => new { q.CompanyId, q.QuoteNumber })
+            .IsUnique();
+
         modelBuilder.Entity<SalesOrder>()
             .HasIndex(so => new { so.CompanyId, so.OrderNumber })
+            .IsUnique();
+
+        modelBuilder.Entity<DeliveryNote>()
+            .HasIndex(dn => new { dn.CompanyId, dn.DeliveryNoteNumber })
             .IsUnique();
 
         modelBuilder.Entity<Invoice>()
@@ -754,6 +836,31 @@ public class AccountingDbContext : DbContext
 
         // AI entities
         modelBuilder.Entity<ChatMessage>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // New separated sales document entities
+        modelBuilder.Entity<Quote>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<QuoteLine>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DeliveryNote>()
+            .HasOne(e => e.Company)
+            .WithMany()
+            .HasForeignKey(e => e.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DeliveryNoteLine>()
             .HasOne(e => e.Company)
             .WithMany()
             .HasForeignKey(e => e.CompanyId)

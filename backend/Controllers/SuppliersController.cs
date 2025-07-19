@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models.Suppliers;
+using backend.DTOs.Core;
+using backend.DTOs.Shared;
 using backend.Services.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
@@ -30,67 +32,39 @@ public class SuppliersController : ControllerBase
     }
 
     /// <summary>
-    /// Gets all suppliers for the current company
+    /// Gets all suppliers for the current company with pagination
     /// </summary>
     /// <param name="companyId">Company ID for multi-tenant filtering</param>
     /// <param name="isActive">Optional active status filter</param>
     /// <param name="searchTerm">Optional search term</param>
     /// <param name="page">Page number (default: 1)</param>
-    /// <param name="pageSize">Page size (default: 50)</param>
-    /// <returns>List of suppliers</returns>
+    /// <param name="pageSize">Page size (default: 25)</param>
+    /// <returns>Paginated list of suppliers</returns>
     [HttpGet]
-    [ProducesResponseType<IEnumerable<SupplierDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<PaginatedResponse<SupplierDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<SupplierDto>>> GetSuppliers(
+    public async Task<ActionResult<PaginatedResponse<SupplierDto>>> GetSuppliers(
         [FromQuery] int? companyId = null,
         [FromQuery] bool? isActive = null,
         [FromQuery] string? searchTerm = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50)
+        [FromQuery] int pageSize = 25,
+        CancellationToken cancellationToken = default)
     {
+        // Use company ID from query parameter or fallback to a default
+        var currentCompanyId = companyId ?? 1; // TODO: Get from authenticated user context
+        
         try
         {
-            // Use company ID from query parameter or fallback to a default
-            var currentCompanyId = companyId ?? 1; // TODO: Get from authenticated user context
+            var result = await _supplierService.GetSuppliersAsync(
+                currentCompanyId, searchTerm, isActive, page, pageSize, cancellationToken);
 
-            var result = await _supplierService.GetAllAsync(currentCompanyId, page, pageSize, searchTerm);
-            var suppliers = result.Items;
-
-            // Apply additional filters
-            if (isActive.HasValue)
-            {
-                suppliers = suppliers.Where(s => s.IsActive == isActive.Value);
-            }
-
-            // Convert to DTOs
-            var supplierDtos = suppliers.Select(supplier => new SupplierDto
-            {
-                Id = supplier.Id,
-                CompanyId = supplier.CompanyId,
-                Name = supplier.Name,
-                Address = supplier.Address,
-                Contact = supplier.Contact,
-                Phone = supplier.Phone,
-                Email = supplier.Email,
-                Website = supplier.Website,
-                TaxId = supplier.TaxId,
-                VatNumber = supplier.VatNumber,
-                PaymentTermsDays = supplier.PaymentTermsDays,
-                IsActive = supplier.IsActive,
-                BankName = supplier.BankName,
-                BankAccount = supplier.BankAccount,
-                BankBranch = supplier.BankBranch,
-                Notes = supplier.Notes,
-                CreatedAt = supplier.CreatedAt,
-                UpdatedAt = supplier.UpdatedAt
-            }).ToList();
-
-            return Ok(supplierDtos);
+            return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while retrieving suppliers for company {CompanyId}", companyId);
+            _logger.LogError(ex, "Error occurred while retrieving suppliers for company {CompanyId}", currentCompanyId);
             return StatusCode(500, "An error occurred while processing your request");
         }
     }

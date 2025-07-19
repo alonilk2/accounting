@@ -117,6 +117,106 @@ public class SalesDocumentsController : ControllerBase
     }
 
     /// <summary>
+    /// Gets paginated sales documents for DataGrid
+    /// </summary>
+    /// <param name="companyId">Company ID for multi-tenant filtering</param>
+    /// <param name="fromDate">Optional start date filter</param>
+    /// <param name="toDate">Optional end date filter</param>
+    /// <param name="documentType">Optional document type filter</param>
+    /// <param name="searchTerm">Optional search term</param>
+    /// <param name="customerId">Optional customer filter</param>
+    /// <param name="page">Page number (0-based)</param>
+    /// <param name="pageSize">Number of items per page</param>
+    /// <returns>Paginated sales documents</returns>
+    [HttpGet("paginated")]
+    [ProducesResponseType<PaginatedSalesDocumentsResponseDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<PaginatedSalesDocumentsResponseDto>> GetPaginatedSalesDocuments(
+        [FromQuery] int? companyId = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] string? documentType = null,
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] int? customerId = null,
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 25)
+    {
+        try
+        {
+            var currentCompanyId = companyId ?? 1;
+            
+            _logger.LogInformation("Retrieving paginated sales documents for company {CompanyId}, page {Page}, pageSize {PageSize}", 
+                currentCompanyId, page, pageSize);
+
+            var documents = new List<SalesDocumentDto>();
+
+            // Get Sales Orders
+            if (string.IsNullOrEmpty(documentType) || documentType.Equals("SalesOrder", StringComparison.OrdinalIgnoreCase))
+            {
+                var salesOrders = await GetSalesOrderDocuments(currentCompanyId, fromDate, toDate, customerId, searchTerm);
+                documents.AddRange(salesOrders);
+            }
+
+            // Get Invoices
+            if (string.IsNullOrEmpty(documentType) || documentType.Equals("Invoice", StringComparison.OrdinalIgnoreCase))
+            {
+                var invoices = await GetInvoiceDocuments(currentCompanyId, fromDate, toDate, customerId, searchTerm);
+                documents.AddRange(invoices);
+            }
+
+            // Get Tax Invoice Receipts
+            if (string.IsNullOrEmpty(documentType) || documentType.Equals("TaxInvoiceReceipt", StringComparison.OrdinalIgnoreCase))
+            {
+                var taxInvoiceReceipts = await GetTaxInvoiceReceiptDocuments(currentCompanyId, fromDate, toDate, customerId, searchTerm);
+                documents.AddRange(taxInvoiceReceipts);
+            }
+
+            // Get Receipts
+            if (string.IsNullOrEmpty(documentType) || documentType.Equals("Receipt", StringComparison.OrdinalIgnoreCase))
+            {
+                var receipts = await GetReceiptDocuments(currentCompanyId, fromDate, toDate, customerId, searchTerm);
+                documents.AddRange(receipts);
+            }
+
+            // Sort documents by date (newest first)
+            documents = documents.OrderByDescending(d => d.DocumentDate).ToList();
+
+            // Apply pagination
+            var totalCount = documents.Count;
+            var totalAmount = documents.Sum(d => d.TotalAmount);
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            
+            var paginatedDocuments = documents
+                .Skip(page * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var response = new PaginatedSalesDocumentsResponseDto
+            {
+                Documents = paginatedDocuments,
+                TotalCount = totalCount,
+                TotalAmount = totalAmount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = totalPages,
+                FromDate = fromDate,
+                ToDate = toDate,
+                DocumentType = documentType,
+                SearchTerm = searchTerm,
+                CustomerId = customerId
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving paginated sales documents");
+            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
+        }
+    }
+
+    /// <summary>
     /// Cancel a sales document
     /// </summary>
     /// <param name="documentType">Document type</param>
@@ -411,7 +511,7 @@ public class SalesDocumentsController : ControllerBase
         if (fromDate.HasValue)
             query = query.Where(so => so.OrderDate >= fromDate.Value);
         if (toDate.HasValue)
-            query = query.Where(so => so.OrderDate <= toDate.Value);
+            query = query.Where(so => so.OrderDate <= toDate.Value.Date.AddDays(1).AddTicks(-1));
         if (customerId.HasValue)
             query = query.Where(so => so.CustomerId == customerId.Value);
         if (!string.IsNullOrEmpty(searchTerm))
@@ -438,7 +538,7 @@ public class SalesDocumentsController : ControllerBase
                 Notes = so.Notes,
                 CanGenerateReceipt = false,
                 CanCancel = so.Status != SalesOrderStatus.Cancelled && so.Status != SalesOrderStatus.Completed,
-                CanEdit = so.Status == SalesOrderStatus.Quote,
+                CanEdit = so.Status == SalesOrderStatus.Draft,
                 CanEmail = true,
                 CanPrint = true,
                 CanExportPdf = true
@@ -458,7 +558,7 @@ public class SalesDocumentsController : ControllerBase
         if (fromDate.HasValue)
             query = query.Where(inv => inv.InvoiceDate >= fromDate.Value);
         if (toDate.HasValue)
-            query = query.Where(inv => inv.InvoiceDate <= toDate.Value);
+            query = query.Where(inv => inv.InvoiceDate <= toDate.Value.Date.AddDays(1).AddTicks(-1));
         if (customerId.HasValue)
             query = query.Where(inv => inv.CustomerId == customerId.Value);
         if (!string.IsNullOrEmpty(searchTerm))
@@ -505,7 +605,7 @@ public class SalesDocumentsController : ControllerBase
         if (fromDate.HasValue)
             query = query.Where(tir => tir.DocumentDate >= fromDate.Value);
         if (toDate.HasValue)
-            query = query.Where(tir => tir.DocumentDate <= toDate.Value);
+            query = query.Where(tir => tir.DocumentDate <= toDate.Value.Date.AddDays(1).AddTicks(-1));
         if (customerId.HasValue)
             query = query.Where(tir => tir.CustomerId == customerId.Value);
         if (!string.IsNullOrEmpty(searchTerm))
@@ -553,7 +653,7 @@ public class SalesDocumentsController : ControllerBase
         if (fromDate.HasValue)
             query = query.Where(r => r.PaymentDate >= fromDate.Value);
         if (toDate.HasValue)
-            query = query.Where(r => r.PaymentDate <= toDate.Value);
+            query = query.Where(r => r.PaymentDate <= toDate.Value.Date.AddDays(1).AddTicks(-1));
         if (customerId.HasValue)
             query = query.Where(r => r.Invoice.CustomerId == customerId.Value);
         if (!string.IsNullOrEmpty(searchTerm))
@@ -624,7 +724,7 @@ public class SalesDocumentsController : ControllerBase
     {
         return status switch
         {
-            SalesOrderStatus.Quote => "הצעת מחיר",
+            SalesOrderStatus.Draft => "טיוטה",
             SalesOrderStatus.Confirmed => "הזמנה",
             SalesOrderStatus.Shipped => "נשלח",
             SalesOrderStatus.Completed => "הושלם",

@@ -62,7 +62,7 @@ const PrintableSalesOrder: React.FC<PrintableSalesOrderProps> = ({
       case 'Confirmed': return 'אישור הזמנה';
       case 'Shipped': return 'תעודת משלוח';
       case 'Completed': return 'הזמנה הושלמה';
-      default: return 'הזמנת מכירה';
+      default: return 'הזמנה';
     }
   };
 

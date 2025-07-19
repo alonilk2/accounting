@@ -1837,6 +1837,230 @@ namespace backend.Migrations
                     b.ToTable("Customers", (string)null);
                 });
 
+            modelBuilder.Entity("backend.Models.Sales.DeliveryNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualDeliveryTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ContactPerson")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ContactPhone")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CourierService")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CustomerSignature")
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeliveryAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("DeliveryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeliveryInstructions")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DeliveryNoteNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("DriverName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ExpectedDeliveryTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReceivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReceivedByName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int?>("SalesOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalQuantity")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("TotalVolume")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("TotalWeight")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("TrackingNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("VehiclePlate")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("SalesOrderId");
+
+                    b.HasIndex("CompanyId", "DeliveryNoteNumber")
+                        .IsUnique();
+
+                    b.ToTable("DeliveryNotes");
+                });
+
+            modelBuilder.Entity("backend.Models.Sales.DeliveryNoteLine", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BatchNumbers")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("DeliveryNoteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ItemCondition")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LineNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("QuantityDelivered")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("QuantityOrdered")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("QuantityReturned")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int?>("SalesOrderLineId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SerialNumbers")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal?>("UnitVolume")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal?>("UnitWeight")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("DeliveryNoteId");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("SalesOrderLineId");
+
+                    b.ToTable("DeliveryNoteLines");
+                });
+
             modelBuilder.Entity("backend.Models.Sales.Invoice", b =>
                 {
                     b.Property<int>("Id")
@@ -2016,6 +2240,191 @@ namespace backend.Migrations
                     b.ToTable("InvoiceLines", (string)null);
                 });
 
+            modelBuilder.Entity("backend.Models.Sales.Quote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AgentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ConvertedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ConvertedToSalesOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DeliveryTerms")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasColumnType("decimal(10,6)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PaymentTerms")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("QuoteDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("QuoteNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("SubtotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Terms")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ValidUntil")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgentId");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("CompanyId", "QuoteNumber")
+                        .IsUnique();
+
+                    b.ToTable("Quotes");
+                });
+
+            modelBuilder.Entity("backend.Models.Sales.QuoteLine", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LineNumber")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("LineTotalWithTax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("QuoteId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxRate")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("QuoteId");
+
+                    b.ToTable("QuoteLines");
+                });
+
             modelBuilder.Entity("backend.Models.Sales.Receipt", b =>
                 {
                     b.Property<int>("Id")
@@ -2122,14 +2531,8 @@ namespace backend.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<decimal>("ExchangeRate")
                         .HasColumnType("decimal(10,6)");
@@ -2156,6 +2559,18 @@ namespace backend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PromisedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("QuoteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("RequiredDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -2164,6 +2579,13 @@ namespace backend.Migrations
                     b.Property<string>("ShippingAddress")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("ShippingCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ShippingMethod")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int?>("StandingOrderId")
                         .HasColumnType("int");
@@ -2196,6 +2618,10 @@ namespace backend.Migrations
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("OrderDate");
+
+                    b.HasIndex("QuoteId")
+                        .IsUnique()
+                        .HasFilter("[QuoteId] IS NOT NULL");
 
                     b.HasIndex("StandingOrderId");
 
@@ -2662,7 +3088,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Company");
@@ -2893,7 +3319,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Purchasing.PurchaseOrder", "PurchaseOrder")
@@ -2919,13 +3345,13 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Inventory.Item", "Item")
                         .WithMany("PurchaseInvoiceLines")
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("backend.Models.Purchasing.PurchaseInvoice", "PurchaseInvoice")
                         .WithMany("Lines")
@@ -2995,7 +3421,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Purchasing.PurchaseInvoice", "PurchaseInvoice")
@@ -3047,6 +3473,66 @@ namespace backend.Migrations
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("backend.Models.Sales.DeliveryNote", b =>
+                {
+                    b.HasOne("backend.Models.Core.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Sales.Customer", "Customer")
+                        .WithMany("DeliveryNotes")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Sales.SalesOrder", "SalesOrder")
+                        .WithMany("DeliveryNotes")
+                        .HasForeignKey("SalesOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("SalesOrder");
+                });
+
+            modelBuilder.Entity("backend.Models.Sales.DeliveryNoteLine", b =>
+                {
+                    b.HasOne("backend.Models.Core.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Sales.DeliveryNote", "DeliveryNote")
+                        .WithMany("Lines")
+                        .HasForeignKey("DeliveryNoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Inventory.Item", "Item")
+                        .WithMany("DeliveryNoteLines")
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Sales.SalesOrderLine", "SalesOrderLine")
+                        .WithMany("DeliveryNoteLines")
+                        .HasForeignKey("SalesOrderLineId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Company");
+
+                    b.Navigation("DeliveryNote");
+
+                    b.Navigation("Item");
+
+                    b.Navigation("SalesOrderLine");
+                });
+
             modelBuilder.Entity("backend.Models.Sales.Invoice", b =>
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
@@ -3091,6 +3577,59 @@ namespace backend.Migrations
                     b.Navigation("Item");
                 });
 
+            modelBuilder.Entity("backend.Models.Sales.Quote", b =>
+                {
+                    b.HasOne("backend.Models.Sales.Agent", "Agent")
+                        .WithMany("Quotes")
+                        .HasForeignKey("AgentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("backend.Models.Core.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Sales.Customer", "Customer")
+                        .WithMany("Quotes")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Agent");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("backend.Models.Sales.QuoteLine", b =>
+                {
+                    b.HasOne("backend.Models.Core.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Inventory.Item", "Item")
+                        .WithMany("QuoteLines")
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Sales.Quote", "Quote")
+                        .WithMany("Lines")
+                        .HasForeignKey("QuoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Item");
+
+                    b.Navigation("Quote");
+                });
+
             modelBuilder.Entity("backend.Models.Sales.Receipt", b =>
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
@@ -3133,6 +3672,11 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("backend.Models.Sales.Quote", "Quote")
+                        .WithOne("ConvertedToSalesOrder")
+                        .HasForeignKey("backend.Models.Sales.SalesOrder", "QuoteId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("backend.Models.Sales.StandingOrder", null)
                         .WithMany("GeneratedInvoices")
                         .HasForeignKey("StandingOrderId");
@@ -3142,6 +3686,8 @@ namespace backend.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("Customer");
+
+                    b.Navigation("Quote");
                 });
 
             modelBuilder.Entity("backend.Models.Sales.SalesOrderLine", b =>
@@ -3199,7 +3745,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Sales.Customer", "Customer")
@@ -3218,7 +3764,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Inventory.Item", "Item")
@@ -3303,6 +3849,8 @@ namespace backend.Migrations
                 {
                     b.Navigation("ComponentBOMs");
 
+                    b.Navigation("DeliveryNoteLines");
+
                     b.Navigation("InventoryTransactions");
 
                     b.Navigation("InvoiceLines");
@@ -3314,6 +3862,8 @@ namespace backend.Migrations
                     b.Navigation("PurchaseInvoiceLines");
 
                     b.Navigation("PurchaseOrderLines");
+
+                    b.Navigation("QuoteLines");
 
                     b.Navigation("SalesOrderLines");
 
@@ -3343,18 +3893,29 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Models.Sales.Agent", b =>
                 {
+                    b.Navigation("Quotes");
+
                     b.Navigation("SalesOrders");
                 });
 
             modelBuilder.Entity("backend.Models.Sales.Customer", b =>
                 {
+                    b.Navigation("DeliveryNotes");
+
                     b.Navigation("Invoices");
+
+                    b.Navigation("Quotes");
 
                     b.Navigation("SalesOrders");
 
                     b.Navigation("StandingOrders");
 
                     b.Navigation("TaxInvoiceReceipts");
+                });
+
+            modelBuilder.Entity("backend.Models.Sales.DeliveryNote", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("backend.Models.Sales.Invoice", b =>
@@ -3366,11 +3927,25 @@ namespace backend.Migrations
                     b.Navigation("Receipts");
                 });
 
+            modelBuilder.Entity("backend.Models.Sales.Quote", b =>
+                {
+                    b.Navigation("ConvertedToSalesOrder");
+
+                    b.Navigation("Lines");
+                });
+
             modelBuilder.Entity("backend.Models.Sales.SalesOrder", b =>
                 {
+                    b.Navigation("DeliveryNotes");
+
                     b.Navigation("Invoices");
 
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("backend.Models.Sales.SalesOrderLine", b =>
+                {
+                    b.Navigation("DeliveryNoteLines");
                 });
 
             modelBuilder.Entity("backend.Models.Sales.StandingOrder", b =>

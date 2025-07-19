@@ -7,11 +7,13 @@ import { useAuthStore } from './stores';
 import {
   Dashboard,
   Customers,
-  Sales,
   SalesDocumentsPage,
+  SalesOrdersPage,
   CreateTaxInvoiceReceiptPage,
+  DeliveryNotes,
   Suppliers,
   Purchases,
+  PurchaseInvoicesPage,
   Inventory,
   ChartOfAccounts,
   Reports,
@@ -19,6 +21,7 @@ import {
   Settings,
   Login,
 } from './pages';
+import Quotes from './pages/Quotes';
 
 function App() {
   const { isAuthenticated } = useAuthStore();
@@ -43,11 +46,14 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/customers" element={<Customers />} />
-            <Route path="/sales" element={<Sales />} />
+            <Route path="/quotes" element={<Quotes />} />
             <Route path="/sales-documents" element={<SalesDocumentsPage />} />
+            <Route path="/sales-orders" element={<SalesOrdersPage />} />
+            <Route path="/delivery-notes" element={<DeliveryNotes />} />
             <Route path="/tax-invoice-receipts/create" element={<CreateTaxInvoiceReceiptPage />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/purchases" element={<Purchases />} />
+            <Route path="/purchase-invoices" element={<PurchaseInvoicesPage />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/accounts" element={<ChartOfAccounts />} />
             <Route path="/reports" element={<Reports />} />

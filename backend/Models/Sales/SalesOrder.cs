@@ -7,20 +7,21 @@ using backend.Models.Inventory;
 namespace backend.Models.Sales;
 
 /// <summary>
-/// Document status for sales orders (NOT invoices)
+/// Document status for sales orders (NOT quotes or invoices)
 /// </summary>
 public enum SalesOrderStatus
 {
-    Quote = 1,
+    Draft = 1,
     Confirmed = 2,
-    Shipped = 3,
-    Completed = 4,
-    Cancelled = 5
+    PartiallyShipped = 3,
+    Shipped = 4,
+    Completed = 5,
+    Cancelled = 6
 }
 
 /// <summary>
-/// Sales orders - represents customer orders and quotations
-/// Separate from invoices which are billing documents
+/// Sales orders - confirmed customer orders only
+/// Separate from quotes and invoices which are separate documents
 /// </summary>
 public class SalesOrder : TenantEntity
 {
@@ -30,7 +31,12 @@ public class SalesOrder : TenantEntity
     public int? AgentId { get; set; }
 
     /// <summary>
-    /// Order/Invoice number
+    /// Reference to original quote (if converted from quote)
+    /// </summary>
+    public int? QuoteId { get; set; }
+
+    /// <summary>
+    /// Order number (sequential)
     /// </summary>
     [Required]
     [MaxLength(50)]
@@ -40,17 +46,17 @@ public class SalesOrder : TenantEntity
     public DateTime OrderDate { get; set; }
 
     /// <summary>
-    /// Due date for payment
+    /// Required delivery date
     /// </summary>
-    public DateTime? DueDate { get; set; }
+    public DateTime? RequiredDate { get; set; }
 
     /// <summary>
-    /// Delivery date
+    /// Promised delivery date
     /// </summary>
-    public DateTime? DeliveryDate { get; set; }
+    public DateTime? PromisedDate { get; set; }
 
     [Required]
-    public SalesOrderStatus Status { get; set; } = SalesOrderStatus.Quote;
+    public SalesOrderStatus Status { get; set; } = SalesOrderStatus.Draft;
 
     /// <summary>
     /// Subtotal before tax and discounts
@@ -110,16 +116,29 @@ public class SalesOrder : TenantEntity
     public string? PaymentTerms { get; set; }
 
     /// <summary>
-    /// Alias for OrderDate property (backward compatibility)
+    /// Shipping method
     /// </summary>
-    [NotMapped]
-    public DateTime Date => OrderDate;
+    [MaxLength(100)]
+    public string? ShippingMethod { get; set; }
+
+    /// <summary>
+    /// Shipping cost
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal ShippingCost { get; set; } = 0;
+
+    /// <summary>
+    /// Priority level (1=Low, 2=Normal, 3=High, 4=Urgent)
+    /// </summary>
+    public int Priority { get; set; } = 2;
 
     // Navigation properties
     public virtual Customer Customer { get; set; } = null!;
     public virtual Agent? Agent { get; set; }
+    public virtual Quote? Quote { get; set; }
     public virtual ICollection<SalesOrderLine> Lines { get; set; } = new List<SalesOrderLine>();
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+    public virtual ICollection<DeliveryNote> DeliveryNotes { get; set; } = new List<DeliveryNote>();
 }
 
 /// <summary>
@@ -182,6 +201,7 @@ public class SalesOrderLine : TenantEntity
     // Navigation properties
     public virtual SalesOrder SalesOrder { get; set; } = null!;
     public virtual Item Item { get; set; } = null!;
+    public virtual ICollection<DeliveryNoteLine> DeliveryNoteLines { get; set; } = new List<DeliveryNoteLine>();
 }
 
 

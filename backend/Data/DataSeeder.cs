@@ -25,6 +25,9 @@ public static class DataSeeder
         // Seed roles
         await SeedRoles(context);
 
+        // Seed system user (must come after roles)
+        await SeedSystemUser(context);
+
         // Seed template chart of accounts first (CompanyId = 0)
         await SeedDefaultChartOfAccounts(context);
 
@@ -87,6 +90,36 @@ public static class DataSeeder
         };
 
         context.Roles.AddRange(roles);
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedSystemUser(AccountingDbContext context)
+    {
+        if (await context.Users.AnyAsync())
+            return; // Users already exist
+
+        // Get the System Administrator role
+        var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "System Administrator");
+        if (adminRole == null)
+        {
+            throw new InvalidOperationException("System Administrator role not found. Make sure SeedRoles is called first.");
+        }
+
+        var systemUser = new User
+        {
+            Name = "System",
+            Email = "system@accounting.local",
+            PasswordHash = "NotApplicable", // System user doesn't need a real password
+            IsActive = true,
+            RoleId = adminRole.Id,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedBy = "System",
+            UpdatedBy = "System",
+            IsDeleted = false
+        };
+
+        context.Users.Add(systemUser);
         await context.SaveChangesAsync();
     }
 

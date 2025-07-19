@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { companyApi, type UpdateCompanyRequest, type CompanyDashboardStats } from '../services/companyApi';
+import { useAuthStore } from '../stores';
 import type { Company } from '../types/entities';
 
 export interface UseCompanyReturn {
@@ -14,7 +15,8 @@ export interface UseCompanyReturn {
 }
 
 export const useCompany = (): UseCompanyReturn => {
-  const [company, setCompany] = useState<Company | null>(null);
+  const { company } = useAuthStore();
+  
   const [stats, setStats] = useState<CompanyDashboardStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,8 @@ export const useCompany = (): UseCompanyReturn => {
       setLoading(true);
       setError(null);
       const companyData = await companyApi.getCompany(id);
-      setCompany(companyData);
+      // Note: Company data should be updated in the auth store, not locally
+      console.log('Company data loaded:', companyData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'שגיאה בטעינת נתוני החברה';
       setError(errorMessage);
@@ -39,7 +42,8 @@ export const useCompany = (): UseCompanyReturn => {
       setLoading(true);
       setError(null);
       const updatedCompany = await companyApi.updateCompany(id, data);
-      setCompany(updatedCompany);
+      // Note: Company data should be updated in the auth store, not locally
+      console.log('Company updated:', updatedCompany);
       return updatedCompany;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'שגיאה בעדכון נתוני החברה';

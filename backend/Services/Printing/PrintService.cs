@@ -263,7 +263,7 @@ public class PrintService : IPrintService
 <html dir=""rtl"" lang=""he"">
 <head>
     <meta charset=""UTF-8"">
-    <title>הזמנת מכירה - {salesOrder.OrderNumber}</title>
+    <title>הזמנה - {salesOrder.OrderNumber}</title>
     <style>{GetCommonStyles()}</style>
 </head>
 <body>
@@ -275,7 +275,7 @@ public class PrintService : IPrintService
                 <p>ע.מ: {company.IsraelTaxId} | טלפון: {company.Phone ?? "לא צוין"}</p>
             </div>
             <div class=""document-title"">
-                <h2>הזמנת מכירה</h2>
+                <h2>הזמנה</h2>
                 <p>מספר: {salesOrder.OrderNumber}</p>
             </div>
         </div>
@@ -290,7 +290,8 @@ public class PrintService : IPrintService
         
         <div class=""order-details"">
             <p><strong>תאריך הזמנה:</strong> {salesOrder.OrderDate:dd/MM/yyyy}</p>
-            {(salesOrder.DueDate.HasValue ? $"<p><strong>תאריך אספקה:</strong> {salesOrder.DueDate.Value:dd/MM/yyyy}</p>" : "")}
+            {(salesOrder.RequiredDate.HasValue ? $"<p><strong>תאריך דרוש:</strong> {salesOrder.RequiredDate.Value:dd/MM/yyyy}</p>" : "")}
+            {(salesOrder.PromisedDate.HasValue ? $"<p><strong>תאריך מובטח:</strong> {salesOrder.PromisedDate.Value:dd/MM/yyyy}</p>" : "")}
             <p><strong>סטטוס:</strong> {GetStatusText(salesOrder.Status)}</p>
             {(!string.IsNullOrEmpty(salesOrder.Notes) ? $"<p><strong>הערות:</strong> {salesOrder.Notes}</p>" : "")}
         </div>
@@ -384,7 +385,7 @@ public class PrintService : IPrintService
     {
         var salesOrdersHtml = string.Join("", salesOrders.Select(so => $@"
             <tr>
-                <td>הזמנת מכירה</td>
+                <td>הזמנה</td>
                 <td>{so.OrderNumber}</td>
                 <td>{so.OrderDate:dd/MM/yyyy}</td>
                 <td>{so.TotalAmount:C}</td>
@@ -626,8 +627,9 @@ public class PrintService : IPrintService
     {
         return status switch
         {
-            SalesOrderStatus.Quote => "הצעת מחיר",
-            SalesOrderStatus.Confirmed => "הזמנה",
+            SalesOrderStatus.Draft => "טיוטה",
+            SalesOrderStatus.Confirmed => "הזמנה מאושרת",
+            SalesOrderStatus.PartiallyShipped => "נשלח חלקית", 
             SalesOrderStatus.Shipped => "נשלח",
             SalesOrderStatus.Completed => "הושלם",
             SalesOrderStatus.Cancelled => "בוטל",

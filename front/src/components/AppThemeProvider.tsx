@@ -91,45 +91,45 @@ const createAppTheme = (mode: 'light' | 'dark', language: 'en' | 'he') => {
           'sans-serif',
         ].join(','),
         h1: {
-          fontSize: '2.75rem',
+          fontSize: '3.25rem',
           fontWeight: 700,
           lineHeight: 1.2,
           letterSpacing: '-0.025em',
         },
         h2: {
-          fontSize: '2.25rem',
+          fontSize: '2.75rem',
           fontWeight: 600,
           lineHeight: 1.25,
           letterSpacing: '-0.015em',
         },
         h3: {
-          fontSize: '1.875rem',
+          fontSize: '2.25rem',
           fontWeight: 600,
           lineHeight: 1.3,
           letterSpacing: '-0.01em',
         },
         h4: {
-          fontSize: '1.5rem',
+          fontSize: '1.875rem',
           fontWeight: 600,
           lineHeight: 1.35,
         },
         h5: {
-          fontSize: '1.25rem',
+          fontSize: '1.5rem',
           fontWeight: 600,
           lineHeight: 1.4,
         },
         h6: {
-          fontSize: '1.125rem',
+          fontSize: '1.375rem',
           fontWeight: 600,
           lineHeight: 1.45,
         },
         body1: {
-          fontSize: '1rem',
+          fontSize: '1.125rem',
           lineHeight: 1.6,
           letterSpacing: '0.00938em',
         },
         body2: {
-          fontSize: '0.875rem',
+          fontSize: '1rem',
           lineHeight: 1.57,
           letterSpacing: '0.00714em',
         },
@@ -137,16 +137,17 @@ const createAppTheme = (mode: 'light' | 'dark', language: 'en' | 'he') => {
           textTransform: 'none',
           fontWeight: 500,
           letterSpacing: '0.02em',
+          fontSize: '1.125rem',
         },
         caption: {
-          fontSize: '0.75rem',
+          fontSize: '0.875rem',
           lineHeight: 1.66,
           letterSpacing: '0.03333em',
         },
       },
-      spacing: (factor: number) => `${0.25 * factor}rem`, // 4px base unit
+      spacing: (factor: number) => `${0.375 * factor}rem`, // 6px base unit (increased from 4px)
       shape: {
-        borderRadius: 12, // More rounded default
+        borderRadius: 16, // More rounded default (increased from 12)
       },
       components: {
         MuiCssBaseline: {
@@ -202,13 +203,13 @@ const createAppTheme = (mode: 'light' | 'dark', language: 'en' | 'he') => {
         MuiButton: {
           styleOverrides: {
             root: {
-              borderRadius: 12,
+              borderRadius: 16,
               textTransform: 'none',
               fontWeight: 500,
-              padding: '12px 24px',
-              fontSize: '0.875rem',
+              padding: '16px 32px',
+              fontSize: '1rem',
               lineHeight: 1.5,
-              minHeight: 44,
+              minHeight: 52,
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
                 transform: 'translateY(-1px)',
@@ -218,20 +219,20 @@ const createAppTheme = (mode: 'light' | 'dark', language: 'en' | 'he') => {
               },
             },
             contained: {
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+              boxShadow: '0 3px 10px rgba(0, 0, 0, 0.15)',
               '&:hover': {
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                boxShadow: '0 5px 15px rgba(0, 0, 0, 0.2)',
                 transform: 'translateY(-1px)',
               },
               '&:active': {
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                boxShadow: '0 3px 10px rgba(0, 0, 0, 0.15)',
                 transform: 'translateY(0)',
               },
             },
             outlined: {
-              borderWidth: '1.5px',
+              borderWidth: '2px',
               '&:hover': {
-                borderWidth: '1.5px',
+                borderWidth: '2px',
                 backgroundColor: mode === 'light' ? '#f8fafc' : '#334155',
               },
             },
@@ -241,14 +242,14 @@ const createAppTheme = (mode: 'light' | 'dark', language: 'en' | 'he') => {
               },
             },
             sizeSmall: {
-              padding: '8px 16px',
-              fontSize: '0.8125rem',
-              minHeight: 36,
+              padding: '12px 24px',
+              fontSize: '0.9375rem',
+              minHeight: 44,
             },
             sizeLarge: {
-              padding: '16px 32px',
-              fontSize: '1rem',
-              minHeight: 52,
+              padding: '20px 40px',
+              fontSize: '1.125rem',
+              minHeight: 60,
             },
           },
         },
@@ -256,7 +257,9 @@ const createAppTheme = (mode: 'light' | 'dark', language: 'en' | 'he') => {
           styleOverrides: {
             root: {
               '& .MuiOutlinedInput-root': {
-                borderRadius: 12,
+                borderRadius: 16,
+                fontSize: '1.125rem',
+                minHeight: '56px',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
                   transform: 'translateY(-1px)',
@@ -269,6 +272,7 @@ const createAppTheme = (mode: 'light' | 'dark', language: 'en' | 'he') => {
               },
               '& .MuiInputLabel-root': {
                 fontWeight: 500,
+                fontSize: '1.125rem',
               },
             },
           },
@@ -294,10 +298,22 @@ const createAppTheme = (mode: 'light' | 'dark', language: 'en' | 'he') => {
         MuiChip: {
           styleOverrides: {
             root: {
-              borderRadius: 8,
+              borderRadius: 12,
               fontWeight: 500,
-              fontSize: '0.75rem',
+              fontSize: '0.875rem',
+              height: 36,
+              '& .MuiChip-label': {
+                padding: '0 16px',
+                fontSize: '0.875rem',
+              },
+            },
+            sizeSmall: {
               height: 28,
+              fontSize: '0.75rem',
+              '& .MuiChip-label': {
+                padding: '0 12px',
+                fontSize: '0.75rem',
+              },
             },
           },
         },

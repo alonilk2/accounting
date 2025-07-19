@@ -1,28 +1,49 @@
 import { useState, useEffect, useCallback } from 'react';
 import { customersAPI } from '../services/api';
 import type { Customer } from '../types/entities';
+import type { PaginatedResponse, CustomerFilters } from '../types/pagination';
 
 export interface UseCustomersResult {
   customers: Customer[];
+  totalCount: number;
   loading: boolean;
   error: string | null;
   createCustomer: (customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Customer>;
   updateCustomer: (id: number, customer: Partial<Customer>) => Promise<Customer>;
   deleteCustomer: (id: number) => Promise<void>;
-  refreshCustomers: () => Promise<void>;
+  refreshCustomers: (filters?: CustomerFilters) => Promise<void>;
+  loadCustomers: (filters: CustomerFilters) => Promise<PaginatedResponse<Customer>>;
 }
 
 export const useCustomers = (): UseCustomersResult => {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refreshCustomers = useCallback(async () => {
+  const loadCustomers = useCallback(async (filters: CustomerFilters): Promise<PaginatedResponse<Customer>> => {
     try {
       setLoading(true);
       setError(null);
-      const data = await customersAPI.getAll();
-      setCustomers(data);
+      const response = await customersAPI.getAll(filters);
+      return response;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load customers';
+      setError(errorMessage);
+      console.error('Error loading customers:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const refreshCustomers = useCallback(async (filters?: CustomerFilters) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await customersAPI.getAll(filters || { page: 1, pageSize: 25 });
+      setCustomers(response.data);
+      setTotalCount(response.totalCount);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load customers';
       setError(errorMessage);
@@ -36,7 +57,8 @@ export const useCustomers = (): UseCustomersResult => {
     try {
       setError(null);
       const newCustomer = await customersAPI.create(customerData);
-      setCustomers(prev => [...prev, newCustomer]);
+      // Refresh to get updated pagination
+      await refreshCustomers();
       return newCustomer;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create customer';
@@ -44,7 +66,7 @@ export const useCustomers = (): UseCustomersResult => {
       console.error('Error creating customer:', err);
       throw err;
     }
-  }, []);
+  }, [refreshCustomers]);
 
   const updateCustomer = useCallback(async (id: number, customerData: Partial<Customer>) => {
     try {
@@ -82,11 +104,13 @@ export const useCustomers = (): UseCustomersResult => {
 
   return {
     customers,
+    totalCount,
     loading,
     error,
     createCustomer,
     updateCustomer,
     deleteCustomer,
     refreshCustomers,
+    loadCustomers,
   };
 };

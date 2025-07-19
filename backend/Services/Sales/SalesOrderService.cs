@@ -79,9 +79,9 @@ public class SalesOrderService : BaseService<SalesOrder>, ISalesOrderService
             salesOrder.IsDeleted = false;
 
             // Set default status if not provided
-            if (salesOrder.Status == SalesOrderStatus.Quote)
+            if (salesOrder.Status == default(SalesOrderStatus))
             {
-                salesOrder.Status = SalesOrderStatus.Confirmed;
+                salesOrder.Status = SalesOrderStatus.Draft;
             }
 
             // Set order date if not provided
@@ -170,8 +170,8 @@ public class SalesOrderService : BaseService<SalesOrder>, ISalesOrderService
             .Where(so => so.CompanyId == companyId && 
                         !so.IsDeleted &&
                         so.Status == SalesOrderStatus.Shipped &&
-                        so.DueDate < DateTime.Today)
-            .OrderBy(so => so.DueDate)
+                        so.RequiredDate < DateTime.Today)
+            .OrderBy(so => so.RequiredDate)
             .ToListAsync(cancellationToken);
     }
 
@@ -303,7 +303,7 @@ public class SalesOrderService : BaseService<SalesOrder>, ISalesOrderService
         {
             CompanyId = salesOrder.CompanyId,
             ItemId = line.ItemId,
-            Date = salesOrder.Date,
+            Date = salesOrder.OrderDate,
             QtyChange = -line.Quantity, // Negative for sales
             TransactionType = InventoryTransactionType.Sale,
             ReferenceId = salesOrder.Id,
@@ -354,12 +354,34 @@ public class SalesOrderService : BaseService<SalesOrder>, ISalesOrderService
     /// </summary>
     private new async Task LogAuditAsync(int entityId, int companyId, string userId, string action, string description, CancellationToken cancellationToken)
     {
+        int auditUserId;
+        
+        // Try to parse userId, if it fails or user doesn't exist, use system user (ID = 1)
+        if (!int.TryParse(userId, out auditUserId))
+        {
+            // Get the system user ID (first user, which should be the system user we seed)
+            var systemUser = await _context.Users.Where(u => u.Email == "system@accounting.local" && !u.IsDeleted)
+                                                 .FirstOrDefaultAsync(cancellationToken);
+            auditUserId = systemUser?.Id ?? 1; // Fallback to 1 if system user not found
+        }
+        else
+        {
+            // Verify the user exists
+            var userExists = await _context.Users.AnyAsync(u => u.Id == auditUserId && !u.IsDeleted, cancellationToken);
+            if (!userExists)
+            {
+                var systemUser = await _context.Users.Where(u => u.Email == "system@accounting.local" && !u.IsDeleted)
+                                                     .FirstOrDefaultAsync(cancellationToken);
+                auditUserId = systemUser?.Id ?? 1; // Fallback to 1 if system user not found
+            }
+        }
+
         var auditLog = new AuditLog
         {
             CompanyId = companyId,
             EntityType = "SalesOrder",
             EntityId = entityId,
-            UserId = int.TryParse(userId, out int userIdInt) ? userIdInt : 1, // Default to 1 if parsing fails
+            UserId = auditUserId,
             Action = action,
             Details = description
         };

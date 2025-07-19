@@ -271,10 +271,32 @@ public abstract class BaseService<T> : IBaseService<T> where T : BaseEntity
     {
         try
         {
+            int auditUserId;
+            
+            // Try to parse userId, if it fails, try to find system user
+            if (!int.TryParse(userId, out auditUserId))
+            {
+                // Find system user by email
+                var systemUser = _context.Users.Where(u => u.Email == "system@accounting.local" && !u.IsDeleted)
+                                              .FirstOrDefault();
+                auditUserId = systemUser?.Id ?? 0; // Use 0 if no system user found (should not happen after seeding)
+            }
+            else
+            {
+                // Verify the user exists
+                var userExists = _context.Users.Any(u => u.Id == auditUserId && !u.IsDeleted);
+                if (!userExists)
+                {
+                    var systemUser = _context.Users.Where(u => u.Email == "system@accounting.local" && !u.IsDeleted)
+                                                  .FirstOrDefault();
+                    auditUserId = systemUser?.Id ?? 0; // Use 0 if no system user found
+                }
+            }
+
             var auditLog = new AuditLog
             {
                 CompanyId = companyId,
-                UserId = int.TryParse(userId, out int userIdInt) ? userIdInt : 0,
+                UserId = auditUserId,
                 Action = action,
                 EntityType = typeof(T).Name,
                 EntityId = entityId,

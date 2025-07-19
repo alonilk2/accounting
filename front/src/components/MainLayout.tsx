@@ -25,7 +25,6 @@ import {
   People,
   Business,
   Inventory,
-  Receipt,
   ShoppingCart,
   AccountBalance,
   BarChart,
@@ -39,6 +38,8 @@ import {
   TrendingUp,
   Insights,
   SmartToy,
+  Assignment,
+  LocalShipping,
   CorporateFare,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -59,7 +60,7 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(style);
 }
 
-const drawerWidth = 320;
+const drawerWidth = 240;
 
 interface NavItem {
   text: string;
@@ -76,10 +77,13 @@ const navigationItems: NavItem[] = [
   { text: 'AI Insights', textHe: 'תובנות AI', icon: <Insights />, path: '/ai-insights', section: 'AI Analytics', isAI: true, badge: 'AI' },
   { text: 'Smart Analytics', textHe: 'אנליטיקה חכמה', icon: <TrendingUp />, path: '/smart-analytics', section: 'AI Analytics', isAI: true, badge: 'AI' },
   { text: 'Customers', textHe: 'לקוחות', icon: <People />, path: '/customers', section: 'Sales' },
-  { text: 'Sales Orders', textHe: 'מכירות', icon: <Receipt />, path: '/sales', section: 'Sales' },
+  { text: 'Quotes', textHe: 'הצעות מחיר', icon: <Assignment />, path: '/quotes', section: 'Sales' },
+  { text: 'Orders', textHe: 'הזמנות', icon: <ShoppingCart />, path: '/sales-orders', section: 'Sales' },
+  { text: 'Delivery Notes', textHe: 'תעודות משלוח', icon: <LocalShipping />, path: '/delivery-notes', section: 'Sales' },
   { text: 'Sales Documents', textHe: 'מסמכי מכירות', icon: <Business />, path: '/sales-documents', section: 'Sales' },
   { text: 'Suppliers', textHe: 'ספקים', icon: <Business />, path: '/suppliers', section: 'Purchasing' },
   { text: 'Purchase Orders', textHe: 'הזמנות רכש', icon: <ShoppingCart />, path: '/purchases', section: 'Purchasing' },
+  { text: 'Purchase Invoices', textHe: 'חשבוניות רכש', icon: <AccountBalance />, path: '/purchase-invoices', section: 'Purchasing' },
   { text: 'Inventory', textHe: 'מלאי', icon: <Inventory />, path: '/inventory', section: 'Inventory' },
   { text: 'Chart of Accounts', textHe: 'תרשים חשבונות', icon: <AccountBalance />, path: '/accounts', section: 'Accounting' },
   { text: 'Reports', textHe: 'דוחות', icon: <BarChart />, path: '/reports', section: 'Reports' },
@@ -154,8 +158,15 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
           sx={{
             borderRadius: 2,
             mx: 1,
-            mb: 0.5,
+            mb: 1,
+            py: 1.5,
+            px: 0.5,
+            minHeight: 80,
             position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 0.5,
             background: item.isAI && !isActive 
               ? `linear-gradient(135deg, ${theme.palette.primary.main}08, ${theme.palette.secondary.main}08)`
               : 'transparent',
@@ -176,64 +187,84 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
                 : undefined,
             },
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            transform: isActive ? 'translateX(4px)' : 'translateX(0)',
+            transform: isActive ? 'scale(1.02)' : 'scale(1)',
           }}
         >
-          <ListItemIcon
+          <Box sx={{ 
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: 40,
+          }}>
+            <Box
+              sx={{
+                color: isActive ? theme.palette.primary.main : 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                '& svg': {
+                  fontSize: 28,
+                  filter: item.isAI ? 'drop-shadow(0 0 4px rgba(25, 118, 210, 0.3))' : 'none',
+                },
+              }}
+            >
+              {item.icon}
+            </Box>
+            {item.badge && (
+              <Chip
+                label={item.badge}
+                size="small"
+                sx={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  height: 16,
+                  fontWeight: 600,
+                  fontSize: '0.65rem',
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  color: 'white',
+                  '& .MuiChip-label': {
+                    px: 0.5,
+                  },
+                }}
+              />
+            )}
+            {item.isAI && (
+              <AutoAwesome 
+                sx={{ 
+                  position: 'absolute',
+                  top: -2,
+                  left: -2,
+                  fontSize: 14, 
+                  color: theme.palette.primary.main,
+                  animation: 'pulse 2s infinite',
+                  '@keyframes pulse': {
+                    '0%': { opacity: 0.5 },
+                    '50%': { opacity: 1 },
+                    '100%': { opacity: 0.5 },
+                  },
+                }} 
+              />
+            )}
+          </Box>
+          <Typography
+            variant="caption"
             sx={{
+              fontWeight: isActive ? 600 : 500,
               color: isActive ? theme.palette.primary.main : 'inherit',
-              minWidth: 40,
-              '& svg': {
-                filter: item.isAI ? 'drop-shadow(0 0 4px rgba(25, 118, 210, 0.3))' : 'none',
-              },
+              textAlign: 'center',
+              lineHeight: 1.1,
+              fontSize: '0.7rem',
+              maxWidth: '100%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            {item.icon}
-          </ListItemIcon>
-          <ListItemText
-            primary={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: isActive ? 600 : 500,
-                    color: isActive ? theme.palette.primary.main : 'inherit',
-                  }}
-                >
-                  {displayText}
-                </Typography>
-                {item.badge && (
-                  <Chip
-                    label={item.badge}
-                    size="small"
-                    sx={{
-                      height: 18,
-                      fontWeight: 600,
-                      background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                      color: 'white',
-                      '& .MuiChip-label': {
-                        px: 0.75,
-                      },
-                    }}
-                  />
-                )}
-                {item.isAI && (
-                  <AutoAwesome 
-                    sx={{ 
-                      fontSize: 16, 
-                      color: theme.palette.primary.main,
-                      animation: 'pulse 2s infinite',
-                      '@keyframes pulse': {
-                        '0%': { opacity: 0.5 },
-                        '50%': { opacity: 1 },
-                        '100%': { opacity: 0.5 },
-                      },
-                    }} 
-                  />
-                )}
-              </Box>
-            }
-          />
+            {displayText}
+          </Typography>
         </ListItemButton>
       </ListItem>
     );
@@ -252,12 +283,15 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Company Header */}
       <Box sx={{ 
-        p: 2, 
+        p: 1.5, 
         background: `linear-gradient(135deg, ${theme.palette.primary.main}10, ${theme.palette.secondary.main}05)`,
         borderBottom: `1px solid ${theme.palette.divider}`,
         position: 'relative',
         overflow: 'visible',
         minHeight: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -269,8 +303,8 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
           zIndex: 0,
         },
       }}>
-        <Box sx={{ position: 'relative', zIndex: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2 }}>
+        <Box sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, mb: 1.5 }}>
             <Box
               sx={{
                 width: 40,
@@ -288,30 +322,39 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
             >
               {company?.name?.charAt(0) || 'A'}
             </Box>
-            <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Box sx={{ textAlign: 'center', width: '100%' }}>
               <Typography 
-                variant="h6" 
+                variant="caption" 
                 component="div" 
                 sx={{ 
                   fontWeight: 700, 
                   lineHeight: 1.2,
-                  wordBreak: 'break-word',
-                  overflow: 'visible',
+                  fontSize: '0.7rem',
+                  textAlign: 'center',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100%',
                 }}
+                title={company?.name || 'AI Accounting System'}
               >
-                {company?.name || 'AI Accounting System'}
+                {company?.name || 'AI System'}
               </Typography>
               <Typography 
-                variant="body2" 
+                variant="caption" 
                 color="text.secondary" 
                 sx={{ 
-                  lineHeight: 1.3,
-                  mt: 0.5,
-                  wordBreak: 'break-word',
-                  overflow: 'visible',
+                  lineHeight: 1.2,
+                  fontSize: '0.6rem',
+                  textAlign: 'center',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100%',
                 }}
+                title={company?.israelTaxId ? `Tax ID: ${company.israelTaxId}` : 'Smart Business Management'}
               >
-                {company?.israelTaxId ? `Tax ID: ${company.israelTaxId}` : 'Smart Business Management'}
+                {company?.israelTaxId ? `Tax: ${company.israelTaxId.slice(-4)}` : 'Smart Mgmt'}
               </Typography>
             </Box>
           </Box>
@@ -319,10 +362,10 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
           {/* AI Status Indicator */}
           <Box sx={{ 
             display: 'flex', 
+            flexDirection: 'column',
             alignItems: 'center', 
-            gap: 1, 
-            mt: 2,
-            p: 1.5,
+            gap: 0.5, 
+            p: 1,
             borderRadius: 2,
             background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
             border: `1px solid ${theme.palette.primary.main}30`,
@@ -332,15 +375,19 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
               color: theme.palette.primary.main,
               animation: 'pulse 2s infinite',
             }} />
-            <Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
+            <Typography variant="caption" sx={{ 
+              fontWeight: 600, 
+              color: theme.palette.primary.main,
+              fontSize: '0.65rem',
+              textAlign: 'center',
+            }}>
               {language === 'he' ? 'AI פעיל' : 'AI Active'}
             </Typography>
             <Box sx={{ 
-              width: 8, 
-              height: 8, 
+              width: 6, 
+              height: 6, 
               borderRadius: '50%', 
               bgcolor: 'success.main',
-              ml: 'auto',
               animation: 'pulse 1.5s infinite',
             }} />
           </Box>
@@ -353,15 +400,16 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
           <Box key={section}>
             {section !== 'Main' && (
               <Box sx={{ 
-                px: 2, 
-                py: 1.5, 
+                px: 1, 
+                py: 1, 
                 display: 'flex', 
+                flexDirection: 'column',
                 alignItems: 'center', 
-                gap: 1,
+                gap: 0.5,
               }}>
                 {section === 'AI Analytics' && (
                   <AutoAwesome sx={{ 
-                    fontSize: 16, 
+                    fontSize: 14, 
                     color: theme.palette.primary.main,
                     animation: 'pulse 2s infinite',
                   }} />
@@ -371,8 +419,11 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
                   sx={{
                     color: section === 'AI Analytics' ? theme.palette.primary.main : 'text.secondary',
                     fontWeight: 700,
-                    letterSpacing: '0.1em',
+                    letterSpacing: '0.05em',
                     textTransform: 'uppercase',
+                    fontSize: '0.65rem',
+                    textAlign: 'center',
+                    lineHeight: 1,
                   }}
                 >
                   {sectionTitles[section as keyof typeof sectionTitles]?.[language] || section}
@@ -382,35 +433,38 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
             <List dense>
               {items.map(renderNavItem)}
             </List>
-            {section !== 'System' && <Divider sx={{ my: 1.5, mx: 2 }} />}
+            {section !== 'System' && <Divider sx={{ my: 1, mx: 2 }} />}
           </Box>
         ))}
       </Box>
 
       {/* Theme and Language Controls */}
       <Box sx={{ 
-        p: 2.5, 
+        p: 1.5, 
         borderTop: `1px solid ${theme.palette.divider}`,
         background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
       }}>
         <Box sx={{ 
           display: 'flex', 
           flexDirection: 'column', 
-          gap: 1.5,
+          gap: 1,
+          alignItems: 'center',
         }}>
           <Box sx={{ 
             display: 'flex', 
+            flexDirection: 'column',
             alignItems: 'center', 
-            justifyContent: 'space-between',
-            p: 1.5,
+            justifyContent: 'center',
+            p: 1,
             borderRadius: 2,
             background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
             border: `1px solid ${theme.palette.divider}`,
+            width: '100%',
           }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {currentTheme === 'dark' ? <Brightness4 sx={{ fontSize: 18 }} /> : <Brightness7 sx={{ fontSize: 18 }} />}
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {language === 'he' ? 'מצב כהה' : 'Dark Mode'}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+              {currentTheme === 'dark' ? <Brightness4 sx={{ fontSize: 16 }} /> : <Brightness7 sx={{ fontSize: 16 }} />}
+              <Typography variant="caption" sx={{ fontWeight: 500, fontSize: '0.65rem' }}>
+                {language === 'he' ? 'כהה' : 'Dark'}
               </Typography>
             </Box>
             <Switch
@@ -427,16 +481,18 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
           
           <Box sx={{ 
             display: 'flex', 
+            flexDirection: 'column',
             alignItems: 'center', 
-            justifyContent: 'space-between',
-            p: 1.5,
+            justifyContent: 'center',
+            p: 1,
             borderRadius: 2,
             background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
             border: `1px solid ${theme.palette.divider}`,
+            width: '100%',
           }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Language sx={{ fontSize: 18 }} />
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+              <Language sx={{ fontSize: 16 }} />
+              <Typography variant="caption" sx={{ fontWeight: 500, fontSize: '0.65rem' }}>
                 {language === 'he' ? 'עברית' : 'Hebrew'}
               </Typography>
             </Box>

@@ -30,20 +30,27 @@ import { useUIStore } from '../stores';
 import { useCustomers } from '../hooks/useCustomers';
 import type { Customer } from '../types/entities';
 import CustomerDocumentsDialog from '../components/customers/CustomerDocumentsDialog';
+import { textFieldStyles, dialogStyles, paperStyles, buttonStyles } from '../styles/formStyles';
+import { enhancedDataGridStyles } from '../styles/enhancedStyles';
 
 const Customers = () => {
   const { language } = useUIStore();
   const { 
     customers, 
+    totalCount,
     loading, 
     error, 
     createCustomer, 
     updateCustomer, 
     deleteCustomer, 
-    refreshCustomers 
+    loadCustomers 
   } = useCustomers();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
+  });
   const [openDialog, setOpenDialog] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
@@ -201,11 +208,36 @@ const Customers = () => {
     }
   };
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.contact.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (customer.taxId && customer.taxId.includes(searchTerm))
-  );
+  // Handle search with debouncing
+  const handleSearch = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+    const newPaginationModel = { ...paginationModel, page: 0 };
+    setPaginationModel(newPaginationModel);
+    loadCustomers({
+      searchTerm: newSearchTerm,
+      page: newPaginationModel.page + 1, // API uses 1-based pagination
+      pageSize: newPaginationModel.pageSize,
+    });
+  };
+
+  // Handle pagination changes
+  const handlePaginationChange = (newPaginationModel: { page: number; pageSize: number }) => {
+    setPaginationModel(newPaginationModel);
+    loadCustomers({
+      searchTerm,
+      page: newPaginationModel.page + 1, // API uses 1-based pagination
+      pageSize: newPaginationModel.pageSize,
+    });
+  };
+
+  // Handle refresh
+  const handleRefresh = () => {
+    loadCustomers({
+      searchTerm,
+      page: paginationModel.page + 1,
+      pageSize: paginationModel.pageSize,
+    });
+  };
 
   const columns: GridColDef[] = [
     {
@@ -344,7 +376,7 @@ const Customers = () => {
   return (
     <Box sx={{ 
       p: { xs: 3, md: 4 }, 
-      backgroundColor: '#fafafa',
+      backgroundColor: 'background.default',
       minHeight: '100vh'
     }}>
       {/* Header with Actions */}
@@ -367,15 +399,9 @@ const Customers = () => {
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
-            onClick={refreshCustomers}
+            onClick={handleRefresh}
             disabled={loading}
-            sx={{ 
-              borderRadius: 3,
-              px: 3,
-              py: 1.5,
-              fontSize: '1rem',
-              fontWeight: 500
-            }}
+            sx={buttonStyles.secondary}
           >
             {language === 'he' ? 'רענן' : 'Refresh'}
           </Button>
@@ -384,26 +410,14 @@ const Customers = () => {
             startIcon={<AddIcon />}
             onClick={() => handleOpenDialog()}
             disabled={loading}
-            sx={{ 
-              borderRadius: 3,
-              px: 4,
-              py: 1.5,
-              fontSize: '1rem',
-              fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)'
-            }}
+            sx={buttonStyles.primary}
           >
             {language === 'he' ? 'הוסף לקוח' : 'Add Customer'}
           </Button>
         </Box>
       </Box>
 
-      <Paper sx={{ 
-        p: 4,
-        borderRadius: 3,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-        backgroundColor: 'white'
-      }}>
+      <Paper sx={paperStyles}>
         {/* Error Alert */}
         {error && (
           <Alert severity="error" sx={{ mb: 3 }} onClose={() => window.location.reload()}>
@@ -418,11 +432,20 @@ const Customers = () => {
             variant="outlined"
             placeholder={language === 'he' ? 'חיפוש לקוחות...' : 'Search customers...'}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
-                fontSize: '1.1rem'
+                fontSize: '1.1rem',
+                backgroundColor: 'background.paper',
+                '&:hover': {
+                  backgroundColor: (theme) => theme.palette.mode === 'light' 
+                    ? 'rgba(0,0,0,0.02)' 
+                    : 'rgba(255,255,255,0.05)',
+                },
+                '&.Mui-focused': {
+                  backgroundColor: 'background.paper',
+                }
               },
               '& .MuiInputLabel-root': {
                 fontSize: '1rem'
@@ -435,23 +458,17 @@ const Customers = () => {
         </Box>
 
         {/* Data Grid */}
-        <Box sx={{ 
-          height: 600, 
-          width: '100%',
-          '& .MuiDataGrid-root': {
-            borderRadius: 2,
-            fontSize: '1rem'
-          }
-        }}>
+        <Box sx={enhancedDataGridStyles}>
           <DataGrid
-            rows={filteredCustomers}
+            rows={customers}
             columns={columns}
             loading={loading}
             pagination
+            paginationMode="server"
+            rowCount={totalCount}
+            paginationModel={paginationModel}
+            onPaginationModelChange={handlePaginationChange}
             pageSizeOptions={[10, 25, 50]}
-            initialState={{
-              pagination: { paginationModel: { pageSize: 10 } },
-            }}
             disableRowSelectionOnClick
             localeText={
               language === 'he'
@@ -473,12 +490,7 @@ const Customers = () => {
         onClose={handleCloseDialog} 
         maxWidth="md" 
         fullWidth
-        sx={{
-          '& .MuiDialog-paper': {
-            borderRadius: 3,
-            p: 2
-          }
-        }}
+        sx={dialogStyles}
       >
         <DialogTitle sx={{ 
           fontSize: '1.5rem',
@@ -499,15 +511,7 @@ const Customers = () => {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  fontSize: '1.1rem'
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: '1rem'
-                }
-              }}
+              sx={textFieldStyles}
             />
             <TextField
               fullWidth
@@ -516,45 +520,21 @@ const Customers = () => {
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               multiline
               rows={2}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  fontSize: '1.1rem'
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: '1rem'
-                }
-              }}
+              sx={textFieldStyles}
             />
             <TextField
               fullWidth
               label={language === 'he' ? 'איש קשר' : 'Contact Person'}
               value={formData.contact}
               onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  fontSize: '1.1rem'
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: '1rem'
-                }
-              }}
+              sx={textFieldStyles}
             />
             <TextField
               fullWidth
               label={language === 'he' ? 'ח.פ./ת.ז.' : 'Tax ID'}
               value={formData.taxId}
               onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  fontSize: '1.1rem'
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: '1rem'
-                }
-              }}
+              sx={textFieldStyles}
             />
             <TextField
               fullWidth
@@ -562,45 +542,21 @@ const Customers = () => {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  fontSize: '1.1rem'
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: '1rem'
-                }
-              }}
+              sx={textFieldStyles}
             />
             <TextField
               fullWidth
               label={language === 'he' ? 'טלפון' : 'Phone'}
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  fontSize: '1.1rem'
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: '1rem'
-                }
-              }}
+              sx={textFieldStyles}
             />
             <TextField
               fullWidth
               label={language === 'he' ? 'אתר אינטרנט' : 'Website'}
               value={formData.website}
               onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  fontSize: '1.1rem'
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: '1rem'
-                }
-              }}
+              sx={textFieldStyles}
             />
             <Box sx={{ display: 'flex', gap: 3 }}>
               <TextField
@@ -609,15 +565,7 @@ const Customers = () => {
                 type="number"
                 value={formData.paymentTerms}
                 onChange={(e) => setFormData({ ...formData, paymentTerms: parseInt(e.target.value) || 0 })}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    fontSize: '1.1rem'
-                  },
-                  '& .MuiInputLabel-root': {
-                    fontSize: '1rem'
-                  }
-                }}
+                sx={textFieldStyles}
               />
               <TextField
                 fullWidth

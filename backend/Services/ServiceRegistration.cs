@@ -28,16 +28,18 @@ public static class ServiceRegistration
     {
         // Core services
         services.AddScoped<ICompanyService, CompanyService>();
+        services.AddScoped<ICustomerService, backend.Services.Core.CustomerService>();
         
         // Sales services
         services.AddScoped<ISalesOrderService, SalesOrderService>();
         services.AddScoped<ICustomerDocumentService, CustomerDocumentService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
+        services.AddScoped<IQuoteService, QuoteService>();
         services.AddScoped<ITaxInvoiceReceiptService, TaxInvoiceReceiptService>();
         
         // Purchasing services
         services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
-        services.AddScoped<ISupplierService, SupplierService>();
+        services.AddScoped<ISupplierService, backend.Services.Suppliers.SupplierService>();
         
         // Inventory services
         services.AddScoped<IInventoryService, InventoryService>();

@@ -3,425 +3,284 @@ import {
   Container,
   Typography,
   Button,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  IconButton,
-  Chip,
-  TextField,
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  MenuItem,
   TablePagination,
   Box,
-  Alert
+  Chip,
+  IconButton,
+  Tooltip,
+  Alert,
+  InputAdornment,
+  TextField,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon,
-  Visibility as ViewIcon,
-  Cancel as CancelIcon,
-  Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
+  Print as PrintIcon,
   Search as SearchIcon,
-  Clear as ClearIcon
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import dayjs from 'dayjs';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 import taxInvoiceReceiptService from '../services/taxInvoiceReceiptService';
-import type {
-  TaxInvoiceReceiptListItem,
-  TaxInvoiceReceiptFilter,
-  TaxInvoiceReceiptStatus
-} from '../types/taxInvoiceReceipt';
-import { TaxInvoiceReceiptStatus as StatusEnum, TAX_INVOICE_RECEIPT_STATUS_LABELS } from '../types/taxInvoiceReceipt';
-
-interface Customer {
-  id: number;
-  name: string;
-}
+import TaxInvoiceReceiptCreateDialog from '../components/taxInvoiceReceipts/TaxInvoiceReceiptCreateDialog';
+import type { TaxInvoiceReceiptListItem, TaxInvoiceReceiptStatus } from '../types/taxInvoiceReceipt';
+import { TAX_INVOICE_RECEIPT_STATUS_LABELS } from '../types/taxInvoiceReceipt';
 
 const TaxInvoiceReceiptsPage: React.FC = () => {
-  const navigate = useNavigate();
   const [receipts, setReceipts] = useState<TaxInvoiceReceiptListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  
-  // Pagination state
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
-  const [totalCount, setTotalCount] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  // Filter state
-  const [filters, setFilters] = useState<TaxInvoiceReceiptFilter>({
-    page: 1,
-    pageSize: 25,
-    sortBy: 'documentDate',
-    sortDescending: true
-  });
+  useEffect(() => {
+    loadReceipts();
+  }, []);
 
-  // Dialog state
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [selectedReceiptId, setSelectedReceiptId] = useState<number | null>(null);
-
-  // Search state
-  const [searchDocumentNumber, setSearchDocumentNumber] = useState('');
-  const [searchCustomerId, setSearchCustomerId] = useState<number | ''>('');
-  const [searchStatus, setSearchStatus] = useState<TaxInvoiceReceiptStatus | ''>('');
-  const [searchFromDate, setSearchFromDate] = useState('');
-  const [searchToDate, setSearchToDate] = useState('');
-
-  // Load data
   const loadReceipts = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await taxInvoiceReceiptService.getTaxInvoiceReceipts(filters);
+      const response = await taxInvoiceReceiptService.getTaxInvoiceReceipts();
       setReceipts(response.items);
-      setTotalCount(response.totalCount);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה בטעינת נתונים');
+      console.error('Error loading tax invoice receipts:', err);
+      setError('שגיאה בטעינת רשימת החשבוניות');
     } finally {
       setLoading(false);
     }
   };
 
-  // Load customers for search filter
-  const loadCustomers = async () => {
-    try {
-      // This would be replaced with actual customer service call
-      // For now, just empty array
-      setCustomers([]);
-    } catch (err) {
-      console.error('Error loading customers:', err);
-    }
+  const handleCreateSuccess = () => {
+    loadReceipts(); // Refresh the list
   };
 
-  useEffect(() => {
-    loadReceipts();
-    loadCustomers();
-  }, [filters]);
-
-  const handleSearch = () => {
-    setFilters({
-      ...filters,
-      documentNumber: searchDocumentNumber || undefined,
-      customerId: searchCustomerId || undefined,
-      status: searchStatus || undefined,
-      fromDate: searchFromDate || undefined,
-      toDate: searchToDate || undefined,
-      page: 1
-    });
-    setPage(0);
-  };
-
-  const handleClearSearch = () => {
-    setSearchDocumentNumber('');
-    setSearchCustomerId('');
-    setSearchStatus('');
-    setSearchFromDate('');
-    setSearchToDate('');
-    setFilters({
-      page: 1,
-      pageSize: rowsPerPage,
-      sortBy: 'documentDate',
-      sortDescending: true
-    });
-    setPage(0);
-  };
-
-  const handlePageChange = (_: unknown, newPage: number) => {
+  const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
-    setFilters({ ...filters, page: newPage + 1 });
   };
 
-  const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    setRowsPerPage(newRowsPerPage);
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-    setFilters({ ...filters, page: 1, pageSize: newRowsPerPage });
-  };
-
-  const handleCancelReceipt = async () => {
-    if (!selectedReceiptId) return;
-
-    try {
-      await taxInvoiceReceiptService.cancelTaxInvoiceReceipt(selectedReceiptId);
-      setShowCancelDialog(false);
-      setSelectedReceiptId(null);
-      loadReceipts();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה בביטול החשבונית');
-    }
-  };
-
-  const handleDeleteReceipt = async () => {
-    if (!selectedReceiptId) return;
-
-    try {
-      await taxInvoiceReceiptService.deleteTaxInvoiceReceipt(selectedReceiptId);
-      setShowDeleteDialog(false);
-      setSelectedReceiptId(null);
-      loadReceipts();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה במחיקת החשבונית');
-    }
   };
 
   const getStatusChip = (status: TaxInvoiceReceiptStatus) => {
-    const color = status === StatusEnum.Paid ? 'success' : 'default';
+    const label = TAX_INVOICE_RECEIPT_STATUS_LABELS[status] || 'לא ידוע';
+    
+    const colorMap = {
+      1: 'success' as const, // Paid - שולם
+      2: 'error' as const,   // Cancelled - בוטל
+    };
+
+    const color = colorMap[status] || 'default' as const;
+    
     return (
       <Chip
-        label={TAX_INVOICE_RECEIPT_STATUS_LABELS[status]}
+        label={label}
         color={color}
         size="small"
+        variant="outlined"
       />
     );
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'ILS'
-    }).format(amount);
-  };
+  const filteredReceipts = receipts.filter(receipt =>
+    receipt.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    receipt.documentNumber?.toString().includes(searchTerm)
+  );
+
+  const paginatedReceipts = filteredReceipts.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
           חשבוניות מס-קבלה
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => navigate('/tax-invoice-receipts/create')}
-          sx={{ mb: 2 }}
+          onClick={() => setShowCreateDialog(true)}
+          sx={{ borderRadius: 2 }}
         >
           חשבונית מס-קבלה חדשה
         </Button>
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
-      {/* Search Filters */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          חיפוש וסינון
-        </Typography>
-        <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} alignItems="center">
-          <Grid size={{ xs: 4, md: 3 }}>
-            <TextField
-              fullWidth
-              label="מספר מסמך"
-              value={searchDocumentNumber}
-              onChange={(e) => setSearchDocumentNumber(e.target.value)}
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 4, md: 2 }}>
-            <TextField
-              fullWidth
-              select
-              label="לקוח"
-              value={searchCustomerId}
-              onChange={(e) => setSearchCustomerId(e.target.value as number | '')}
-              size="small"
-            >
-              <MenuItem value="">כל הלקוחות</MenuItem>
-              {customers.map((customer) => (
-                <MenuItem key={customer.id} value={customer.id}>
-                  {customer.name}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid size={{ xs: 4, md: 2 }}>
-            <TextField
-              fullWidth
-              select
-              label="סטטוס"
-              value={searchStatus}
-              onChange={(e) => setSearchStatus(e.target.value as TaxInvoiceReceiptStatus | '')}
-              size="small"
-            >
-              <MenuItem value="">כל הסטטוסים</MenuItem>
-              <MenuItem value={StatusEnum.Paid}>שולם</MenuItem>
-              <MenuItem value={StatusEnum.Cancelled}>בוטל</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid size={{ xs: 4, md: 2 }}>
-            <TextField
-              fullWidth
-              type="date"
-              label="מתאריך"
-              value={searchFromDate}
-              onChange={(e) => setSearchFromDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 4, md: 2 }}>
-            <TextField
-              fullWidth
-              type="date"
-              label="עד תאריך"
-              value={searchToDate}
-              onChange={(e) => setSearchToDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              size="small"
-            />
-          </Grid>
-          <Grid size={{ xs: 4, md: 1 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <IconButton onClick={handleSearch} color="primary">
-                <SearchIcon />
-              </IconButton>
-              <IconButton onClick={handleClearSearch} color="secondary">
-                <ClearIcon />
-              </IconButton>
-            </Box>
-          </Grid>
-        </Grid>
+      {/* Search and Actions */}
+      <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+        <Box display="flex" gap={2} alignItems="center">
+          <TextField
+            placeholder="חיפוש לפי לקוח או מספר מסמך..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ 
+              flex: 1,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
+          />
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={loadReceipts}
+            disabled={loading}
+            sx={{ borderRadius: 2 }}
+          >
+            רענן
+          </Button>
+        </Box>
       </Paper>
 
       {/* Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>מספר מסמך</TableCell>
-              <TableCell>תאריך</TableCell>
-              <TableCell>לקוח</TableCell>
-              <TableCell>סטטוס</TableCell>
-              <TableCell>אופן תשלום</TableCell>
-              <TableCell align="right">סכום</TableCell>
-              <TableCell align="center">פעולות</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  טוען...
-                </TableCell>
+      <Paper sx={{ borderRadius: 2 }}>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                <TableCell sx={{ fontWeight: 600 }}>מספר מסמך</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>תאריך</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>לקוח</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>אופן תשלום</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 600 }}>סכום כולל</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 600 }}>סטטוס</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 600, width: 120 }}>פעולות</TableCell>
               </TableRow>
-            ) : receipts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  לא נמצאו חשבוניות מס-קבלה
-                </TableCell>
-              </TableRow>
-            ) : (
-              receipts.map((receipt) => (
-                <TableRow key={receipt.id} hover>
-                  <TableCell>{receipt.documentNumber}</TableCell>
-                  <TableCell>{dayjs(receipt.documentDate).format('DD/MM/YYYY')}</TableCell>
-                  <TableCell>{receipt.customerName}</TableCell>
-                  <TableCell>{getStatusChip(receipt.status)}</TableCell>
-                  <TableCell>{receipt.paymentMethod}</TableCell>
-                  <TableCell align="right">{formatCurrency(receipt.totalAmount)}</TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      onClick={() => navigate(`/tax-invoice-receipts/${receipt.id}`)}
-                      size="small"
-                      title="צפייה"
-                    >
-                      <ViewIcon />
-                    </IconButton>
-                    {receipt.status === StatusEnum.Paid && (
-                      <>
-                        <IconButton
-                          onClick={() => navigate(`/tax-invoice-receipts/${receipt.id}/edit`)}
-                          size="small"
-                          title="עריכה"
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => {
-                            setSelectedReceiptId(receipt.id);
-                            setShowCancelDialog(true);
-                          }}
-                          size="small"
-                          title="ביטול"
-                          color="warning"
-                        >
-                          <CancelIcon />
-                        </IconButton>
-                      </>
-                    )}
-                    <IconButton
-                      onClick={() => {
-                        setSelectedReceiptId(receipt.id);
-                        setShowDeleteDialog(true);
-                      }}
-                      size="small"
-                      title="מחיקה"
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    <Typography>טוען...</Typography>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        
+              ) : paginatedReceipts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    <Typography color="text.secondary">
+                      {searchTerm ? 'לא נמצאו תוצאות לחיפוש' : 'אין חשבוניות מס-קבלה עדיין'}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedReceipts.map((receipt) => (
+                  <TableRow 
+                    key={receipt.id}
+                    hover
+                    sx={{ '&:hover': { backgroundColor: 'action.hover' } }}
+                  >
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">
+                        {receipt.documentNumber}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(receipt.documentDate), 'dd/MM/yyyy', { locale: he })}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {receipt.customerName}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {receipt.paymentMethod}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Typography variant="body2" fontWeight="medium">
+                        ₪{receipt.totalAmount?.toFixed(2) || '0.00'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      {getStatusChip(receipt.status)}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Box display="flex" gap={1} justifyContent="center">
+                        <Tooltip title="הצג">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              // TODO: Navigate to view page
+                              console.log('View receipt', receipt.id);
+                            }}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="הדפס">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              // TODO: Print receipt
+                              console.log('Print receipt', receipt.id);
+                            }}
+                          >
+                            <PrintIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
         <TablePagination
           component="div"
-          count={totalCount}
+          count={filteredReceipts.length}
           page={page}
-          onPageChange={handlePageChange}
+          onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          labelRowsPerPage="שורות לעמוד:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} מתוך ${count}`}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          labelRowsPerPage="שורות בעמוד:"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} מתוך ${count !== -1 ? count : `יותר מ ${to}`}`
+          }
+          sx={{
+            '& .MuiTablePagination-selectLabel': {
+              fontSize: '0.875rem',
+            },
+            '& .MuiTablePagination-displayedRows': {
+              fontSize: '0.875rem',
+            },
+          }}
         />
-      </TableContainer>
+      </Paper>
 
-      {/* Cancel Dialog */}
-      <Dialog open={showCancelDialog} onClose={() => setShowCancelDialog(false)}>
-        <DialogTitle>ביטול חשבונית מס-קבלה</DialogTitle>
-        <DialogContent>
-          האם אתה בטוח שברצונך לבטל את החשבונית? פעולה זו תחזיר את המלאי ותסמן את המסמך כמבוטל.
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowCancelDialog(false)}>ביטול</Button>
-          <Button onClick={handleCancelReceipt} color="warning" variant="contained">
-            אישור ביטול
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete Dialog */}
-      <Dialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)}>
-        <DialogTitle>מחיקת חשבונית מס-קבלה</DialogTitle>
-        <DialogContent>
-          האם אתה בטוח שברצונך למחוק את החשבונית? פעולה זו בלתי הפיכה.
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowDeleteDialog(false)}>ביטול</Button>
-          <Button onClick={handleDeleteReceipt} color="error" variant="contained">
-            מחיקה
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Create Dialog */}
+      <TaxInvoiceReceiptCreateDialog
+        open={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onSuccess={handleCreateSuccess}
+      />
     </Container>
   );
 };

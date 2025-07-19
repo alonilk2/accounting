@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using backend.Data;
 using backend.Models.Suppliers;
+using backend.DTOs.Core;
+using backend.DTOs.Shared;
 using backend.Services.Interfaces;
 using backend.Services.Core;
 
@@ -294,5 +296,95 @@ public class SupplierService : BaseService<Supplier>, ISupplierService
         {
             throw new ArgumentException("Payment terms must be between 0 and 365 days");
         }
+    }
+
+    /// <summary>
+    /// Get suppliers with pagination and filtering
+    /// </summary>
+    public async Task<PaginatedResponse<SupplierDto>> GetSuppliersAsync(
+        int companyId, 
+        string? searchTerm = null, 
+        bool? isActive = null,
+        int page = 1, 
+        int pageSize = 25, 
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Suppliers
+            .Where(s => s.CompanyId == companyId)
+            .AsQueryable();
+
+        // Apply search filter
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            var lowerSearchTerm = searchTerm.ToLower();
+            query = query.Where(s => 
+                s.Name.ToLower().Contains(lowerSearchTerm) ||
+                (s.TaxId != null && s.TaxId.Contains(searchTerm)) ||
+                (s.VatNumber != null && s.VatNumber.Contains(searchTerm)) ||
+                (s.Email != null && s.Email.ToLower().Contains(lowerSearchTerm)) ||
+                (s.Phone != null && s.Phone.Contains(searchTerm)));
+        }
+
+        // Apply active filter
+        if (isActive.HasValue)
+        {
+            query = query.Where(s => s.IsActive == isActive.Value);
+        }
+
+        // Get total count before pagination
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        // Apply pagination and ordering
+        var suppliers = await query
+            .OrderBy(s => s.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(s => new SupplierDto
+            {
+                Id = s.Id,
+                CompanyId = s.CompanyId,
+                Name = s.Name,
+                Address = s.Address ?? string.Empty,
+                Contact = s.Contact ?? string.Empty,
+                Phone = s.Phone,
+                Email = s.Email,
+                Website = s.Website,
+                TaxId = s.TaxId,
+                VatNumber = s.VatNumber,
+                PaymentTermsDays = s.PaymentTermsDays,
+                IsActive = s.IsActive,
+                CreatedAt = s.CreatedAt,
+                UpdatedAt = s.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return PaginatedResponse<SupplierDto>.Create(suppliers, page, pageSize, totalCount);
+    }
+
+    /// <summary>
+    /// Get supplier by ID
+    /// </summary>
+    public async Task<SupplierDto?> GetSupplierAsync(int id, int companyId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Suppliers
+            .Where(s => s.Id == id && s.CompanyId == companyId)
+            .Select(s => new SupplierDto
+            {
+                Id = s.Id,
+                CompanyId = s.CompanyId,
+                Name = s.Name,
+                Address = s.Address ?? string.Empty,
+                Contact = s.Contact ?? string.Empty,
+                Phone = s.Phone,
+                Email = s.Email,
+                Website = s.Website,
+                TaxId = s.TaxId,
+                VatNumber = s.VatNumber,
+                PaymentTermsDays = s.PaymentTermsDays,
+                IsActive = s.IsActive,
+                CreatedAt = s.CreatedAt,
+                UpdatedAt = s.UpdatedAt
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

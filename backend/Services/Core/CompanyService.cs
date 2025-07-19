@@ -196,13 +196,13 @@ public class CompanyService : BaseService<Company>, ICompanyService
 
             stats.PendingInvoices = await _context.SalesOrders
                 .CountAsync(so => so.CompanyId == companyId && 
-                                so.Status == SalesOrderStatus.Quote &&
+                                so.Status == SalesOrderStatus.Draft &&
                                 !so.IsDeleted, cancellationToken);
 
             stats.OverdueInvoices = await _context.SalesOrders
                 .CountAsync(so => so.CompanyId == companyId && 
                                 so.Status == SalesOrderStatus.Shipped &&
-                                so.DueDate < DateTime.Today &&
+                                so.RequiredDate < DateTime.Today &&
                                 !so.IsDeleted, cancellationToken);
 
             stats.LastUpdated = DateTime.UtcNow;

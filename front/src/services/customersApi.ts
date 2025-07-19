@@ -1,6 +1,7 @@
 import type { Customer } from '../types/entities';
+import type { PaginatedResponse } from '../types/pagination';
 
-const API_BASE_URL = 'https://localhost:5121/api';
+const API_BASE_URL = 'http://localhost:5121/api';
 
 export const customersApi = {
   async getCustomers(): Promise<Customer[]> {
@@ -17,7 +18,8 @@ export const customersApi = {
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
 
-    return response.json();
+    const paginatedResponse: PaginatedResponse<Customer> = await response.json();
+    return paginatedResponse.data || [];
   },
 
   async getCustomer(id: number): Promise<Customer> {

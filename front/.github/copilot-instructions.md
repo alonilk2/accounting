@@ -1,166 +1,245 @@
 # AI Accounting SaaS Project - Copilot Instructions
 
-This is an AI-First SaaS Accounting Platform for Israeli businesses with React frontend + .NET backend, designed for Israeli Tax Authority compliance and multi-tenant operations.
+AI-First SaaS Accounting Platform for Israeli businesses with React frontend + .NET backend, fully compliant with Israeli regulations including "מסמך אחיד" (Unified Document) requirements.
 
-## Architecture Overview
+## 🏗️ Architecture Overview
 
-### Multi-Tenant SaaS Structure
-- **Backend**: .NET 9 Web API with Entity Framework Core + Azure SQL
-- **Frontend**: React 18 + TypeScript + Vite + Material-UI + Zustand
-- **Multi-tenancy**: Row-level security with `CompanyId` on all tenant entities
-- **Base entities**: All models inherit from `BaseEntity` (audit fields) or `TenantEntity` (+ CompanyId)
+### Technology Stack
+- **Frontend**: React + TypeScript, Material-UI, Zustand state management
+- **Backend**: .NET 8 Web API, Entity Framework Core
+- **Database**: Azure SQL Database with managed identity
+- **AI**: Azure OpenAI with function calling for Hebrew business assistant
+- **Infrastructure**: Azure App Service, Key Vault, Application Insights
 
-### Key Business Domains
-- **Sales**: `SalesOrder` → `SalesOrderLine` with customer/agent relationships
-- **Purchasing**: `PurchaseOrder` → `PurchaseOrderLine` with supplier relationships  
-- **Inventory**: `Item` tracking with `InventoryTransaction` movements
-- **Accounting**: `ChartOfAccount` (hierarchical) + `JournalEntry` for double-entry bookkeeping
-- **POS**: Point-of-sale transactions (`POSSale` → `POSSaleLines`)
-- **Compliance**: Israeli Tax Authority "מבנה אחיד" export (INI.TXT/BKMVDATA.TXT format)
+### Project Structure
+```
+/
+├── backend/                 # .NET 8 Web API
+│   ├── Controllers/        # API endpoints with multi-tenant filtering
+│   ├── Services/          # Business logic inheriting BaseService<T>
+│   ├── Models/            # Entity models with BaseEntity/TenantEntity
+│   ├── DTOs/              # Data transfer objects
+│   ├── Migrations/        # EF Core database migrations
+│   └── AI/                # Azure OpenAI integration & function services
+├── front/                  # React TypeScript frontend
+│   ├── src/
+│   │   ├── components/    # UI components with Hebrew RTL support
+│   │   ├── stores/        # Zustand state management
+│   │   ├── types/         # TypeScript interfaces matching backend
+│   │   ├── utils/         # Helpers for formatting, validation
+│   │   └── api/           # API client services
+│   └── public/            # Static assets
+```
 
-## Development Patterns
+## 🔐 Critical Architecture Patterns
 
-### Backend (.NET)
-- **Service Layer**: Business logic in `Services/` with interface contracts (`IBaseService<T>`)
-- **Controllers**: Thin REST controllers in `Controllers/` - delegate to services directly
-- **Multi-tenant queries**: ALWAYS filter by `CompanyId` - use `ApplyCompanyFilter()` in base service
-- **Database**: Use `AccountingDbContext` with proper Include() for navigation properties
-- **Validation**: Data annotations + service-level validation for business rules
-
-### Critical Multi-Tenant Pattern
-All tenant entities inherit from `TenantEntity` which includes `CompanyId`. Base service automatically filters:
+### Multi-Tenant Security (NEVER SKIP)
+All tenant entities inherit from `TenantEntity` with `CompanyId`. ALWAYS filter by company:
 ```csharp
-// BaseService<T> automatically applies company filtering
-protected virtual IQueryable<T> ApplyCompanyFilter(IQueryable<T> query, int companyId)
-{
-    return query.Where(e => EF.Property<int>(e, CompanyIdPropertyName) == companyId);
-}
+// Controllers MUST pass companyId to all service methods
+var customers = await _context.Customers
+    .Where(c => c.CompanyId == currentCompanyId) // REQUIRED
+    .ToListAsync();
+```
 
-// Controllers must pass companyId to all service methods
-[HttpGet]
-public async Task<ActionResult<IEnumerable<CustomerDto>>> GetCustomers([FromQuery] int? companyId = null)
+### BaseService Pattern (Foundation)
+All services inherit from `BaseService<T>` providing standardized multi-tenant CRUD:
+```csharp
+public abstract class BaseService<T> : IBaseService<T> where T : BaseEntity
 {
-    var currentCompanyId = companyId ?? 1; // Get from auth context in real app
-    var customers = await _context.Customers
-        .Where(c => c.CompanyId == currentCompanyId) // REQUIRED filtering
-        .ToListAsync();
+    protected abstract DbSet<T> DbSet { get; }
+    protected abstract string CompanyIdPropertyName { get; }
+    
+    // Auto-applies company filtering via EF.Property<int>(e, CompanyIdPropertyName)
+    // Includes audit logging, optimistic concurrency, soft deletes
+}
+```
+## 🤖 AI Function Calling Pattern
+Extensible function routing for Azure OpenAI function calls with Hebrew descriptions:
+```csharp
+public class CustomerFunctionService : ICustomerFunctionService
+{
+    public List<FunctionDefinition> GetCustomerFunctions() => new()
+    {
+        new() { Name = "getCustomersList", Description = "קבלת רשימת לקוחות" },
+        new() { Name = "createCustomer", Description = "יצירת לקוח חדש" },
+        new() { Name = "searchCustomers", Description = "חיפוש לקוחות לפי שם או מס' ח.פ" }
+    };
+    
+    public async Task<FunctionResult> ExecuteCustomerFunctionAsync(
+        FunctionCall functionCall, int companyId, CancellationToken cancellationToken)
+    {
+        return functionCall.Name switch
+        {
+            "getCustomersList" => await GetCustomersListAsync(functionCall.Arguments, companyId, cancellationToken),
+            "createCustomer" => await CreateCustomerAsync(functionCall.Arguments, companyId, cancellationToken),
+            _ => new FunctionResult { IsSuccess = false, ErrorMessage = "Unknown function" }
+        };
+    }
 }
 ```
 
-### Frontend (React)
-- **State Management**: Zustand stores in `stores/index.ts` (AuthStore, UIStore pattern)
-- **Types**: TypeScript interfaces in `types/entities.ts` mirror backend models exactly
-- **Services**: API communication layer in `services/` with axios
-- **Components**: Material-UI based, feature-organized in `components/`
-- **Routing**: React Router for navigation between modules
+## 🇮🇱 Israeli Compliance & Regulations
+
+### מסמך אחיד (Unified Document) Requirements
+- **Format**: Standardized invoice format per Israeli Tax Authority regulations
+- **Fields**: All mandatory fields including מס' עוסק מורשה, invoice serial number
+- **QR Code**: Optional QR code for digital validation
+- **Implementation**: `UnifiedDocumentService` handles format compliance
+
+### Tax & Financial Compliance
+- **Tax ID**: Use `CompanyService.ValidateTaxIdAsync()` (Israeli check digit algorithm)
+- **VAT Rate**: 18% standard Israeli VAT (מע"מ) in service calculations
+- **Currency**: Default "ILS" for all Israeli businesses, format with ₪
+- **Invoice Numbering**: Sequential, company-specific, reset yearly option
+- **Tax Reports**: Export formats compatible with Israeli Tax Authority systems
+
+### Document Management
+- **Print Templates**: Hebrew RTL support in `src/components/print/`
+  - Invoice template with מסמך אחיד compliance
+  - Receipt template (קבלה)
+  - Quote template (הצעת מחיר)
+- **PDF Export**: Using `iTextSharp` for Hebrew PDF generation with proper RTL
+- **Excel Export**: EPPlus for financial reports with Hebrew headers
+
+## 📧 Email Integration
+```csharp
+public interface IEmailService
+{
+    Task SendInvoiceAsync(int invoiceId, string recipientEmail, int companyId);
+    Task SendQuoteAsync(int quoteId, string recipientEmail, int companyId);
+    Task SendStatementAsync(int customerId, DateTime fromDate, DateTime toDate, int companyId);
+}
+```
+- **SMTP Configuration**: Azure Communication Services or SendGrid
+- **Templates**: Hebrew/English email templates with company branding
+- **Attachments**: Auto-attach PDF documents
+
+## 💾 Backup & Restore
+```csharp
+public interface IBackupService
+{
+    Task<BackupResult> CreateBackupAsync(int companyId);
+    Task<RestoreResult> RestoreBackupAsync(int companyId, string backupId);
+    Task<List<BackupInfo>> GetBackupsAsync(int companyId);
+}
+```
+- **Automated Backups**: Daily Azure SQL automated backups
+- **Manual Backups**: On-demand company-specific data export
+- **Restore**: Point-in-time recovery with audit trail
+- **Storage**: Azure Blob Storage with encryption
+
+## 🎨 Design System
+
+### UI/UX Principles
+- **Modern Israeli Business Design**: Clean, professional, mobile-responsive
+- **Color Palette**:
+  - Primary: #1976d2 (Professional Blue)
+  - Secondary: #FFA726 (Warm Amber)
+  - Success: #4CAF50
+  - Error: #F44336
+- **Typography**: 
+  - Hebrew: Noto Sans Hebrew, Heebo
+  - English: Roboto, Inter
+- **Spacing**: Material Design 8px grid system
+
+### RTL Support
+```typescript
+// AppThemeProvider.tsx
+const theme = createTheme({
+  direction: language === 'he' ? 'rtl' : 'ltr',
+  typography: {
+    fontFamily: language === 'he' 
+      ? '"Noto Sans Hebrew", "Heebo", sans-serif'
+      : '"Roboto", "Inter", sans-serif'
+  }
+});
+```
+
+## 🚀 Development Workflow
+
+### Backend Development
+```bash
+cd backend
+dotnet run                          # Runs on https://localhost:5121
+dotnet ef migrations add [Name]     # Create new migration
+dotnet ef database update           # Apply migrations
+dotnet test                         # Run unit tests
+```
+
+### Frontend Development
+```bash
+cd front
+npm install                         # Install dependencies
+npm run dev                         # Runs on http://localhost:5173
+npm run build                       # Production build
+npm test                           # Run tests
+```
 
 ### Service Registration Pattern
 ```csharp
-// In Services/ServiceRegistration.cs - register ALL services here
+// Services/ServiceRegistration.cs - register ALL services here
 services.AddScoped<ISalesOrderService, SalesOrderService>();
-services.ConfigureDatabase(builder.Configuration, builder.Environment);
+services.AddScoped<IInvoiceService, InvoiceService>();
+services.AddScoped<IEmailService, EmailService>();
+services.AddScoped<IBackupService, BackupService>();
+services.AddScoped<IUnifiedDocumentService, UnifiedDocumentService>();
+// AI Services with Azure Managed Identity
+services.AddScoped<IAIAssistantService, AIAssistantService>();
+services.AddScoped<ICustomerFunctionService, CustomerFunctionService>();
 ```
 
-## Critical Workflows
+## 📋 API Conventions
+- **RESTful Routes**: `/api/[controller]/[action]`
+- **Multi-tenant**: `companyId` parameter on ALL tenant operations
+- **Document Endpoints**: 
+  - `/api/sales` - Sales orders management
+  - `/api/invoices` - Invoice operations
+  - `/api/invoices/from-sales-order/{id}` - Convert order to invoice
+  - `/api/invoices/{id}/send-email` - Email invoice
+  - `/api/invoices/{id}/export-pdf` - Export as PDF
+  - `/api/reports/export-excel` - Excel reports
+- **Backup Endpoints**:
+  - `/api/backup/create` - Create backup
+  - `/api/backup/restore/{backupId}` - Restore from backup
+  - `/api/backup/list` - List available backups
 
-### Development Commands
-```bash
-# Backend
-cd backend ; dotnet run --launch-profile https  # HTTPS on port 7275
-dotnet ef migrations add MigrationName           # Database changes
-dotnet ef database update                        # Apply migrations
-
-# Frontend  
-cd front ; npm run dev                          # Vite dev server on port 5173
-npm run test                                     # Vitest unit tests
-npm run build                                    # Production build
-```
-
-### Database Entity Patterns
-- **Entity relationships**: Use navigation properties with proper FK constraints
-- **Soft deletes**: Set `IsDeleted = true`, never physically delete records
-- **Audit trail**: `CreatedAt/UpdatedAt` automatically managed by `BaseEntity`
-- **Concurrency**: Use `RowVersion` for optimistic concurrency control
-- **Company setup**: Use `CompanyService.InitializeCompanyAsync()` - auto-creates Israeli chart of accounts
-
-### API Development Conventions
-- RESTful endpoints: `/api/[controller]/[action]`
-- DTOs for data transfer (avoid exposing entity models directly)
-- Consistent error responses with proper HTTP status codes
-- Multi-tenant filtering: `companyId` parameter on ALL tenant operations
-- Dev endpoint pattern: `GET /api/customers/dev/first-company` returns test company ID
-
-### Israeli Business Logic (Critical)
-- **Tax ID Validation**: Use `CompanyService.ValidateTaxIdAsync()` - implements Israeli check digit algorithm
-- **Chart of Accounts**: Auto-generated per Israeli standards (100-199 Assets, 200-299 Liabilities, etc.)
-- **Default Currency**: "ILS" for all Israeli businesses
-- **Fiscal Year**: Default January 1st start (customizable per company)
-
-## Israeli Tax Compliance (Critical)
-- **מבנה אחיד Export**: Generate INI.TXT + BKMVDATA.TXT files per Income Tax Instruction 1.31
-- **Record types**: C100 (documents), D110 (lines), B100 (GL transactions), M100 (inventory)
-- **VAT handling**: Proper tax calculations and reporting
-- **Audit requirements**: All financial changes must be logged in `AuditLog` table
-
-## AI Integration Points
-- **Azure Form Recognizer**: OCR for receipt/invoice scanning (`/api/ai/scan-receipt`)
-- **Azure OpenAI**: Chatbot assistant for financial queries (`/api/ai/query`)
-- **Future**: Anomaly detection, forecasting, automated categorization
-
-## Testing & Quality
-- **Unit tests**: Vitest + React Testing Library for frontend, xUnit for backend
-- **Integration tests**: Test full user workflows through API endpoints
-- **Database tests**: Use in-memory SQLite for isolated testing
-- **Type safety**: Strict TypeScript with proper entity type definitions
-
-## Document Printing & Export Features
-
-### Current Print Implementation (React-based)
-- **Frontend-Only Printing**: Uses `react-to-print` library for browser-based printing
-- **Print Components**: Existing components in `src/components/print/`:
-  - `PrintButton` - Reusable print button with Material-UI integration
-  - `PrintableReceipt` - Hebrew receipt template for customer payments
-  - `PrintableSalesOrder` - Sales order/invoice printing template
-  - `PrintableDocument` - Base template with Hebrew company header
-- **Current Usage**: Sales orders and receipts can be printed directly from UI
-- **Sequential Numbering**: Already implemented (REC-YYYY-#### for receipts, SO-YYYY-#### for sales orders)
-
-### Extending Print Functionality (To Match Instructions)
-- **Backend PDF Service**: Create `IPrintService` interface for server-side PDF generation:
+## 🔧 Entity Patterns
 ```csharp
-// Backend: IPrintService interface (NOT YET IMPLEMENTED)
-public interface IPrintService
+public abstract class BaseEntity
 {
-    Task<byte[]> GenerateInvoicePdfAsync(int invoiceId, int companyId, CancellationToken cancellationToken = default);
-    Task<byte[]> GenerateReceiptPdfAsync(int receiptId, int companyId, CancellationToken cancellationToken = default);
-    Task<byte[]> GenerateReportPdfAsync(string reportType, int companyId, object parameters, CancellationToken cancellationToken = default);
+    public int Id { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+    public bool IsDeleted { get; set; } = false; // Soft delete only
+    public byte[]? RowVersion { get; set; } // Optimistic concurrency
+}
+
+public abstract class TenantEntity : BaseEntity
+{
+    public int CompanyId { get; set; } // Multi-tenant key
+    public virtual Company Company { get; set; }
 }
 ```
-- **Print API Endpoints** (To be implemented):
-  - `GET /api/print/invoice/{id}` - Returns PDF stream
-  - `GET /api/print/receipt/{id}` - Returns receipt PDF
-  - `GET /api/print/report/{type}` - Returns report PDF with query parameters
 
-### Israeli Document Standards (הדפסת מסמכים לפי תקנות ישראליות)
-- **Current Implementation**: Existing templates already include Hebrew support and RTL layout
-- **Tax Compliance**: Current receipt template includes required Israeli fields:
-  - Company name, address, tax ID (מס׳ עוסק מורשה)
-  - Customer details and tax ID
-  - Receipt number and date
-  - Payment method and amount in ILS
-  - Sequential numbering per year (REC-YYYY-####)
-- **VAT Integration**: Uses 17% tax rate from existing `SalesOrderService.ValidateAndProcessLineItemsAsync()`
+## 🔒 Security Checklist
+- [ ] Always filter by CompanyId in queries
+- [ ] Use DTOs, never expose entities directly
+- [ ] Validate Israeli tax IDs and document formats
+- [ ] Implement proper authentication/authorization
+- [ ] Encrypt sensitive data in transit and at rest
+- [ ] Audit all financial operations
 
-### Print Service Pattern (Current vs Planned)
-```typescript
-// Current: Frontend component printing
-<PrintButton
-  printableContent={() => (
-    <PrintableReceipt receipt={receipt} salesOrder={order} customer={customer} company={company} />
-  )}
-  documentTitle={`קבלה-${receipt.receiptNumber}`}
-/>
+## 🌐 Localization
+- All UI text uses conditional: `language === 'he' ? 'עברית' : 'English'`
+- Date formats: DD/MM/YYYY for Israeli standard
+- Number formats: 1,234.56 with ₪ symbol
+- Right-to-left layout for Hebrew interface
 
-// Planned: Backend PDF service
-const pdfBytes = await printService.GenerateReceiptPdfAsync(receiptId, companyId);
-```
+## 📊 Reporting & Analytics
+- **Financial Reports**: P&L, Balance Sheet, Cash Flow
+- **VAT Reports**: Format for Israeli Tax Authority submission
+- **Customer Statements**: Account activity summaries
+- **Export Formats**: PDF for viewing, Excel for analysis
+- **Dashboard**: Real-time KPIs with Hebrew labels

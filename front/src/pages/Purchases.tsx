@@ -39,7 +39,7 @@ import {
 } from '@mui/icons-material';
 import { useUIStore } from '../stores';
 import { purchaseOrdersAPI } from '../services/purchaseOrdersApi';
-import { suppliersAPI } from '../services/suppliersApi';
+import { suppliersAPI } from '../services/api';
 import { itemsAPI } from '../services/api';
 import type { PurchaseOrder, PurchaseOrderStatus, Supplier, Item } from '../types/entities';
 

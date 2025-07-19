@@ -55,6 +55,24 @@ public class SalesDocumentsResponseDto
 }
 
 /// <summary>
+/// DTO for paginated sales documents response
+/// </summary>
+public class PaginatedSalesDocumentsResponseDto
+{
+    public List<SalesDocumentDto> Documents { get; set; } = new();
+    public int TotalCount { get; set; }
+    public decimal TotalAmount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
+    public DateTime? FromDate { get; set; }
+    public DateTime? ToDate { get; set; }
+    public string? DocumentType { get; set; }
+    public string? SearchTerm { get; set; }
+    public int? CustomerId { get; set; }
+}
+
+/// <summary>
 /// DTO for receipt information
 /// </summary>
 public class ReceiptDto

@@ -2,6 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models.Sales;
+using backend.Models.Core;
+using backend.DTOs.Core;
+using backend.DTOs.Shared;
+using backend.Services.Core;
 using backend.Services.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
@@ -19,64 +23,60 @@ public class CustomersController : ControllerBase
     private readonly ILogger<CustomersController> _logger;
     private readonly ICustomerDocumentService _customerDocumentService;
     private readonly ICustomerFunctionService _customerFunctionService;
+    private readonly ICustomerService _customerService;
 
     public CustomersController(
         AccountingDbContext context, 
         ILogger<CustomersController> logger,
         ICustomerDocumentService customerDocumentService,
-        ICustomerFunctionService customerFunctionService)
+        ICustomerFunctionService customerFunctionService,
+        ICustomerService customerService)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _customerDocumentService = customerDocumentService ?? throw new ArgumentNullException(nameof(customerDocumentService));
         _customerFunctionService = customerFunctionService ?? throw new ArgumentNullException(nameof(customerFunctionService));
+        _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
     }
 
     /// <summary>
-    /// Gets all customers for the current company
+    /// Gets all customers for the current company with pagination
     /// </summary>
     /// <param name="companyId">Company ID for multi-tenant filtering</param>
-    /// <returns>List of customers</returns>
+    /// <param name="searchTerm">Search term for filtering</param>
+    /// <param name="isActive">Filter by active status</param>
+    /// <param name="page">Page number (1-based)</param>
+    /// <param name="pageSize">Number of items per page</param>
+    /// <returns>Paginated list of customers</returns>
     [HttpGet]
-    [ProducesResponseType<IEnumerable<CustomerDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<PaginatedResponse<CustomerDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<CustomerDto>>> GetCustomers([FromQuery] int? companyId = null)
+    public async Task<ActionResult<PaginatedResponse<CustomerDto>>> GetCustomers(
+        [FromQuery] int? companyId = null,
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] bool? isActive = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken cancellationToken = default)
     {
         try
         {
             // In a real app, companyId would come from authenticated user context
             var currentCompanyId = companyId ?? 1; // Default for now
             
-            _logger.LogInformation("Retrieving customers for company {CompanyId}", currentCompanyId);
+            _logger.LogInformation("Retrieving customers for company {CompanyId}, page {Page}, pageSize {PageSize}", 
+                currentCompanyId, page, pageSize);
 
-            var customers = await _context.Customers
-                .Where(c => c.CompanyId == currentCompanyId)
-                .OrderBy(c => c.Name)
-                .Select(c => new CustomerDto
-                {
-                    Id = c.Id,
-                    CompanyId = c.CompanyId,
-                    Name = c.Name,
-                    Address = c.Address ?? string.Empty,
-                    Contact = c.Contact ?? c.Name,
-                    TaxId = c.TaxId,
-                    Email = c.Email,
-                    Phone = c.Phone,
-                    Website = c.Website,
-                    PaymentTerms = c.PaymentTermsDays,
-                    CreditLimit = c.CreditLimit,
-                    IsActive = c.IsActive,
-                    CreatedAt = c.CreatedAt,
-                    UpdatedAt = c.UpdatedAt
-                })
-                .ToListAsync();
+            // Use the injected customer service with pagination
+            var result = await _customerService.GetCustomersAsync(
+                currentCompanyId, searchTerm, isActive, page, pageSize, cancellationToken);
 
-            return Ok(customers);
+            return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving customers for company {CompanyId}", companyId);
+            _logger.LogError(ex, "Error retrieving customers for company {CompanyId}", companyId ?? 1);
             return StatusCode(500, new { message = "An error occurred while retrieving customers" });
         }
     }

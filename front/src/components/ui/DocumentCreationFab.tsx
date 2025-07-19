@@ -23,13 +23,16 @@ import {
   RequestQuote as QuoteIcon,
   MonetizationOn as ReceiptPaymentIcon,
 } from '@mui/icons-material';
-import { useUIStore, useAIAssistantStore } from '../../stores';
+import { useUIStore, useAIAssistantStore, useAuthStore } from '../../stores';
 import InvoiceCreateDialog from '../invoices/InvoiceCreateDialog';
-import { PurchaseInvoiceDialog } from '../purchases/PurchaseInvoiceDialog';
+import { PurchaseInvoiceDialog } from '../purchasing/PurchaseInvoiceDialog';
+import TaxInvoiceReceiptCreateDialog from '../taxInvoiceReceipts/TaxInvoiceReceiptCreateDialog';
+import CreateQuoteDialog from '../quotes/CreateQuoteDialog';
 import { useNavigate } from 'react-router-dom';
 
 const DocumentCreationFab: React.FC = () => {
   const theme = useTheme();
+  const { company } = useAuthStore();
   const { language } = useUIStore();
   const { isOpen: isAIOpen } = useAIAssistantStore();
   const navigate = useNavigate();
@@ -38,6 +41,8 @@ const DocumentCreationFab: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [showPurchaseInvoiceDialog, setShowPurchaseInvoiceDialog] = useState(false);
+  const [showTaxInvoiceReceiptDialog, setShowTaxInvoiceReceiptDialog] = useState(false);
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
   
   const open = Boolean(anchorEl);
 
@@ -62,7 +67,7 @@ const DocumentCreationFab: React.FC = () => {
       icon: <QuoteIcon />,
       name: language === 'he' ? 'הצעת מחיר' : 'Quote',
       onClick: () => {
-        navigate('/sales'); // Navigate to sales page where quotes can be created
+        setShowQuoteDialog(true);
         handleClose();
       },
     },
@@ -70,7 +75,7 @@ const DocumentCreationFab: React.FC = () => {
       icon: <OrderIcon />,
       name: language === 'he' ? 'הזמנה' : 'Sales Order',
       onClick: () => {
-        navigate('/sales'); // Navigate to sales page where orders can be created
+        navigate('/sales-orders?action=create&type=Confirmed');
         handleClose();
       },
     },
@@ -78,7 +83,7 @@ const DocumentCreationFab: React.FC = () => {
       icon: <ShippingIcon />,
       name: language === 'he' ? 'תעודת משלוח' : 'Delivery Note',
       onClick: () => {
-        navigate('/sales'); // Navigate to sales page where delivery notes can be created
+        navigate('/delivery-notes?action=create');
         handleClose();
       },
     },
@@ -86,7 +91,7 @@ const DocumentCreationFab: React.FC = () => {
       icon: <ReceiptIcon />,
       name: language === 'he' ? 'חשבונית מס-קבלה' : 'Tax Invoice Receipt',
       onClick: () => {
-        navigate('/tax-invoice-receipts/create');
+        setShowTaxInvoiceReceiptDialog(true);
         handleClose();
       },
     },
@@ -284,10 +289,23 @@ const DocumentCreationFab: React.FC = () => {
         onSuccess={() => setShowInvoiceDialog(false)}
       />
 
+      <CreateQuoteDialog
+        open={showQuoteDialog}
+        onClose={() => setShowQuoteDialog(false)}
+        onSuccess={() => setShowQuoteDialog(false)}
+        companyId={company?.id || 1}
+      />
+
       <PurchaseInvoiceDialog
         open={showPurchaseInvoiceDialog}
         onClose={() => setShowPurchaseInvoiceDialog(false)}
-        suppliers={[]} // TODO: Fetch suppliers from API
+        onSave={() => setShowPurchaseInvoiceDialog(false)}
+      />
+
+      <TaxInvoiceReceiptCreateDialog
+        open={showTaxInvoiceReceiptDialog}
+        onClose={() => setShowTaxInvoiceReceiptDialog(false)}
+        onSuccess={() => setShowTaxInvoiceReceiptDialog(false)}
       />
     </>
   );

@@ -82,7 +82,9 @@ public class Customer : TenantEntity
     public string? Notes { get; set; }
 
     // Navigation properties
+    public virtual ICollection<Quote> Quotes { get; set; } = new List<Quote>();
     public virtual ICollection<SalesOrder> SalesOrders { get; set; } = new List<SalesOrder>();
+    public virtual ICollection<DeliveryNote> DeliveryNotes { get; set; } = new List<DeliveryNote>();
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     public virtual ICollection<StandingOrder> StandingOrders { get; set; } = new List<StandingOrder>();
     public virtual ICollection<TaxInvoiceReceipt> TaxInvoiceReceipts { get; set; } = new List<TaxInvoiceReceipt>();
@@ -119,5 +121,6 @@ public class Agent : TenantEntity
     public string? Notes { get; set; }
 
     // Navigation properties
+    public virtual ICollection<Quote> Quotes { get; set; } = new List<Quote>();
     public virtual ICollection<SalesOrder> SalesOrders { get; set; } = new List<SalesOrder>();
 }

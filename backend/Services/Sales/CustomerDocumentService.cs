@@ -387,8 +387,9 @@ public class CustomerDocumentService : ICustomerDocumentService
     {
         return status switch
         {
-            SalesOrderStatus.Quote => "הצעת מחיר",
-            SalesOrderStatus.Confirmed => "הזמנה",
+            SalesOrderStatus.Draft => "טיוטה",
+            SalesOrderStatus.Confirmed => "הזמנה מאושרת",
+            SalesOrderStatus.PartiallyShipped => "נשלח חלקית",
             SalesOrderStatus.Shipped => "נשלח",
             SalesOrderStatus.Completed => "הושלם",
             SalesOrderStatus.Cancelled => "בוטל",

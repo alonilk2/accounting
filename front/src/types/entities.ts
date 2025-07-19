@@ -132,6 +132,55 @@ export interface Item {
   updatedAt: Date;
 }
 
+// Quote entities - separate from SalesOrder
+export interface Quote {
+  id: number;
+  companyId: number;
+  customerId: number;
+  customerName: string;
+  agentId?: number;
+  agentName?: string;
+  quoteNumber: string;
+  quoteDate: Date;
+  validUntil?: Date | null;
+  status: QuoteStatus;
+  subtotalAmount: number;
+  discountAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+  currency: string;
+  exchangeRate: number;
+  notes?: string;
+  terms?: string;
+  deliveryTerms?: string;
+  paymentTerms?: string;
+  convertedToSalesOrderId?: number;
+  convertedAt?: Date;
+  lines: QuoteLine[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface QuoteLine {
+  id: number;
+  quoteId: number;
+  itemId: number;
+  itemName: string;
+  itemSku: string;
+  lineNumber: number;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+  discountPercent: number;
+  taxRate: number;
+  lineTotal: number;
+  taxAmount: number;
+  lineTotalWithTax: number;
+}
+
+export type QuoteStatus = 'Draft' | 'Sent' | 'Accepted' | 'Rejected' | 'Expired' | 'Converted';
+
+// Sales Order entities - now separate from quotes
 export interface SalesOrder {
   id: number;
   companyId: number;
@@ -141,8 +190,8 @@ export interface SalesOrder {
   agentName?: string;
   orderNumber: string;
   orderDate: Date;
-  dueDate?: Date;
-  deliveryDate?: Date;
+  requiredDate?: Date;
+  promisedDate?: Date;
   status: SalesOrderStatus;
   subtotalAmount: number;
   taxAmount: number;
@@ -150,6 +199,8 @@ export interface SalesOrder {
   paidAmount: number;
   currency: string;
   notes?: string;
+  shippingMethod?: string;
+  quoteId?: number; // Reference to original quote if converted
   lines: SalesOrderLine[];
   createdAt: Date;
   updatedAt: Date;
@@ -171,7 +222,64 @@ export interface SalesOrderLine {
   lineTotal: number;
 }
 
-export type SalesOrderStatus = 'Quote' | 'Confirmed' | 'Shipped' | 'Completed' | 'Cancelled';
+export type SalesOrderStatus = 'Draft' | 'Confirmed' | 'PartiallyShipped' | 'Shipped' | 'Completed' | 'Cancelled';
+
+// Delivery Note entities
+export interface DeliveryNote {
+  id: number;
+  companyId: number;
+  customerId: number;
+  customerName: string;
+  salesOrderId?: number;
+  salesOrderNumber?: string;
+  deliveryNoteNumber: string;
+  deliveryDate: Date;
+  expectedDeliveryTime?: Date;
+  actualDeliveryTime?: Date;
+  status: DeliveryNoteStatus;
+  deliveryAddress?: string;
+  contactPerson?: string;
+  contactPhone?: string;
+  driverName?: string;
+  vehiclePlate?: string;
+  totalQuantity: number;
+  totalWeight?: number;
+  totalVolume?: number;
+  deliveryInstructions?: string;
+  notes?: string;
+  customerSignature?: string;
+  receivedByName?: string;
+  receivedAt?: Date;
+  trackingNumber?: string;
+  courierService?: string;
+  lines: DeliveryNoteLine[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DeliveryNoteLine {
+  id: number;
+  deliveryNoteId: number;
+  itemId: number;
+  itemName: string;
+  itemSku: string;
+  salesOrderLineId?: number;
+  lineNumber: number;
+  description?: string;
+  quantityOrdered: number;
+  quantityDelivered: number;
+  quantityReturned: number;
+  unit?: string;
+  unitWeight?: number;
+  unitVolume?: number;
+  serialNumbers?: string;
+  batchNumbers?: string;
+  expiryDate?: Date;
+  itemCondition?: string;
+  notes?: string;
+}
+
+export type DeliveryNoteStatus = 'Draft' | 'Prepared' | 'InTransit' | 'Delivered' | 'Returned' | 'Cancelled';
 
 export type InvoiceStatus = 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled';
 

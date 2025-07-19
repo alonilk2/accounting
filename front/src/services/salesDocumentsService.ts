@@ -5,6 +5,7 @@ import type {
   SalesDocument, 
   DocumentsFilter, 
   SalesDocumentsResponse, 
+  PaginatedSalesDocumentsResponse,
   MonthlyDocuments,
   DocumentType 
 } from '../types/salesDocuments';
@@ -29,6 +30,15 @@ interface BackendDocumentDto {
   canEmail: boolean;
   canPrint: boolean;
   canExportPdf: boolean;
+}
+
+interface BackendPaginatedResponse {
+  documents: BackendDocumentDto[];
+  totalCount: number;
+  totalAmount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 interface BackendMonthlyGroupDto {
@@ -114,8 +124,55 @@ class SalesDocumentsService {
       canEmail: doc.canEmail,
       canPrint: doc.canPrint,
       canExportPdf: doc.canExportPdf,
+      canConvert: false, // Default value for compatibility
       originalDocument: { id: doc.id } as Receipt // Minimal placeholder
     };
+  }
+
+  /**
+   * Get paginated sales documents for DataGrid
+   */
+  async getPaginatedSalesDocuments(filters: DocumentsFilter = {}): Promise<PaginatedSalesDocumentsResponse> {
+    try {
+      const params: Record<string, unknown> = {};
+      
+      if (filters.fromDate) {
+        params.fromDate = filters.fromDate.toISOString().split('T')[0];
+      }
+      if (filters.toDate) {
+        params.toDate = filters.toDate.toISOString().split('T')[0];
+      }
+      if (filters.documentType) {
+        params.documentType = filters.documentType;
+      }
+      if (filters.searchTerm) {
+        params.searchTerm = filters.searchTerm;
+      }
+      if (filters.customerId) {
+        params.customerId = filters.customerId;
+      }
+      if (filters.page !== undefined) {
+        params.page = filters.page;
+      }
+      if (filters.pageSize !== undefined) {
+        params.pageSize = filters.pageSize;
+      }
+
+      const response = await api.get('/salesdocuments/paginated', { params });
+      
+      return {
+        documents: response.data.documents.map((doc: BackendDocumentDto) => this.mapBackendDocumentToFrontend(doc)),
+        totalCount: response.data.totalCount,
+        totalAmount: response.data.totalAmount,
+        page: response.data.page,
+        pageSize: response.data.pageSize,
+        totalPages: response.data.totalPages,
+        filters
+      };
+    } catch (error) {
+      console.error('Error fetching paginated sales documents:', error);
+      throw error;
+    }
   }
 
   /**

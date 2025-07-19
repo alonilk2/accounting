@@ -1,10 +1,13 @@
 export { default as Dashboard } from './Dashboard';
 export { default as Customers } from './Customers';
-export { default as Sales } from './Sales';
 export { default as SalesDocumentsPage } from './SalesDocumentsPage';
+export { default as SalesOrdersPage } from './SalesOrdersPage';
 export { default as CreateTaxInvoiceReceiptPage } from './CreateTaxInvoiceReceiptPage';
+export { default as TaxInvoiceReceiptsPage } from './TaxInvoiceReceiptsPage';
+export { default as DeliveryNotes } from './DeliveryNotes';
 export { default as Suppliers } from './Suppliers';
 export { default as Purchases } from './Purchases';
+export { default as PurchaseInvoicesPage } from './PurchaseInvoicesPage';
 export { default as Inventory } from './Inventory';
 export { default as ChartOfAccounts } from './ChartOfAccounts';
 export { default as Reports } from './Reports';

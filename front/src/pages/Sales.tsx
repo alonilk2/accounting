@@ -1,731 +1,922 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
+  Button,
+  Card,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  Paper,
+  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
+  Chip,
+  Menu,
   MenuItem,
+  InputAdornment,
   Alert,
+  CircularProgress,
+  Tooltip,
+  Stack,
+  Select,
+  FormControl,
+  InputLabel,
   Grid,
-  Paper,
+  Autocomplete,
+  Divider
 } from '@mui/material';
-
 import {
   Add as AddIcon,
-  Refresh as RefreshIcon,
   Edit as EditIcon,
+  Delete as DeleteIcon,
+  MoreVert as MoreVertIcon,
+  Search as SearchIcon,
+  Refresh as RefreshIcon,
   Print as PrintIcon,
-  Assignment as QuoteIcon,
-  CheckCircle as ConfirmedIcon,
-  LocalShipping as ShippedIcon,
-  Receipt as SalesIcon,
+  Email as EmailIcon,
+  LocalShipping as ShippingIcon,
+  Receipt as ReceiptIcon
 } from '@mui/icons-material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useUIStore } from '../stores';
-import { salesAPI, customersAPI } from '../services/api';
-import type { SalesOrder, SalesOrderStatus, Customer, Company } from '../types/entities';
-import SalesOrderForm from '../components/sales/SalesOrderForm';
-import { PrintButton, PrintableSalesOrder } from '../components/print';
-import { ModernButton, ModernFab } from '../components/ui';
+import { salesAPI } from '../services/api';
+import { customersApi } from '../services/customersApi';
+import { itemsAPI } from '../services/api';
+import type { SalesOrder, SalesOrderStatus, Customer, Item, CreateSalesOrderForm } from '../types/entities';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Sales = () => {
   const { language } = useUIStore();
-  const [orders, setOrders] = useState<SalesOrder[]>([]);
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // States
+  const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [selectedDocumentType, setSelectedDocumentType] = useState<SalesOrderStatus>('Quote');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<SalesOrderStatus | 'All'>('All');
+  
+  // Pagination states
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Dialog states
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<SalesOrder | null>(null);
+  
+  // Menu state
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
-  const [showPrintDialog, setShowPrintDialog] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [company, setCompany] = useState<Company | null>(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    customerId: 0,
+    orderDate: new Date().toISOString().split('T')[0],
+    dueDate: '',
+    deliveryDate: '',
+    status: 'Quote' as SalesOrderStatus,
+    notes: ''
+  });
 
-  // Filters
-  const [statusFilter, setStatusFilter] = useState<SalesOrderStatus | ''>('');
-  const [dateFrom, setDateFrom] = useState<Date | null>(null);
-  const [dateTo, setDateTo] = useState<Date | null>(null);
+  // Line items state
+  interface OrderLine {
+    id?: number;
+    itemId: number;
+    itemName?: string;
+    itemSku?: string;
+    quantity: number;
+    unitPrice: number;
+    description: string;
+    lineTotal?: number;
+  }
 
-  const loadOrders = useCallback(async () => {
+  const [orderLines, setOrderLines] = useState<OrderLine[]>([]);
+  const [newLineData, setNewLineData] = useState({
+    itemId: 0,
+    quantity: 1,
+    unitPrice: 0,
+    description: ''
+  });
+
+  // Check URL parameters for action and type
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const action = urlParams.get('action');
+    const type = urlParams.get('type');
+    
+    if (action === 'create' && type) {
+      const statusMap: Record<string, SalesOrderStatus> = {
+        'Quote': 'Quote',
+        'Confirmed': 'Confirmed',
+        'Shipped': 'Shipped'
+      };
+      
+      if (statusMap[type]) {
+        setFormData(prev => ({ ...prev, status: statusMap[type] }));
+        openAddDialog();
+      }
+    }
+  }, [location.search]);
+
+  // Load data
+  const loadSalesOrders = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [ordersData, customersData] = await Promise.all([
-        salesAPI.getOrders({
-          status: statusFilter || undefined,
-        }),
-        customersAPI.getAll(),
-      ]);
-      setOrders(ordersData);
-      setCustomers(customersData);
-      
-      // Load company data if not already loaded
-      if (!company) {
-        try {
-          const companyData = {
-            id: 1,
-            name: 'החברה שלי',
-            address: 'רחוב הראשי 123, תל אביב',
-            israelTaxId: '123456789',
-            phone: '03-1234567',
-            email: 'info@mycompany.co.il',
-            currency: 'ILS',
-            fiscalYearStartMonth: 1,
-            timeZone: 'Asia/Jerusalem',
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          } as Company;
-          setCompany(companyData);
-        } catch (err) {
-          console.warn('Could not load company data:', err);
-        }
-      }
+      const filters = {
+        status: statusFilter !== 'All' ? statusFilter : undefined,
+        searchTerm: searchTerm || undefined
+      };
+      const data = await salesAPI.getOrders(filters);
+      setSalesOrders(data);
     } catch (err) {
-      setError('Failed to load sales orders');
-      console.error('Error loading orders:', err);
+      setError(language === 'he' ? 'שגיאה בטעינת הזמנות המכירות' : 'Error loading sales orders');
+      console.error('Error loading sales orders:', err);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, company]);
+  };
+
+  const loadCustomers = async () => {
+    try {
+      const data = await customersApi.getCustomers();
+      setCustomers(data);
+    } catch (err) {
+      console.error('Error loading customers:', err);
+    }
+  };
+
+  const loadItems = async () => {
+    try {
+      const data = await itemsAPI.getAll({ isActive: true });
+      setItems(data);
+    } catch (err) {
+      console.error('Error loading items:', err);
+    }
+  };
+
+  // Effects
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadSalesOrders();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [statusFilter, searchTerm, language]);
 
   useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
+    loadCustomers();
+    loadItems();
+  }, []);
 
-  const handleNewDocument = (documentType: SalesOrderStatus) => {
-    setSelectedDocumentType(documentType);
-    setShowForm(true);
-  };
-
-  const handleStatusChange = async (orderId: number, newStatus: SalesOrderStatus) => {
+  // Handle form submission
+  const handleSubmit = async () => {
     try {
-      await salesAPI.updateStatus(orderId, newStatus);
-      await loadOrders(); // Refresh the list
+      const orderData: CreateSalesOrderForm = {
+        customerId: formData.customerId,
+        orderDate: new Date(formData.orderDate),
+        dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+        deliveryDate: formData.deliveryDate ? new Date(formData.deliveryDate) : undefined,
+        status: formData.status,
+        notes: formData.notes,
+        lines: orderLines.map((line) => ({
+          itemId: line.itemId,
+          quantity: line.quantity,
+          unitPrice: line.unitPrice,
+          description: line.description,
+        }))
+      };
+
+      if (editingOrder) {
+        await salesAPI.updateOrder(editingOrder.id, orderData);
+      } else {
+        await salesAPI.createOrder(orderData);
+      }
+      setOpenDialog(false);
+      resetForm();
+      loadSalesOrders();
     } catch (err) {
-      setError('Failed to update order status');
-      console.error('Error updating status:', err);
+      setError(language === 'he' ? 'שגיאה בשמירת הזמנת המכירות' : 'Error saving sales order');
+      console.error('Error saving sales order:', err);
     }
   };
 
-  const getPrintableOrderComponent = (order: SalesOrder) => {
-    const customer = customers.find(c => c.id === order.customerId);
-    if (!customer || !company) {
-      return null;
+  // Handle delete
+  const handleDelete = async () => {
+    if (!orderToDelete) return;
+    
+    try {
+      await salesAPI.deleteOrder(orderToDelete.id);
+      setDeleteDialogOpen(false);
+      setOrderToDelete(null);
+      loadSalesOrders();
+    } catch (err) {
+      setError(language === 'he' ? 'שגיאה במחיקת הזמנת המכירות' : 'Error deleting sales order');
+      console.error('Error deleting sales order:', err);
     }
-
-    return () => (
-      <PrintableSalesOrder
-        salesOrder={order}
-        customer={customer}
-        company={company}
-      />
-    );
   };
 
-  const columns: GridColDef[] = [
-    {
-      field: 'orderNumber',
-      headerName: 'מספר הזמנה',
-      width: 150,
-      minWidth: 120,
-    },
-    {
-      field: 'customerName',
-      headerName: 'לקוח',
-      width: 200,
-      minWidth: 150,
-      flex: 1,
-    },
-    {
-      field: 'orderDate',
-      headerName: 'תאריך',
-      width: 120,
-      minWidth: 100,
-      valueFormatter: (value: unknown) => {
-        if (value instanceof Date) {
-          return value.toLocaleDateString('he-IL');
-        }
-        if (typeof value === 'string') {
-          return new Date(value).toLocaleDateString('he-IL');
-        }
-        return '-';
-      },
-    },
-    {
-      field: 'dueDate',
-      headerName: 'תאריך יעד',
-      width: 120,
-      minWidth: 100,
-      valueFormatter: (value: unknown) => {
-        if (!value) return '-';
-        if (value instanceof Date) {
-          return value.toLocaleDateString('he-IL');
-        }
-        if (typeof value === 'string') {
-          return new Date(value).toLocaleDateString('he-IL');
-        }
-        return '-';
-      },
-    },
-    {
-      field: 'status',
-      headerName: 'סטטוס',
-      width: 180,
-      minWidth: 140,
-      renderCell: (params) => {
-        const order = params.row as SalesOrder;
-        return (
-          <TextField
-            select
-            value={params.value}
-            onChange={(e) => handleStatusChange(order.id, e.target.value as SalesOrderStatus)}
-            size="small"
-            variant="outlined"
-            sx={{ minWidth: 120, width: '100%' }}
-          >
-            <MenuItem value="Quote" sx={{ fontSize: '1rem' }}>הצעת מחיר</MenuItem>
-            <MenuItem value="Confirmed" sx={{ fontSize: '1rem' }}>הזמנה</MenuItem>
-            <MenuItem value="Shipped" sx={{ fontSize: '1rem' }}>תעודת משלוח</MenuItem>
-            <MenuItem value="Completed" sx={{ fontSize: '1rem' }}>הושלם</MenuItem>
-            <MenuItem value="Cancelled" sx={{ fontSize: '1rem' }}>בוטל</MenuItem>
-          </TextField>
-        );
-      },
-    },
-    {
-      field: 'totalAmount',
-      headerName: 'סכום כולל',
-      width: 120,
-      minWidth: 100,
-      type: 'number',
-      valueFormatter: (value: unknown) => `₪${Number(value).toLocaleString()}`,
-    },
-    {
-      field: 'paidAmount',
-      headerName: 'שולם',
-      width: 120,
-      minWidth: 100,
-      type: 'number',
-      valueFormatter: (value: unknown) => `₪${Number(value).toLocaleString()}`,
-    },
-    {
-      field: 'actions',
-      type: 'actions',
-      headerName: 'פעולות',
-      width: 260,
-      minWidth: 240,
-      renderCell: (params) => {
-        const order = params.row as SalesOrder;
-        const actions = [];
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      customerId: 0,
+      orderDate: new Date().toISOString().split('T')[0],
+      dueDate: '',
+      deliveryDate: '',
+      status: 'Quote',
+      notes: ''
+    });
+    setEditingOrder(null);
+    setOrderLines([]);
+    
+    // Clear URL parameters
+    const url = new URL(window.location.href);
+    url.searchParams.delete('action');
+    url.searchParams.delete('type');
+    window.history.replaceState({}, '', url.toString());
+  };
 
-        actions.push({
-          icon: <EditIcon />,
-          label: "עריכה",
-          onClick: () => {
-            // TODO: Implement edit functionality
-            console.log('Edit order:', order.id);
-          }
-        });
+  // Open edit dialog
+  const openEditDialog = (order: SalesOrder) => {
+    setEditingOrder(order);
+    setFormData({
+      customerId: order.customerId,
+      orderDate: new Date(order.orderDate).toISOString().split('T')[0],
+      dueDate: order.dueDate ? new Date(order.dueDate).toISOString().split('T')[0] : '',
+      deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : '',
+      status: order.status,
+      notes: order.notes || ''
+    });
+    // Convert SalesOrderLine to our form format
+    const formattedLines = order.lines?.map(line => ({
+      id: line.id,
+      itemId: line.itemId,
+      itemName: line.itemName,
+      itemSku: line.itemSku,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+      description: line.description,
+      lineTotal: line.lineTotal
+    })) || [];
+    setOrderLines(formattedLines);
+    setOpenDialog(true);
+    setAnchorEl(null);
+  };
 
-        // Add print button
-        const PrintableComponent = getPrintableOrderComponent(order);
-        if (PrintableComponent) {
-          actions.push({
-            icon: <PrintIcon />,
-            label: "הדפס",
-            onClick: () => {
-              setSelectedOrder(order);
-              setShowPrintDialog(true);
-            }
-          });
-        }
+  // Open add dialog
+  const openAddDialog = () => {
+    resetForm();
+    setOpenDialog(true);
+  };
 
-        return (
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 1, 
-            alignItems: 'center',
-            height: '100%',
-            py: 1
-          }}>
-            {actions.map((action, index) => (
-              <Box
-                key={index}
-                onClick={action.onClick}
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  padding: '8px 12px',
-                  borderRadius: 2,
-                  transition: 'all 0.2s ease',
-                  minWidth: '56px',
-                  '&:hover': {
-                    backgroundColor: 'action.hover',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  },
-                  '&:active': {
-                    transform: 'translateY(0)',
-                  }
-                }}
-              >
-                <Box sx={{ 
-                  color: 'primary.main',
-                  mb: 0.5,
-                  fontSize: '20px',
-                  transition: 'color 0.2s ease',
-                  '&:hover': {
-                    color: 'primary.dark',
-                  }
-                }}>
-                  {action.icon}
-                </Box>
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
-                    textAlign: 'center',
-                    lineHeight: 1,
-                    color: 'text.secondary',
-                    transition: 'color 0.2s ease',
-                    '&:hover': {
-                      color: 'text.primary',
-                    }
-                  }}
-                >
-                  {action.label}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
-        );
-      },
+  // Menu handlers
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, order: SalesOrder) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedOrder(order);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedOrder(null);
+  };
+
+  // Line items handlers
+  const addOrderLine = () => {
+    if (newLineData.itemId === 0) return;
+    
+    const selectedItem = items.find(item => item.id === newLineData.itemId);
+    const newLine: OrderLine = {
+      itemId: newLineData.itemId,
+      itemName: selectedItem?.name,
+      itemSku: selectedItem?.sku,
+      quantity: newLineData.quantity,
+      unitPrice: newLineData.unitPrice,
+      description: newLineData.description || selectedItem?.description || '',
+      lineTotal: newLineData.quantity * newLineData.unitPrice
+    };
+    
+    setOrderLines([...orderLines, newLine]);
+    setNewLineData({
+      itemId: 0,
+      quantity: 1,
+      unitPrice: 0,
+      description: ''
+    });
+  };
+
+  const updateOrderLine = (index: number, field: keyof OrderLine, value: any) => {
+    const newLines = [...orderLines];
+    newLines[index] = { ...newLines[index], [field]: value };
+    
+    // Recalculate line total if quantity or price changed
+    if (field === 'quantity' || field === 'unitPrice') {
+      newLines[index].lineTotal = newLines[index].quantity * newLines[index].unitPrice;
+    }
+    
+    setOrderLines(newLines);
+  };
+
+  const removeOrderLine = (index: number) => {
+    const newLines = orderLines.filter((_, i) => i !== index);
+    setOrderLines(newLines);
+  };
+
+  // Status helpers
+  const getStatusColor = (status: SalesOrderStatus) => {
+    switch (status) {
+      case 'Quote': return 'default';
+      case 'Confirmed': return 'primary';
+      case 'Shipped': return 'info';
+      case 'Completed': return 'success';
+      case 'Cancelled': return 'error';
+      default: return 'default';
+    }
+  };
+
+  const getStatusText = (status: SalesOrderStatus) => {
+    if (language === 'he') {
+      switch (status) {
+        case 'Quote': return 'הצעת מחיר';
+        case 'Confirmed': return 'הזמנה מאושרת';
+        case 'Shipped': return 'נשלח';
+        case 'Completed': return 'הושלם';
+        case 'Cancelled': return 'מבוטל';
+        default: return status;
+      }
+    }
+    return status;
+  };
+
+  const text = {
+    title: language === 'he' ? 'מכירות והזמנות' : 'Sales & Orders',
+    addOrder: language === 'he' ? 'הזמנת מכירות חדשה' : 'New Sales Order',
+    editOrder: language === 'he' ? 'עריכת הזמנה' : 'Edit Order',
+    orderNumber: language === 'he' ? 'מספר הזמנה' : 'Order Number',
+    customer: language === 'he' ? 'לקוח' : 'Customer',
+    orderDate: language === 'he' ? 'תאריך הזמנה' : 'Order Date',
+    dueDate: language === 'he' ? 'תאריך יעד' : 'Due Date',
+    deliveryDate: language === 'he' ? 'תאריך משלוח' : 'Delivery Date',
+    amount: language === 'he' ? 'סכום' : 'Amount',
+    status: language === 'he' ? 'סטטוס' : 'Status',
+    actions: language === 'he' ? 'פעולות' : 'Actions',
+    edit: language === 'he' ? 'עריכה' : 'Edit',
+    delete: language === 'he' ? 'מחיקה' : 'Delete',
+    cancel: language === 'he' ? 'ביטול' : 'Cancel',
+    save: language === 'he' ? 'שמירה' : 'Save',
+    search: language === 'he' ? 'חיפוש...' : 'Search...',
+    statusFilter: language === 'he' ? 'סינון לפי סטטוס' : 'Filter by Status',
+    all: language === 'he' ? 'הכל' : 'All',
+    refresh: language === 'he' ? 'רענון' : 'Refresh',
+    selectCustomer: language === 'he' ? 'בחר לקוח' : 'Select Customer',
+    notes: language === 'he' ? 'הערות' : 'Notes',
+    items: language === 'he' ? 'פריטים' : 'Items',
+    item: language === 'he' ? 'פריט' : 'Item',
+    description: language === 'he' ? 'תיאור' : 'Description',
+    quantity: language === 'he' ? 'כמות' : 'Quantity',
+    unitPrice: language === 'he' ? 'מחיר יחידה' : 'Unit Price',
+    total: language === 'he' ? 'סה"כ' : 'Total',
+    addItem: language === 'he' ? 'הוסף פריט' : 'Add Item',
+    selectItem: language === 'he' ? 'בחר פריט' : 'Select Item',
+    noOrders: language === 'he' ? 'אין הזמנות' : 'No orders found',
+    deleteConfirm: language === 'he' ? 'האם אתה בטוח שברצונך למחוק הזמנה זו?' : 'Are you sure you want to delete this order?',
+    print: language === 'he' ? 'הדפסה' : 'Print',
+    email: language === 'he' ? 'שלח במייל' : 'Send Email',
+    generateReceipt: language === 'he' ? 'צור קבלה' : 'Generate Receipt',
+    ship: language === 'he' ? 'שלח' : 'Ship',
+    createQuote: language === 'he' ? 'הצעת מחיר' : 'Quote',
+    createOrder: language === 'he' ? 'הזמנה' : 'Order',
+    createDelivery: language === 'he' ? 'תעודת משלוח' : 'Delivery'
+  };
+
+  // FAB handlers
+  const handleCreateDocument = (type: 'Quote' | 'Confirmed' | 'Shipped') => {
+    setCreateDocumentType(type);
+    setCreateDialogOpen(true);
+    setSpeedDialOpen(false);
+  };
+
+  const handleCreateDialogClose = () => {
+    setCreateDialogOpen(false);
+  };
+
+  const handleCreateSuccess = () => {
+    setCreateDialogOpen(false);
+    loadSalesOrders(); // Refresh the orders list
+  };
+
+  // Speed Dial actions
+  const speedDialActions = [
+    {
+      icon: <ReceiptIcon />,
+      name: text.createQuote,
+      onClick: () => handleCreateDocument('Quote'),
+    },
+    {
+      icon: <AssignmentIcon />,
+      name: text.createOrder,
+      onClick: () => handleCreateDocument('Confirmed'),
+    },
+    {
+      icon: <ShippingIcon />,
+      name: text.createDelivery,
+      onClick: () => handleCreateDocument('Shipped'),
     },
   ];
-
-  const statusOptions = [
-    { value: '', label: 'כל הסטטוסים' },
-    { value: 'Quote', label: 'הצעת מחיר' },
-    { value: 'Confirmed', label: 'הזמנה' },
-    { value: 'Shipped', label: 'תעודת משלוח' },
-    { value: 'Completed', label: 'הושלם' },
-    { value: 'Cancelled', label: 'בוטל' },
-  ];
-
-  if (showForm) {
-    return (
-      <SalesOrderForm
-        onSave={() => {
-          setShowForm(false);
-          setSelectedDocumentType('Quote'); // Reset to default
-          loadOrders();
-        }}
-        onCancel={() => {
-          setShowForm(false);
-          setSelectedDocumentType('Quote'); // Reset to default
-        }}
-        initialDocumentType={selectedDocumentType}
-      />
-    );
-  }
 
   return (
-    <Box sx={{ 
-      p: { xs: 3, md: 4 }, 
-      backgroundColor: '#fafafa',
-      minHeight: '100vh'
-    }}>
-      {error && (
-        <Alert 
-          severity="error" 
-          sx={{ mb: 3 }} 
-          onClose={() => setError(null)}
-        >
-          <Typography sx={{ fontSize: '1rem' }}>
-            {error}
-          </Typography>
-        </Alert>
-      )}
-
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography
-          variant="h3"
-          sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 2,
-            fontWeight: 600,
-            color: 'primary.main'
-          }}
-        >
-          <SalesIcon sx={{ fontSize: 40 }} />
-          {language === 'he' ? 'מכירות' : 'Sales'}
+    <Box>
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4" component="h1">
+          {text.title}
         </Typography>
-        <Box display="flex" gap={2}>
-          <ModernButton
-            variant="outline"
-            icon={<RefreshIcon />}
-            onClick={loadOrders}
-            disabled={loading}
-            sx={{ 
-              borderRadius: 3,
-              px: 3,
-              py: 1.5,
-              fontSize: '1rem',
-              fontWeight: 500
-            }}
+        <Box display="flex" gap={1}>
+          <Tooltip title={text.refresh}>
+            <IconButton onClick={loadSalesOrders} disabled={loading}>
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openAddDialog}
           >
-            {language === 'he' ? 'רענן' : 'Refresh'}
-          </ModernButton>
-          
-          {/* Document Type Buttons */}
-          <Box display="flex" gap={2} sx={{ ml: 2 }}>
-            <ModernButton
-              variant="primary"
-              icon={<QuoteIcon />}
-              onClick={() => handleNewDocument('Quote')}
-              sx={{ 
-                borderRadius: 3,
-                px: 4,
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 600,
-                backgroundColor: '#2196f3',
-                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
-                '&:hover': { 
-                  backgroundColor: '#1976d2',
-                  boxShadow: '0 6px 16px rgba(33, 150, 243, 0.4)'
-                }
-              }}
-            >
-              {language === 'he' ? 'הצעת מחיר' : 'Quote'}
-            </ModernButton>
-            
-            <ModernButton
-              variant="primary"
-              icon={<ConfirmedIcon />}
-              onClick={() => handleNewDocument('Confirmed')}
-              sx={{ 
-                borderRadius: 3,
-                px: 4,
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 600,
-                backgroundColor: '#4caf50',
-                boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
-                '&:hover': { 
-                  backgroundColor: '#388e3c',
-                  boxShadow: '0 6px 16px rgba(76, 175, 80, 0.4)'
-                }
-              }}
-            >
-              {language === 'he' ? 'הזמנה' : 'Confirmed'}
-            </ModernButton>
-            
-            <ModernButton
-              variant="primary"
-              icon={<ShippedIcon />}
-              onClick={() => handleNewDocument('Shipped')}
-              sx={{ 
-                borderRadius: 3,
-                px: 4,
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 600,
-                backgroundColor: '#ff9800',
-                boxShadow: '0 4px 12px rgba(255, 152, 0, 0.3)',
-                '&:hover': { 
-                  backgroundColor: '#f57c00',
-                  boxShadow: '0 6px 16px rgba(255, 152, 0, 0.4)'
-                }
-              }}
-            >
-              {language === 'he' ? 'תעודת משלוח' : 'Shipped'}
-            </ModernButton>
-          </Box>
+            {text.addOrder}
+          </Button>
         </Box>
       </Box>
 
       {/* Filters */}
-      <Paper sx={{ 
-        p: 4,
-        mb: 4,
-        borderRadius: 3,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-        backgroundColor: 'white'
-      }}>
-        <Typography
-          variant="h5"
-          gutterBottom
-          sx={{ 
-            fontWeight: 600,
-            color: 'text.primary',
-            mb: 3
-          }}
-        >
-          {language === 'he' ? 'סינון' : 'Filters'}
-        </Typography>
-        <Grid container spacing={{ xs: 3, md: 4 }} columns={{ xs: 4, sm: 8, md: 12 }} alignItems="center">
-          <Grid size={{ xs: 4, sm: 4, md: 3 }}>
-            <TextField
-              select
-              label="סטטוס"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as SalesOrderStatus | '')}
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  fontSize: '1.1rem'
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: '1rem'
-                }
-              }}
-            >
-              {statusOptions.map((option) => (
-                <MenuItem 
-                  key={option.value} 
-                  value={option.value}
-                  sx={{ fontSize: '1rem' }}
-                >
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid size={{ xs: 4, sm: 4, md: 3 }}>
-            <DatePicker
-              label="מתאריך"
-              value={dateFrom}
-              onChange={setDateFrom}
-              slotProps={{ 
-                textField: { 
-                  fullWidth: true,
-                  sx: {
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      fontSize: '1.1rem'
-                    },
-                    '& .MuiInputLabel-root': {
-                      fontSize: '1rem'
-                    }
-                  }
-                } 
-              }}
-            />
-          </Grid>
-          <Grid size={{ xs: 4, sm: 4, md: 3 }}>
-            <DatePicker
-              label="עד תאריך"
-              value={dateTo}
-              onChange={setDateTo}
-              slotProps={{ 
-                textField: { 
-                  fullWidth: true,
-                  sx: {
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      fontSize: '1.1rem'
-                    },
-                    '& .MuiInputLabel-root': {
-                      fontSize: '1rem'
-                    }
-                  }
-                } 
-              }}
-            />
-          </Grid>
-          <Grid size={{ xs: 4, sm: 4, md: 3 }}>
-            <ModernButton
-              variant="ghost"
-              onClick={() => {
-                setStatusFilter('');
-                setDateFrom(null);
-                setDateTo(null);
-              }}
-              fullWidth
-              sx={{ 
-                borderRadius: 3,
-                px: 3,
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 500
-              }}
-            >
-              נקה סינון
-            </ModernButton>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* Data Grid */}
-      <Paper sx={{ 
-        borderRadius: 3,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-        backgroundColor: 'white'
-      }}>
-        <Box sx={{ p: 4 }}>
-          <DataGrid
-            rows={orders}
-            columns={columns}
-            loading={loading}
-            autoHeight
-            pageSizeOptions={[25, 50, 100]}
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 25 },
-              },
-            }}
-            sx={{
-              '& .MuiDataGrid-columnHeader': {
-                backgroundColor: 'background.paper',
-                fontWeight: 600,
-                fontSize: '1rem',
-              },
-              '& .MuiDataGrid-actionsCell': {
-                gap: '8px',
-                justifyContent: 'flex-start',
-                paddingLeft: '16px',
-                paddingRight: '16px',
-              },
-              '& .MuiDataGrid-cell': {
-                display: 'flex',
-                alignItems: 'center',
-                fontSize: '1rem',
-              },
-              '& .MuiDataGrid-actionsCell .MuiButtonBase-root': {
-                minWidth: '40px',
-                minHeight: '40px',
-                padding: '8px',
-                borderRadius: 2,
-              },
-              '& .MuiDataGrid-root': {
-                border: 'none',
-              },
-              '& .MuiDataGrid-main': {
-                borderRadius: 2,
-              },
+      <Card sx={{ mb: 3, p: 2 }}>
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+          <TextField
+            fullWidth
+            placeholder={text.search}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
             }}
           />
-        </Box>
-      </Paper>
-
-      {/* Print Dialog */}
-      {selectedOrder && (
-        <Dialog
-          open={showPrintDialog}
-          onClose={() => {
-            setShowPrintDialog(false);
-            setSelectedOrder(null);
-          }}
-          maxWidth="md"
-          fullWidth
-          sx={{
-            '& .MuiDialog-paper': {
-              borderRadius: 3,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
-            }
-          }}
-        >
-          <DialogTitle sx={{ pb: 2 }}>
-            <Typography
-              variant="h5"
-              sx={{ 
-                fontWeight: 600,
-                color: 'text.primary'
-              }}
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>{text.statusFilter}</InputLabel>
+            <Select
+              value={statusFilter}
+              label={text.statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as SalesOrderStatus | 'All')}
             >
-              הדפסת מסמך - הזמנה {selectedOrder.orderNumber}
-            </Typography>
-          </DialogTitle>
-          <DialogContent sx={{ pb: 2 }}>
-            <Box sx={{ textAlign: 'center', py: 3 }}>
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  mb: 3,
-                  fontSize: '1.1rem'
-                }}
-              >
-                בחר את פעולת ההדפסה הרצויה:
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
-                {(() => {
-                  const PrintableComponent = getPrintableOrderComponent(selectedOrder);
-                  if (!PrintableComponent) {
-                    return (
-                      <Typography 
-                        color="error"
-                        sx={{ fontSize: '1.1rem' }}
-                      >
-                        לא ניתן להדפיס את המסמך - חסרים נתונים
-                      </Typography>
-                    );
-                  }
+              <MenuItem value="All">{text.all}</MenuItem>
+              <MenuItem value="Quote">הצעת מחיר</MenuItem>
+              <MenuItem value="Confirmed">הזמנה מאושרת</MenuItem>
+              <MenuItem value="Shipped">נשלח</MenuItem>
+              <MenuItem value="Completed">הושלם</MenuItem>
+              <MenuItem value="Cancelled">מבוטל</MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
+      </Card>
 
-                  return (
-                    <>
-                      <PrintButton
-                        variant="contained"
-                        size="large"
-                        printableContent={PrintableComponent}
-                        documentTitle={`הזמנה-${selectedOrder.orderNumber}`}
-                        onAfterPrint={() => {
-                          setShowPrintDialog(false);
-                          setSelectedOrder(null);
-                        }}
-                      >
-                        הדפס הזמנה
-                      </PrintButton>
-                    </>
-                  );
-                })()}
-              </Box>
-            </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 3, gap: 2 }}>
-            <ModernButton 
-              variant="ghost" 
-              onClick={() => {
-                setShowPrintDialog(false);
-                setSelectedOrder(null);
-              }}
-              sx={{ 
-                borderRadius: 3,
-                px: 3,
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 500
-              }}
-            >
-              סגור
-            </ModernButton>
-          </DialogActions>
-        </Dialog>
+      {/* Error Alert */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
       )}
 
-      {/* Floating Action Button for Quick Add */}
-      <ModernFab
-        variant="ai"
-        icon={<AddIcon />}
-        tooltip="הזמנה חדשה"
-        onClick={() => setShowForm(true)}
-        glow
-        pulse
-        sx={{
-          position: 'fixed',
-          bottom: 16,
-          right: 16,
-        }}
-      />
+      {/* Sales Orders Table */}
+      <Card>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>{text.orderNumber}</TableCell>
+                <TableCell>{text.customer}</TableCell>
+                <TableCell>{text.orderDate}</TableCell>
+                <TableCell>{text.amount}</TableCell>
+                <TableCell>{text.status}</TableCell>
+                <TableCell>{text.actions}</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <CircularProgress />
+                  </TableCell>
+                </TableRow>
+              ) : salesOrders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <Typography variant="body2" color="textSecondary">
+                      {text.noOrders}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                salesOrders.map((order) => (
+                  <TableRow key={order.id} hover>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">
+                        {order.orderNumber}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {order.customerName || '-'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {new Date(order.orderDate).toLocaleDateString()}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {order.totalAmount.toLocaleString()} {order.currency}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getStatusText(order.status)}
+                        color={getStatusColor(order.status)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
+                        onClick={(e) => handleMenuOpen(e, order)}
+                        size="small"
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
+
+      {/* Action Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={() => selectedOrder && openEditDialog(selectedOrder)}>
+          <EditIcon fontSize="small" sx={{ mr: 1 }} />
+          {text.edit}
+        </MenuItem>
+        <MenuItem onClick={() => console.log('Print', selectedOrder)}>
+          <PrintIcon fontSize="small" sx={{ mr: 1 }} />
+          {text.print}
+        </MenuItem>
+        <MenuItem onClick={() => console.log('Email', selectedOrder)}>
+          <EmailIcon fontSize="small" sx={{ mr: 1 }} />
+          {text.email}
+        </MenuItem>
+        {selectedOrder?.status === 'Confirmed' && (
+          <MenuItem onClick={() => console.log('Ship', selectedOrder)}>
+            <ShippingIcon fontSize="small" sx={{ mr: 1 }} />
+            {text.ship}
+          </MenuItem>
+        )}
+        {selectedOrder?.status === 'Shipped' && (
+          <MenuItem onClick={() => console.log('Generate Receipt', selectedOrder)}>
+            <ReceiptIcon fontSize="small" sx={{ mr: 1 }} />
+            {text.generateReceipt}
+          </MenuItem>
+        )}
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            setOrderToDelete(selectedOrder);
+            setDeleteDialogOpen(true);
+            handleMenuClose();
+          }}
+        >
+          <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+          {text.delete}
+        </MenuItem>
+      </Menu>
+
+      {/* Add/Edit Dialog */}
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          {editingOrder ? text.editOrder : text.addOrder}
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            {/* Customer Selection */}
+            <Autocomplete
+              options={customers}
+              getOptionLabel={(option) => option.name}
+              value={customers.find(c => c.id === formData.customerId) || null}
+              onChange={(_, newValue) => {
+                setFormData({ ...formData, customerId: newValue?.id || 0 });
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={text.selectCustomer}
+                  required
+                />
+              )}
+            />
+
+            {/* Dates */}
+            <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }}>
+              <Grid size={{ xs: 4, sm: 8, md: 4 }}>
+                <TextField
+                  fullWidth
+                  label={text.orderDate}
+                  type="date"
+                  value={formData.orderDate}
+                  onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })}
+                  InputLabelProps={{ shrink: true }}
+                  required
+                />
+              </Grid>
+              <Grid size={{ xs: 4, sm: 8, md: 4 }}>
+                <TextField
+                  fullWidth
+                  label={text.dueDate}
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid size={{ xs: 4, sm: 8, md: 4 }}>
+                <TextField
+                  fullWidth
+                  label={text.deliveryDate}
+                  type="date"
+                  value={formData.deliveryDate}
+                  onChange={(e) => setFormData({ ...formData, deliveryDate: e.target.value })}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            </Grid>
+
+            {/* Status */}
+            <FormControl fullWidth>
+              <InputLabel>{text.status}</InputLabel>
+              <Select
+                value={formData.status}
+                label={text.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as SalesOrderStatus })}
+              >
+                <MenuItem value="Quote">הצעת מחיר</MenuItem>
+                <MenuItem value="Confirmed">הזמנה מאושרת</MenuItem>
+                <MenuItem value="Shipped">נשלח</MenuItem>
+                <MenuItem value="Completed">הושלם</MenuItem>
+                <MenuItem value="Cancelled">מבוטל</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              fullWidth
+              label={text.notes}
+              multiline
+              rows={3}
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            />
+
+            {/* Order Lines Table */}
+            <Box>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                {text.items}
+              </Typography>
+              
+              {orderLines.length > 0 && (
+                <Card sx={{ mb: 2 }}>
+                  <TableContainer component={Paper}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>{text.item}</TableCell>
+                          <TableCell>{text.description}</TableCell>
+                          <TableCell align="center">{text.quantity}</TableCell>
+                          <TableCell align="center">{text.unitPrice}</TableCell>
+                          <TableCell align="center">{text.total}</TableCell>
+                          <TableCell align="center">{text.actions}</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {orderLines.map((line, index) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <Box>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {line.itemName || `ID: ${line.itemId}`}
+                                </Typography>
+                                {line.itemSku && (
+                                  <Typography variant="caption" color="textSecondary">
+                                    SKU: {line.itemSku}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                value={line.description || ''}
+                                onChange={(e) => updateOrderLine(index, 'description', e.target.value)}
+                                placeholder={text.description}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <TextField
+                                type="number"
+                                size="small"
+                                value={line.quantity}
+                                onChange={(e) => updateOrderLine(index, 'quantity', Number(e.target.value))}
+                                inputProps={{ min: 0, step: 1 }}
+                                sx={{ width: 80 }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <TextField
+                                type="number"
+                                size="small"
+                                value={line.unitPrice}
+                                onChange={(e) => updateOrderLine(index, 'unitPrice', Number(e.target.value))}
+                                inputProps={{ min: 0, step: 0.01 }}
+                                sx={{ width: 100 }}
+                              />
+                            </TableCell>
+                            <TableCell align="center">
+                              <Typography variant="body2" fontWeight="medium">
+                                {(line.quantity * line.unitPrice).toFixed(2)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="center">
+                              <IconButton
+                                onClick={() => removeOrderLine(index)}
+                                size="small"
+                                color="error"
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Card>
+              )}
+
+              {/* Add New Item */}
+              <Card sx={{ p: 2, backgroundColor: 'grey.50' }}>
+                <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                  {text.addItem}
+                </Typography>
+                <Stack spacing={2}>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <FormControl fullWidth>
+                      <InputLabel>{text.selectItem}</InputLabel>
+                      <Select
+                        value={newLineData.itemId}
+                        label={text.selectItem}
+                        onChange={(e) => {
+                          const itemId = Number(e.target.value);
+                          const selectedItem = items.find(item => item.id === itemId);
+                          setNewLineData({ 
+                            ...newLineData, 
+                            itemId,
+                            unitPrice: selectedItem?.sellPrice || 0,
+                            description: selectedItem?.description || ''
+                          });
+                        }}
+                      >
+                        <MenuItem value={0}>
+                          <em>{text.selectItem}</em>
+                        </MenuItem>
+                        {items.map((item) => (
+                          <MenuItem key={item.id} value={item.id}>
+                            <Box>
+                              <Typography variant="body2">{item.name}</Typography>
+                              <Typography variant="caption" color="textSecondary">
+                                {item.sku} - ₪{item.sellPrice}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <TextField
+                      type="number"
+                      label={text.quantity}
+                      value={newLineData.quantity}
+                      onChange={(e) => setNewLineData({ ...newLineData, quantity: Number(e.target.value) })}
+                      inputProps={{ min: 1, step: 1 }}
+                      sx={{ minWidth: 120 }}
+                    />
+
+                    <TextField
+                      type="number"
+                      label={text.unitPrice}
+                      value={newLineData.unitPrice}
+                      onChange={(e) => setNewLineData({ ...newLineData, unitPrice: Number(e.target.value) })}
+                      inputProps={{ min: 0, step: 0.01 }}
+                      sx={{ minWidth: 120 }}
+                    />
+                  </Stack>
+
+                  <TextField
+                    fullWidth
+                    label={text.description}
+                    value={newLineData.description}
+                    onChange={(e) => setNewLineData({ ...newLineData, description: e.target.value })}
+                    placeholder={text.description}
+                  />
+
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      variant="contained"
+                      onClick={addOrderLine}
+                      disabled={newLineData.itemId === 0}
+                      startIcon={<AddIcon />}
+                    >
+                      {text.addItem}
+                    </Button>
+                  </Box>
+                </Stack>
+              </Card>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>
+            {text.cancel}
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSubmit}
+            disabled={formData.customerId === 0 || orderLines.length === 0}
+          >
+            {text.save}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>
+          {text.delete}
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            {text.deleteConfirm}
+          </Typography>
+          {orderToDelete && (
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>
+              {orderToDelete.orderNumber}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>
+            {text.cancel}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDelete}
+          >
+            {text.delete}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

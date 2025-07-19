@@ -1,0 +1,353 @@
+/* Global styles for larger UI proportions */
+
+/* Base font size increase */
+html {
+  font-size: 16px; /* Keep default, subtle improvements elsewhere */
+}
+
+/* Increase overall spacing for all Material-UI components */
+.MuiContainer-root {
+  padding: 1.5rem !important;
+}
+
+.MuiCard-root {
+  padding: 1.5rem !important;
+  margin: 1rem 0 !important;
+}
+
+.MuiCardContent-root {
+  padding: 1.5rem !important;
+}
+
+.MuiCardActions-root {
+  padding: 1rem 1.5rem !important;
+}
+
+/* Increase dialog padding */
+.MuiDialog-paper {
+  padding: 1.5rem !important;
+}
+
+.MuiDialogTitle-root {
+  padding: 1.5rem 1.5rem 1rem 1.5rem !important;
+  font-size: 1.5rem !important;
+}
+
+.MuiDialogContent-root {
+  padding: 1rem 1.5rem !important;
+}
+
+.MuiDialogActions-root {
+  padding: 1rem 1.5rem 1.5rem 1.5rem !important;
+}
+
+/* Increase form control spacing */
+.MuiFormControl-root {
+  margin: 1rem 0 !important;
+}
+
+.MuiFormControlLabel-root {
+  margin: 0.75rem 0 !important;
+}
+
+/* Increase data grid row heights */
+.MuiDataGrid-row {
+  min-height: 52px !important;
+}
+
+.MuiDataGrid-cell {
+  padding: 0.75rem !important;
+  font-size: 1rem !important;
+}
+
+.MuiDataGrid-columnHeader {
+  padding: 0.75rem !important;
+  font-size: 1.125rem !important;
+}
+
+/* Increase button sizes */
+.MuiButton-root {
+  min-height: 44px !important;
+  padding: 0.75rem 1.5rem !important;
+  font-size: 1rem !important;
+}
+
+.MuiButton-sizeSmall {
+  min-height: 36px !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+}
+
+.MuiButton-sizeLarge {
+  min-height: 52px !important;
+  padding: 1rem 2rem !important;
+  font-size: 1.125rem !important;
+}
+
+/* Increase input field sizes */
+.MuiTextField-root .MuiOutlinedInput-root {
+  min-height: 48px !important;
+  font-size: 1rem !important;
+}
+
+.MuiTextField-root .MuiInputLabel-root {
+  font-size: 1rem !important;
+}
+
+.MuiTextField-root .MuiFormHelperText-root {
+  font-size: 0.875rem !important;
+}
+
+/* Increase select field sizes */
+.MuiSelect-root {
+  min-height: 48px !important;
+  font-size: 1rem !important;
+}
+
+/* Increase autocomplete sizes */
+.MuiAutocomplete-root .MuiOutlinedInput-root {
+  min-height: 48px !important;
+  font-size: 1rem !important;
+}
+
+/* Increase chip sizes */
+.MuiChip-root {
+  height: 32px !important;
+  font-size: 0.875rem !important;
+}
+
+.MuiChip-root .MuiChip-label {
+  padding: 0 0.75rem !important;
+}
+
+/* Increase list item sizes */
+.MuiListItem-root {
+  padding: 1rem 0.75rem !important;
+}
+
+.MuiListItemText-primary {
+  font-size: 1rem !important;
+}
+
+.MuiListItemText-secondary {
+  font-size: 0.875rem !important;
+}
+
+/* Increase table cell sizes */
+.MuiTableCell-root {
+  padding: 1rem 0.75rem !important;
+  font-size: 1rem !important;
+}
+
+.MuiTableCell-head {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+}
+
+/* Increase toolbar height */
+.MuiToolbar-root {
+  min-height: 72px !important;
+  padding: 0 1.5rem !important;
+}
+
+/* Increase app bar height */
+.MuiAppBar-root {
+  min-height: 72px !important;
+}
+
+/* Increase drawer width and item sizes */
+.MuiDrawer-paper {
+  width: 240px !important;
+}
+
+.MuiDrawer-paper .MuiListItem-root {
+  padding: 0.75rem 1rem !important;
+}
+
+.MuiDrawer-paper .MuiListItemText-primary {
+  font-size: 1rem !important;
+}
+
+.MuiDrawer-paper .MuiListItemIcon-root {
+  min-width: 48px !important;
+}
+
+/* Increase tab sizes */
+.MuiTab-root {
+  min-height: 52px !important;
+  font-size: 1rem !important;
+  padding: 0.75rem 1.5rem !important;
+}
+
+/* Increase accordion sizes */
+.MuiAccordionSummary-root {
+  min-height: 64px !important;
+  padding: 0 1.5rem !important;
+}
+
+.MuiAccordionDetails-root {
+  padding: 1.5rem !important;
+}
+
+/* Increase stepper sizes */
+.MuiStepLabel-root {
+  padding: 0.75rem 0 !important;
+}
+
+.MuiStepLabel-labelContainer .MuiTypography-root {
+  font-size: 1rem !important;
+}
+
+/* Increase breadcrumb sizes */
+.MuiBreadcrumbs-root {
+  font-size: 1rem !important;
+  padding: 0.75rem 0 !important;
+}
+
+/* Increase pagination sizes */
+.MuiPagination-root {
+  padding: 1rem 0 !important;
+}
+
+.MuiPaginationItem-root {
+  min-width: 40px !important;
+  height: 40px !important;
+  font-size: 1rem !important;
+}
+
+/* Increase menu item sizes */
+.MuiMenuItem-root {
+  padding: 0.75rem 1rem !important;
+  font-size: 1rem !important;
+  min-height: 44px !important;
+}
+
+/* Increase FAB sizes */
+.MuiFab-root {
+  width: 60px !important;
+  height: 60px !important;
+}
+
+.MuiFab-sizeSmall {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.MuiFab-sizeLarge {
+  width: 72px !important;
+  height: 72px !important;
+}
+
+/* Increase switch sizes */
+.MuiSwitch-root {
+  width: 58px !important;
+  height: 38px !important;
+}
+
+.MuiSwitch-switchBase {
+  padding: 1px !important;
+}
+
+.MuiSwitch-thumb {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Increase checkbox and radio sizes */
+.MuiCheckbox-root,
+.MuiRadio-root {
+  padding: 10px !important;
+}
+
+.MuiCheckbox-root .MuiSvgIcon-root,
+.MuiRadio-root .MuiSvgIcon-root {
+  font-size: 1.5rem !important;
+}
+
+/* Increase slider sizes */
+.MuiSlider-root {
+  height: 6px !important;
+}
+
+.MuiSlider-thumb {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Increase avatar sizes */
+.MuiAvatar-root {
+  width: 44px !important;
+  height: 44px !important;
+}
+
+.MuiAvatar-small {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.MuiAvatar-large {
+  width: 56px !important;
+  height: 56px !important;
+}
+
+/* Increase snackbar sizes */
+.MuiSnackbar-root .MuiSnackbarContent-root {
+  font-size: 1rem !important;
+  padding: 0.75rem 1.5rem !important;
+}
+
+/* Increase progress indicator sizes */
+.MuiCircularProgress-root {
+  width: 44px !important;
+  height: 44px !important;
+}
+
+.MuiLinearProgress-root {
+  height: 6px !important;
+}
+
+/* Increase icon sizes throughout */
+.MuiSvgIcon-root {
+  font-size: 1.5rem !important;
+}
+
+.MuiSvgIcon-fontSizeSmall {
+  font-size: 1.25rem !important;
+}
+
+.MuiSvgIcon-fontSizeLarge {
+  font-size: 2rem !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  html {
+    font-size: 16px; /* Slightly smaller on mobile */
+  }
+  
+  .MuiContainer-root {
+    padding: 1rem !important;
+  }
+  
+  .MuiCard-root {
+    padding: 1rem !important;
+    margin: 0.75rem 0 !important;
+  }
+  
+  .MuiDrawer-paper {
+    width: 220px !important;
+  }
+}
+
+/* Additional spacing utilities */
+.spacing-xs { margin: 0.5rem !important; }
+.spacing-sm { margin: 1rem !important; }
+.spacing-md { margin: 1.5rem !important; }
+.spacing-lg { margin: 2rem !important; }
+.spacing-xl { margin: 3rem !important; }
+
+.padding-xs { padding: 0.5rem !important; }
+.padding-sm { padding: 1rem !important; }
+.padding-md { padding: 1.5rem !important; }
+.padding-lg { padding: 2rem !important; }
+.padding-xl { padding: 3rem !important; }

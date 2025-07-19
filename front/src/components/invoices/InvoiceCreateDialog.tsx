@@ -25,7 +25,12 @@ import {
   Divider,
   Alert,
 } from "@mui/material";
-import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import { 
+  Add as AddIcon, 
+  Delete as DeleteIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+} from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -148,9 +153,9 @@ export default function InvoiceCreateDialog({
       const response = await invoicesAPI.create(formData);
       onSuccess?.(response.id);
       handleClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error creating invoice:", err);
-      setError(err.response?.data?.message || "שגיאה ביצירת החשבונית");
+      setError("שגיאה ביצירת החשבונית");
     } finally {
       setLoading(false);
     }
@@ -181,7 +186,7 @@ export default function InvoiceCreateDialog({
   const updateLineItem = (
     index: number,
     field: keyof CreateInvoiceLineForm,
-    value: any
+    value: string | number
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -198,7 +203,7 @@ export default function InvoiceCreateDialog({
       updateLineItem(index, "itemSku", item.sku);
       updateLineItem(index, "unitPrice", item.price);
     } else {
-      updateLineItem(index, "itemId", undefined);
+      updateLineItem(index, "itemId", 0);
       updateLineItem(index, "itemSku", "");
     }
   };
@@ -241,16 +246,22 @@ export default function InvoiceCreateDialog({
         maxWidth="lg"
         fullWidth
         dir="rtl"
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: 3,
+            maxHeight: '90vh',
+          }
+        }}
       >
-        <DialogTitle>
-          <Typography variant="h6" component="div">
+        <DialogTitle sx={{ pb: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600, color: 'primary.main' }}>
             יצירת חשבונית חדשה
           </Typography>
         </DialogTitle>
 
-        <DialogContent>
+        <DialogContent sx={{ pb: 1 }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 3 }}>
               {error}
             </Alert>
           )}
@@ -275,7 +286,17 @@ export default function InvoiceCreateDialog({
                 options={customers}
                 getOptionLabel={(customer) => customer.name}
                 renderInput={(params) => (
-                  <TextField {...params} label="לקוח" required fullWidth />
+                  <TextField 
+                    {...params} 
+                    label="לקוח" 
+                    required 
+                    fullWidth 
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  />
                 )}
                 disabled={loading}
               />
@@ -298,6 +319,11 @@ export default function InvoiceCreateDialog({
                   textField: {
                     fullWidth: true,
                     required: true,
+                    sx: {
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }
                   },
                 }}
                 disabled={loading}
@@ -318,6 +344,11 @@ export default function InvoiceCreateDialog({
                 slotProps={{
                   textField: {
                     fullWidth: true,
+                    sx: {
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }
                   },
                 }}
                 disabled={loading}
@@ -338,6 +369,11 @@ export default function InvoiceCreateDialog({
                     }));
                   }}
                   disabled={loading}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
                 >
                   <MenuItem value="ILS">שקל ישראלי (₪)</MenuItem>
                   <MenuItem value="USD">דולר אמריקני ($)</MenuItem>
@@ -361,6 +397,11 @@ export default function InvoiceCreateDialog({
                 rows={2}
                 fullWidth
                 disabled={loading}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
               />
             </Grid>
           </Grid>
@@ -377,30 +418,31 @@ export default function InvoiceCreateDialog({
                 mb: 2,
               }}
             >
-              <Typography variant="h6">פריטים</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>פריטים</Typography>
               <Button
                 startIcon={<AddIcon />}
                 onClick={addLineItem}
                 variant="outlined"
                 size="small"
                 disabled={loading}
+                sx={{ borderRadius: 2 }}
               >
                 הוסף פריט
               </Button>
             </Box>
 
-            <TableContainer component={Paper} variant="outlined">
+            <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
               <Table size="small">
                 <TableHead>
-                  <TableRow>
-                    <TableCell>פריט</TableCell>
-                    <TableCell>תיאור</TableCell>
-                    <TableCell align="center">כמות</TableCell>
-                    <TableCell align="center">מחיר יחידה</TableCell>
-                    <TableCell align="center">הנחה %</TableCell>
-                    <TableCell align="center">מע"מ %</TableCell>
-                    <TableCell align="center">סה"כ</TableCell>
-                    <TableCell align="center">פעולות</TableCell>
+                  <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                    <TableCell sx={{ fontWeight: 600 }}>פריט</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>תיאור</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>כמות</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>מחיר יחידה</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>הנחה %</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>מע"מ %</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>סה"כ</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 600, width: 80 }}>פעולות</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -422,6 +464,11 @@ export default function InvoiceCreateDialog({
                               {...params}
                               size="small"
                               placeholder="בחר פריט"
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 1,
+                                }
+                              }}
                             />
                           )}
                           sx={{ minWidth: 200 }}
@@ -438,6 +485,11 @@ export default function InvoiceCreateDialog({
                           fullWidth
                           placeholder="תיאור הפריט"
                           disabled={loading}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 1,
+                            }
+                          }}
                         />
                       </TableCell>
                       <TableCell>
@@ -453,7 +505,12 @@ export default function InvoiceCreateDialog({
                           }
                           size="small"
                           inputProps={{ min: 0, step: 0.01 }}
-                          sx={{ width: 80 }}
+                          sx={{ 
+                            width: 80,
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 1,
+                            }
+                          }}
                           disabled={loading}
                         />
                       </TableCell>
@@ -470,7 +527,12 @@ export default function InvoiceCreateDialog({
                           }
                           size="small"
                           inputProps={{ min: 0, step: 0.01 }}
-                          sx={{ width: 100 }}
+                          sx={{ 
+                            width: 100,
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 1,
+                            }
+                          }}
                           disabled={loading}
                         />
                       </TableCell>
@@ -487,7 +549,12 @@ export default function InvoiceCreateDialog({
                           }
                           size="small"
                           inputProps={{ min: 0, max: 100, step: 0.01 }}
-                          sx={{ width: 80 }}
+                          sx={{ 
+                            width: 80,
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 1,
+                            }
+                          }}
                           disabled={loading}
                         />
                       </TableCell>
@@ -504,13 +571,18 @@ export default function InvoiceCreateDialog({
                           }
                           size="small"
                           inputProps={{ min: 0, max: 100, step: 0.01 }}
-                          sx={{ width: 80 }}
+                          sx={{ 
+                            width: 80,
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 1,
+                            }
+                          }}
                           disabled={loading}
                         />
                       </TableCell>
                       <TableCell align="center">
-                        <Typography variant="body2">
-                          {calculateLineTotal(line).toFixed(2)} ₪
+                        <Typography sx={{ fontWeight: 600 }}>
+                          ₪{calculateLineTotal(line).toFixed(2)}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">
@@ -530,36 +602,31 @@ export default function InvoiceCreateDialog({
             </TableContainer>
           </Box>
 
-          {/* Totals Section */}
-          <Paper sx={{ p: 2, bgcolor: "grey.50" }}>
-            <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} justifyContent="flex-end">
-              <Grid size={{ xs: 4, sm: 8, md: 4 }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography>סכום ביניים:</Typography>
-                  <Typography>{totals.subtotal.toFixed(2)} ₪</Typography>
-                </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography>מע"מ:</Typography>
-                  <Typography>{totals.taxAmount.toFixed(2)} ₪</Typography>
-                </Box>
-                <Divider sx={{ my: 1 }} />
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography variant="h6">סה"כ לתשלום:</Typography>
-                  <Typography variant="h6">
-                    {totals.total.toFixed(2)} ₪
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </Paper>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              סה"כ כולל מע"מ: ₪{totals.total.toFixed(2)}
+            </Typography>
+          </Box>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <Button
+            onClick={handleClose}
+            variant="outlined"
+            startIcon={<CancelIcon />}
+            disabled={loading}
+            sx={{ borderRadius: 2 }}
+          >
             ביטול
           </Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-            {loading ? "יוצר חשבונית..." : "צור חשבונית"}
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            startIcon={<SaveIcon />}
+            disabled={loading}
+            sx={{ borderRadius: 2 }}
+          >
+            {loading ? "יוצר חשבונית..." : "שמור"}
           </Button>
         </DialogActions>
       </Dialog>

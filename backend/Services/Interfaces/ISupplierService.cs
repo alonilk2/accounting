@@ -1,4 +1,6 @@
 using backend.Models.Suppliers;
+using backend.DTOs.Core;
+using backend.DTOs.Shared;
 
 namespace backend.Services.Interfaces;
 
@@ -49,6 +51,22 @@ public interface ISupplierService : IBaseService<Supplier>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment terms in days</returns>
     Task<int> GetPaymentTermsAsync(int supplierId, int companyId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get suppliers with pagination and filtering
+    /// </summary>
+    Task<PaginatedResponse<SupplierDto>> GetSuppliersAsync(
+        int companyId, 
+        string? searchTerm = null, 
+        bool? isActive = null,
+        int page = 1, 
+        int pageSize = 25, 
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get supplier by ID
+    /// </summary>
+    Task<SupplierDto?> GetSupplierAsync(int id, int companyId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
