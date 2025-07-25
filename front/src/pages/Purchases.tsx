@@ -18,22 +18,21 @@ import {
   DialogActions,
   TextField,
   Chip,
-  Menu,
   MenuItem,
   InputAdornment,
   Alert,
-  CircularProgress,
   Tooltip,
   Stack,
   Select,
   FormControl,
   InputLabel
 } from '@mui/material';
+import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  MoreVert as MoreVertIcon,
   Search as SearchIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
@@ -42,6 +41,7 @@ import { purchaseOrdersAPI } from '../services/purchaseOrdersApi';
 import { suppliersAPI } from '../services/api';
 import { itemsAPI } from '../services/api';
 import type { PurchaseOrder, PurchaseOrderStatus, Supplier, Item } from '../types/entities';
+import { dataGridStyles } from '../styles/formStyles';
 
 const Purchases = () => {
   const { language } = useUIStore();
@@ -78,10 +78,6 @@ const Purchases = () => {
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<PurchaseOrder | null>(null);
-  
-  // Menu state
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -123,7 +119,8 @@ const Purchases = () => {
 
   const loadItems = async () => {
     try {
-      const data = await itemsAPI.getAll({ isActive: true });
+      const response = await itemsAPI.getAll({ isActive: true });
+      const data = Array.isArray(response) ? response : response.data || [];
       setItems(data);
     } catch (err) {
       console.error('Error loading items:', err);
@@ -244,24 +241,12 @@ const Purchases = () => {
     })) || [];
     setOrderLines(formattedLines);
     setOpenDialog(true);
-    setAnchorEl(null);
   };
 
   // Open add dialog
   const openAddDialog = () => {
     resetForm();
     setOpenDialog(true);
-  };
-
-  // Menu handlers
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, order: PurchaseOrder) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedOrder(order);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedOrder(null);
   };
 
   // Status helpers
@@ -313,6 +298,85 @@ const Purchases = () => {
     selectItem: language === 'he' ? 'בחר פריט' : 'Select Item',
     noItems: language === 'he' ? 'לא נוספו פריטים' : 'No items added'
   };
+
+  // DataGrid columns
+  const columns: GridColDef[] = [
+    {
+      field: 'orderNumber',
+      headerName: text.orderNumber,
+      width: 150,
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="medium">
+          {params.value}
+        </Typography>
+      ),
+    },
+    {
+      field: 'supplierName',
+      headerName: text.supplier,
+      width: 200,
+      renderCell: (params) => (
+        <Typography variant="body2">
+          {params.value || '-'}
+        </Typography>
+      ),
+    },
+    {
+      field: 'orderDate',
+      headerName: text.orderDate,
+      width: 150,
+      renderCell: (params) => (
+        <Typography variant="body2">
+          {new Date(params.value).toLocaleDateString()}
+        </Typography>
+      ),
+    },
+    {
+      field: 'totalAmount',
+      headerName: text.amount,
+      width: 150,
+      renderCell: (params) => (
+        <Typography variant="body2">
+          {params.value.toLocaleString()} {params.row.currency}
+        </Typography>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: text.status,
+      width: 130,
+      renderCell: (params) => (
+        <Chip
+          label={params.value}
+          color={getStatusColor(params.value as PurchaseOrderStatus)}
+          size="small"
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      type: 'actions',
+      headerName: text.actions,
+      width: 100,
+      getActions: (params) => [
+        <GridActionsCellItem
+          key="edit"
+          icon={<EditIcon />}
+          label={text.edit}
+          onClick={() => openEditDialog(params.row as PurchaseOrder)}
+        />,
+        <GridActionsCellItem
+          key="delete"
+          icon={<DeleteIcon />}
+          label={text.delete}
+          onClick={() => {
+            setOrderToDelete(params.row as PurchaseOrder);
+            setDeleteDialogOpen(true);
+          }}
+        />,
+      ],
+    },
+  ];
 
   // Purchase order line management
   const addOrderLine = () => {
@@ -415,102 +479,23 @@ const Purchases = () => {
         </Alert>
       )}
 
-      {/* Purchase Orders Table */}
+      {/* Purchase Orders DataGrid */}
       <Card>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{text.orderNumber}</TableCell>
-                <TableCell>{text.supplier}</TableCell>
-                <TableCell>{text.orderDate}</TableCell>
-                <TableCell>{text.amount}</TableCell>
-                <TableCell>{text.status}</TableCell>
-                <TableCell>{text.actions}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    <CircularProgress />
-                  </TableCell>
-                </TableRow>
-              ) : purchaseOrders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    <Typography variant="body2" color="textSecondary">
-                      {text.noOrders}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                purchaseOrders.map((order) => (
-                  <TableRow key={order.id} hover>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
-                        {order.orderNumber}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {order.supplierName || '-'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {new Date(order.orderDate).toLocaleDateString()}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {order.totalAmount.toLocaleString()} {order.currency}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={order.status}
-                        color={getStatusColor(order.status)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        onClick={(e) => handleMenuOpen(e, order)}
-                        size="small"
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
-
-      {/* Action Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={() => selectedOrder && openEditDialog(selectedOrder)}>
-          <EditIcon fontSize="small" sx={{ mr: 1 }} />
-          {text.edit}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setOrderToDelete(selectedOrder);
-            setDeleteDialogOpen(true);
-            handleMenuClose();
+        <DataGrid
+          rows={purchaseOrders}
+          columns={columns}
+          sx={dataGridStyles}
+          loading={loading}
+          initialState={{
+            pagination: {
+              paginationModel: { page: 0, pageSize: 10 },
+            },
           }}
-        >
-          <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-          {text.delete}
-        </MenuItem>
-      </Menu>
+          pageSizeOptions={[5, 10, 25, 50]}
+          disableRowSelectionOnClick
+          getRowId={(row) => row.id}
+        />
+      </Card>
 
       {/* Add/Edit Dialog */}
       <Dialog

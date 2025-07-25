@@ -73,25 +73,6 @@ public class PaginatedSalesDocumentsResponseDto
 }
 
 /// <summary>
-/// DTO for receipt information
-/// </summary>
-public class ReceiptDto
-{
-    public int Id { get; set; }
-    public int CompanyId { get; set; }
-    public int InvoiceId { get; set; }
-    public string InvoiceNumber { get; set; } = string.Empty;
-    public string CustomerName { get; set; } = string.Empty;
-    public string ReceiptNumber { get; set; } = string.Empty;
-    public DateTime PaymentDate { get; set; }
-    public decimal Amount { get; set; }
-    public string PaymentMethod { get; set; } = string.Empty;
-    public string? ReferenceNumber { get; set; }
-    public string? Notes { get; set; }
-    public DateTime CreatedAt { get; set; }
-}
-
-/// <summary>
 /// Request model for generating a receipt
 /// </summary>
 public class GenerateReceiptRequest

@@ -33,6 +33,7 @@ public class AccountingDbContext : DbContext
     // Accounting
     public DbSet<ChartOfAccount> ChartOfAccounts { get; set; } = null!;
     public DbSet<JournalEntry> JournalEntries { get; set; } = null!;
+    public DbSet<Expense> Expenses { get; set; } = null!;
 
     // Sales
     public DbSet<Customer> Customers { get; set; } = null!;
@@ -207,9 +208,26 @@ public class AccountingDbContext : DbContext
             .HasForeignKey(je => je.AccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Expenses
+        modelBuilder.Entity<Expense>()
+            .HasOne(e => e.Supplier)
+            .WithMany()
+            .HasForeignKey(e => e.SupplierId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Expense>()
+            .HasOne(e => e.Account)
+            .WithMany()
+            .HasForeignKey(e => e.AccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Unique constraints
         modelBuilder.Entity<ChartOfAccount>()
             .HasIndex(a => new { a.CompanyId, a.AccountNumber })
+            .IsUnique();
+
+        modelBuilder.Entity<Expense>()
+            .HasIndex(e => new { e.CompanyId, e.ExpenseNumber })
             .IsUnique();
     }
 

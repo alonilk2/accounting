@@ -160,8 +160,9 @@ const Sales = () => {
 
   const loadItems = async () => {
     try {
-      const data = await itemsAPI.getAll({ isActive: true });
-      setItems(data);
+      const response = await itemsAPI.getAll({ isActive: true });
+      // CRITICAL: Extract .data property from PaginatedResponse
+      setItems(response.data || []);
     } catch (err) {
       console.error('Error loading items:', err);
     }

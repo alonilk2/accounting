@@ -179,9 +179,6 @@ namespace backend.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CompanyId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -240,14 +237,152 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId1");
-
                     b.HasIndex("ParentAccountId");
 
                     b.HasIndex("CompanyId", "AccountNumber")
                         .IsUnique();
 
                     b.ToTable("ChartOfAccounts", (string)null);
+                });
+
+            modelBuilder.Entity("backend.Models.Accounting.Expense", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ApprovedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AttachmentPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("DescriptionHebrew")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("ExpenseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExpenseNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRecurring")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTaxDeductible")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("PaidDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PaymentReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("PurchaseOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReceiptNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SupplierName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Tags")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("VatRate")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("SupplierId");
+
+                    b.HasIndex("CompanyId", "ExpenseNumber")
+                        .IsUnique();
+
+                    b.ToTable("Expenses");
                 });
 
             modelBuilder.Entity("backend.Models.Accounting.JournalEntry", b =>
@@ -351,9 +486,6 @@ namespace backend.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CompanyId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -412,8 +544,6 @@ namespace backend.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.HasIndex("CompanyId1");
-
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("UserId");
@@ -432,6 +562,9 @@ namespace backend.Migrations
                     b.Property<string>("Address")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("BackgroundImage")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("City")
                         .HasMaxLength(100)
@@ -858,9 +991,6 @@ namespace backend.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CompanyId1")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("CostPrice")
                         .HasColumnType("decimal(18,4)");
 
@@ -953,8 +1083,6 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId1");
-
                     b.HasIndex("CompanyId", "SKU")
                         .IsUnique();
 
@@ -976,9 +1104,6 @@ namespace backend.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CompanyId1")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1054,8 +1179,6 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CashierUserId");
-
-                    b.HasIndex("CompanyId1");
 
                     b.HasIndex("CompanyId", "TransactionNumber")
                         .IsUnique();
@@ -1405,9 +1528,6 @@ namespace backend.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CompanyId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1486,8 +1606,6 @@ namespace backend.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CompanyId1");
 
                     b.HasIndex("OrderDate");
 
@@ -1669,9 +1787,6 @@ namespace backend.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CompanyId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1718,8 +1833,6 @@ namespace backend.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.HasIndex("CompanyId1");
-
                     b.ToTable("Agents", (string)null);
                 });
 
@@ -1740,9 +1853,6 @@ namespace backend.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CompanyId1")
                         .HasColumnType("int");
 
                     b.Property<string>("Contact")
@@ -1831,8 +1941,6 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("CompanyId1");
 
                     b.ToTable("Customers", (string)null);
                 });
@@ -2513,9 +2621,6 @@ namespace backend.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CompanyId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -2612,8 +2717,6 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AgentId");
-
-                    b.HasIndex("CompanyId1");
 
                     b.HasIndex("CustomerId");
 
@@ -2723,9 +2826,6 @@ namespace backend.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CompanyId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -2794,8 +2894,6 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("CompanyId1");
 
                     b.HasIndex("CustomerId");
 
@@ -2994,9 +3092,6 @@ namespace backend.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CompanyId1")
-                        .HasColumnType("int");
-
                     b.Property<string>("Contact")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -3078,8 +3173,6 @@ namespace backend.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.HasIndex("CompanyId1");
-
                     b.ToTable("Suppliers", (string)null);
                 });
 
@@ -3088,7 +3181,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Company");
@@ -3097,14 +3190,10 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Models.Accounting.ChartOfAccount", b =>
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Core.Company", null)
                         .WithMany("ChartOfAccounts")
-                        .HasForeignKey("CompanyId1");
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("backend.Models.Accounting.ChartOfAccount", "ParentAccount")
                         .WithMany("ChildAccounts")
@@ -3114,6 +3203,31 @@ namespace backend.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("ParentAccount");
+                });
+
+            modelBuilder.Entity("backend.Models.Accounting.Expense", b =>
+                {
+                    b.HasOne("backend.Models.Accounting.ChartOfAccount", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("backend.Models.Core.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Suppliers.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("backend.Models.Accounting.JournalEntry", b =>
@@ -3127,7 +3241,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Account");
@@ -3138,14 +3252,10 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Models.Audit.AuditLog", b =>
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Core.Company", null)
                         .WithMany("AuditLogs")
-                        .HasForeignKey("CompanyId1");
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("backend.Models.Identity.User", "User")
                         .WithMany("AuditLogs")
@@ -3220,7 +3330,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Inventory.Item", "Item")
@@ -3237,14 +3347,10 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Models.Inventory.Item", b =>
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Core.Company", null)
                         .WithMany("Items")
-                        .HasForeignKey("CompanyId1");
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Company");
                 });
@@ -3258,14 +3364,10 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.HasOne("backend.Models.Core.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Core.Company", null)
                         .WithMany("POSSales")
-                        .HasForeignKey("CompanyId1");
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("CashierUser");
 
@@ -3296,7 +3398,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Sales.Invoice", null)
@@ -3319,7 +3421,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Purchasing.PurchaseOrder", "PurchaseOrder")
@@ -3345,7 +3447,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Inventory.Item", "Item")
@@ -3369,14 +3471,10 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Models.Purchasing.PurchaseOrder", b =>
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Core.Company", null)
                         .WithMany("PurchaseOrders")
-                        .HasForeignKey("CompanyId1");
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("backend.Models.Suppliers.Supplier", "Supplier")
                         .WithMany("PurchaseOrders")
@@ -3394,7 +3492,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Inventory.Item", "Item")
@@ -3421,7 +3519,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Purchasing.PurchaseInvoice", "PurchaseInvoice")
@@ -3446,14 +3544,10 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Models.Sales.Agent", b =>
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Core.Company", null)
                         .WithMany("Agents")
-                        .HasForeignKey("CompanyId1");
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Company");
                 });
@@ -3461,14 +3555,10 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Models.Sales.Customer", b =>
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Core.Company", null)
                         .WithMany("Customers")
-                        .HasForeignKey("CompanyId1");
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Company");
                 });
@@ -3478,7 +3568,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Sales.Customer", "Customer")
@@ -3504,7 +3594,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Sales.DeliveryNote", "DeliveryNote")
@@ -3538,7 +3628,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Sales.Customer", "Customer")
@@ -3587,7 +3677,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Sales.Customer", "Customer")
@@ -3608,7 +3698,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Inventory.Item", "Item")
@@ -3635,7 +3725,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Sales.Invoice", "Invoice")
@@ -3657,14 +3747,10 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("backend.Models.Core.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Core.Company", null)
                         .WithMany("SalesOrders")
-                        .HasForeignKey("CompanyId1");
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("backend.Models.Sales.Customer", "Customer")
                         .WithMany("SalesOrders")
@@ -3695,7 +3781,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Inventory.Item", "Item")
@@ -3720,14 +3806,10 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Models.Sales.StandingOrder", b =>
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Core.Company", null)
                         .WithMany("StandingOrders")
-                        .HasForeignKey("CompanyId1");
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("backend.Models.Sales.Customer", "Customer")
                         .WithMany("StandingOrders")
@@ -3745,7 +3827,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Sales.Customer", "Customer")
@@ -3764,7 +3846,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("backend.Models.Inventory.Item", "Item")
@@ -3789,14 +3871,10 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Models.Suppliers.Supplier", b =>
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Core.Company", null)
                         .WithMany("Suppliers")
-                        .HasForeignKey("CompanyId1");
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Company");
                 });

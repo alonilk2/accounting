@@ -50,6 +50,10 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "Azure.AI.FormRecognizer": {
+              "target": "Package",
+              "version": "[4.1.0, )"
+            },
             "Azure.AI.OpenAI": {
               "target": "Package",
               "version": "[2.1.0, )"
@@ -61,6 +65,10 @@
             "Azure.Security.KeyVault.Secrets": {
               "target": "Package",
               "version": "[4.8.0, )"
+            },
+            "Azure.Storage.Blobs": {
+              "target": "Package",
+              "version": "[12.21.2, )"
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",

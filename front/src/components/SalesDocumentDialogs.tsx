@@ -98,8 +98,9 @@ const SalesDocumentDialogs: React.FC<SalesDocumentDialogsProps> = ({
 
   const loadItems = async () => {
     try {
-      const data = await itemsAPI.getAll({ isActive: true });
-      setItems(data);
+      const response = await itemsAPI.getAll({ isActive: true });
+      // CRITICAL: Extract .data property from PaginatedResponse
+      setItems(response.data || []);
     } catch (err) {
       console.error('Error loading items:', err);
     }
@@ -114,7 +115,7 @@ const SalesDocumentDialogs: React.FC<SalesDocumentDialogsProps> = ({
   }, [open]);
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, status: documentType }));
+    setFormData(prev => ({ ...prev, status: documentType as SalesOrderStatus }));
   }, [documentType]);
 
   // Handle form submission
@@ -157,7 +158,7 @@ const SalesDocumentDialogs: React.FC<SalesDocumentDialogsProps> = ({
       orderDate: new Date().toISOString().split('T')[0],
       dueDate: '',
       deliveryDate: '',
-      status: documentType,
+      status: documentType as SalesOrderStatus,
       notes: ''
     });
     setOrderLines([]);

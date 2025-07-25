@@ -102,7 +102,7 @@ public class PurchaseInvoicesController : ControllerBase
                 UpdatedAt = pi.UpdatedAt
             }).ToList();
 
-            Response.Headers.Add("X-Total-Count", totalCount.ToString());
+            Response.Headers["X-Total-Count"] = totalCount.ToString();
             return Ok(result);
         }
         catch (Exception ex)

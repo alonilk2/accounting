@@ -111,13 +111,14 @@ const CreateTaxInvoiceReceiptPage: React.FC = () => {
       setLoading(true);
       
       // Load customers and items in parallel
-      const [customersData, itemsData] = await Promise.all([
+      const [customersData, itemsResponse] = await Promise.all([
         customersApi.getCustomers(),
         itemsAPI.getAll({ isActive: true })
       ]);
       
       setCustomers(customersData);
-      setItems(itemsData);
+      // CRITICAL: Extract .data property from PaginatedResponse
+      setItems(itemsResponse.data || []);
     } catch (err) {
       console.error('Error loading data:', err);
       setError('שגיאה בטעינת הנתונים');

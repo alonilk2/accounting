@@ -1,4 +1,6 @@
 using backend.Models.Inventory;
+using backend.DTOs.Shared;
+using backend.DTOs.Core;
 
 namespace backend.Services.Interfaces;
 
@@ -17,8 +19,8 @@ public interface IInventoryService : IBaseService<Item>
     /// <param name="page">Page number (1-based)</param>
     /// <param name="pageSize">Items per page</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Filtered list of items</returns>
-    Task<IEnumerable<Item>> GetFilteredAsync(
+    /// <returns>Paginated response with items</returns>
+    Task<PaginatedResponse<ItemDto>> GetFilteredAsync(
         int companyId,
         string? search = null,
         bool? isActive = null,

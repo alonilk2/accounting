@@ -5,6 +5,8 @@ using backend.Models.Inventory;
 using backend.Services.Interfaces;
 using backend.Services.Core;
 using backend.Services.Accounting;
+using backend.DTOs.Shared;
+using backend.DTOs.Core;
 
 namespace backend.Services.Inventory;
 
@@ -48,8 +50,8 @@ public class InventoryService : BaseService<Item>, IInventoryService
     /// <param name="page">Page number (1-based)</param>
     /// <param name="pageSize">Items per page</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Filtered list of items</returns>
-    public async Task<IEnumerable<Item>> GetFilteredAsync(
+    /// <returns>Paginated response with items</returns>
+    public async Task<PaginatedResponse<ItemDto>> GetFilteredAsync(
         int companyId,
         string? search = null,
         bool? isActive = null,
@@ -78,14 +80,54 @@ public class InventoryService : BaseService<Item>, IInventoryService
                 query = query.Where(i => i.IsActive == isActive.Value);
             }
 
+            // Get total count for pagination
+            var totalCount = await query.CountAsync(cancellationToken);
+
             // Apply pagination
             var skip = (page - 1) * pageSize;
             
-            return await query
+            var items = await query
                 .OrderBy(i => i.Name)
                 .Skip(skip)
                 .Take(pageSize)
                 .ToListAsync(cancellationToken);
+
+            // Convert to DTOs
+            var itemDtos = items.Select(i => new ItemDto
+            {
+                Id = i.Id,
+                CompanyId = i.CompanyId,
+                Sku = i.SKU,
+                Name = i.Name,
+                NameHebrew = i.NameHebrew,
+                Description = i.Description,
+                Category = i.Category,
+                Unit = i.Unit,
+                CostPrice = i.CostPrice,
+                SalePrice = i.SellPrice,
+                SellPrice = i.SellPrice,
+                CurrentStockQty = (int)i.CurrentStockQty,
+                ReorderPoint = (int)i.ReorderPoint,
+                MaxStockLevel = i.MaxStockLevel,
+                ItemType = i.ItemType,
+                IsInventoryTracked = i.IsInventoryTracked,
+                IsActive = i.IsActive,
+                IsSellable = i.IsSellable,
+                IsPurchasable = i.IsPurchasable,
+                Weight = i.Weight,
+                Volume = i.Volume,
+                Barcode = i.Barcode,
+                ImageUrl = i.ImageUrl,
+                PreferredSupplierId = i.PreferredSupplierId,
+                TrackInventory = i.IsInventoryTracked,
+                // Backward compatibility
+                Cost = i.Cost,
+                Price = i.Price,
+                CreatedAt = i.CreatedAt,
+                UpdatedAt = i.UpdatedAt
+            });
+
+            return PaginatedResponse<ItemDto>.Create(itemDtos, page, pageSize, totalCount);
         }
         catch (Exception ex)
         {

@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models.Inventory;
 using backend.Services.Interfaces;
+using backend.DTOs.Core;
+using backend.DTOs.Shared;
 using System.ComponentModel.DataAnnotations;
 
 namespace backend.Controllers;
@@ -25,7 +27,7 @@ public class ItemsController : ControllerBase
     }
 
     /// <summary>
-    /// Gets all items for the current company
+    /// Gets all items for the current company with pagination
     /// </summary>
     /// <param name="companyId">Company ID for multi-tenant filtering</param>
     /// <param name="search">Search term</param>
@@ -33,12 +35,12 @@ public class ItemsController : ControllerBase
     /// <param name="isActive">Filter by active status</param>
     /// <param name="page">Page number (1-based)</param>
     /// <param name="pageSize">Items per page</param>
-    /// <returns>List of items</returns>
+    /// <returns>Paginated list of items</returns>
     [HttpGet]
-    [ProducesResponseType<IEnumerable<ItemDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<PaginatedResponse<ItemDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<ItemDto>>> GetItems(
+    public async Task<ActionResult<PaginatedResponse<ItemDto>>> GetItems(
         [FromQuery] int? companyId = null,
         [FromQuery] string? search = null,
         [FromQuery] string? category = null,
@@ -53,51 +55,66 @@ public class ItemsController : ControllerBase
             
             _logger.LogInformation("Retrieving items for company {CompanyId}", currentCompanyId);
 
-            // Use service to get filtered items
-            var items = await _inventoryService.GetFilteredAsync(
+            // Use service to get filtered items with pagination
+            var paginatedItems = await _inventoryService.GetFilteredAsync(
                 currentCompanyId,
                 search: search,
                 isActive: isActive,
                 page: page,
                 pageSize: pageSize);
 
-            var itemDtos = items.Select(i => new ItemDto
-            {
-                Id = i.Id,
-                CompanyId = i.CompanyId,
-                Sku = i.SKU,
-                Name = i.Name,
-                NameHebrew = i.NameHebrew,
-                Description = i.Description,
-                Category = i.Category,
-                Unit = i.Unit,
-                CostPrice = i.CostPrice,
-                SellPrice = i.SellPrice,
-                CurrentStockQty = i.CurrentStockQty,
-                ReorderPoint = i.ReorderPoint,
-                MaxStockLevel = i.MaxStockLevel,
-                ItemType = i.ItemType,
-                IsInventoryTracked = i.IsInventoryTracked,
-                IsActive = i.IsActive,
-                IsSellable = i.IsSellable,
-                IsPurchasable = i.IsPurchasable,
-                Weight = i.Weight,
-                Volume = i.Volume,
-                Barcode = i.Barcode,
-                ImageUrl = i.ImageUrl,
-                PreferredSupplierId = i.PreferredSupplierId,
-                // Backward compatibility
-                Cost = i.Cost,
-                Price = i.Price,
-                CreatedAt = i.CreatedAt,
-                UpdatedAt = i.UpdatedAt
-            });
-
-            return Ok(itemDtos);
+            return Ok(paginatedItems);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving items for company {CompanyId}", companyId);
+            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
+        }
+    }
+
+    /// <summary>
+    /// Gets paginated items for DataGrid components
+    /// </summary>
+    /// <param name="companyId">Company ID for multi-tenant filtering</param>
+    /// <param name="search">Search term</param>
+    /// <param name="category">Filter by category</param>
+    /// <param name="isActive">Filter by active status</param>
+    /// <param name="page">Page number (1-based)</param>
+    /// <param name="pageSize">Items per page</param>
+    /// <returns>Paginated list of items</returns>
+    [HttpGet("paginated")]
+    [ProducesResponseType<PaginatedResponse<ItemDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<PaginatedResponse<ItemDto>>> GetPaginatedItems(
+        [FromQuery] int? companyId = null,
+        [FromQuery] string? search = null,
+        [FromQuery] string? category = null,
+        [FromQuery] bool? isActive = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
+    {
+        try
+        {
+            // In a real app, companyId would come from authenticated user context
+            var currentCompanyId = companyId ?? 1;
+            
+            _logger.LogInformation("Retrieving paginated items for company {CompanyId}, page {Page}, pageSize {PageSize}", 
+                currentCompanyId, page, pageSize);
+
+            // Use service to get filtered items with pagination
+            var paginatedItems = await _inventoryService.GetFilteredAsync(
+                currentCompanyId,
+                search: search,
+                isActive: isActive,
+                page: page,
+                pageSize: pageSize);
+
+            return Ok(paginatedItems);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving paginated items for company {CompanyId}", companyId);
             return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
         }
     }

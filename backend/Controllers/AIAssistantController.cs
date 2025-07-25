@@ -14,13 +14,16 @@ namespace backend.Controllers;
 public class AIAssistantController : ControllerBase
 {
     private readonly IAIAssistantService _aiAssistantService;
+    private readonly IDocumentScanService _documentScanService;
     private readonly ILogger<AIAssistantController> _logger;
 
     public AIAssistantController(
         IAIAssistantService aiAssistantService,
+        IDocumentScanService documentScanService,
         ILogger<AIAssistantController> logger)
     {
         _aiAssistantService = aiAssistantService;
+        _documentScanService = documentScanService;
         _logger = logger;
     }
 
@@ -355,6 +358,184 @@ public class AIAssistantController : ControllerBase
         {
             _logger.LogError(ex, "Error updating AI assistant config");
             return StatusCode(500, new { message = "שגיאה פנימית בשרת" });
+        }
+    }
+
+    /// <summary>
+    /// Scan a document (invoice, receipt, etc.) and extract expense data
+    /// </summary>
+    /// <param name="request">Document scan request with file data</param>
+    /// <returns>Extracted expense data for review</returns>
+    [HttpPost("scan-document")]
+    [AllowAnonymous] // Allow anonymous access for development
+    public async Task<ActionResult<DocumentScanResponse>> ScanDocument([FromBody] DocumentScanRequest request)
+    {
+        try
+        {
+            var companyId = GetCompanyIdFromClaims();
+
+            // For development: use default company ID if not available from claims
+            if (companyId == 0)
+            {
+                companyId = 1; // Development default company ID
+                _logger.LogWarning("Using development default company ID: {CompanyId}", companyId);
+            }
+
+            // Validate request
+            if (string.IsNullOrEmpty(request.FileData))
+            {
+                return BadRequest(new { message = "נתוני הקובץ נדרשים" });
+            }
+
+            if (string.IsNullOrEmpty(request.FileName))
+            {
+                return BadRequest(new { message = "שם הקובץ נדרש" });
+            }
+
+            if (string.IsNullOrEmpty(request.ContentType))
+            {
+                return BadRequest(new { message = "סוג הקובץ נדרש" });
+            }
+
+            // Check if AI assistant is available
+            if (!await _aiAssistantService.IsAvailableAsync(companyId))
+            {
+                return BadRequest(new { message = "מגבלת השימוש היומית הגיעה לקצה" });
+            }
+
+            _logger.LogInformation("Starting document scan for company {CompanyId}, file: {FileName}", 
+                companyId, request.FileName);
+
+            var response = await _documentScanService.ScanDocumentAsync(request, companyId);
+
+            if (!response.IsSuccess)
+            {
+                return BadRequest(new { message = response.ErrorMessage });
+            }
+
+            _logger.LogInformation("Document scan completed successfully for company {CompanyId} in {ProcessingTime}ms", 
+                companyId, response.ProcessingTimeMs);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error scanning document");
+            return StatusCode(500, new { message = "שגיאה בעיבוד המסמך" });
+        }
+    }
+
+    /// <summary>
+    /// Create an expense from scanned document data after user review
+    /// </summary>
+    /// <param name="request">Create expense request with reviewed data</param>
+    /// <returns>Created expense ID</returns>
+    [HttpPost("create-expense-from-scan")]
+    [AllowAnonymous] // Allow anonymous access for development
+    public async Task<ActionResult<object>> CreateExpenseFromScan([FromBody] CreateExpenseFromScanRequest request)
+    {
+        try
+        {
+            var companyId = GetCompanyIdFromClaims();
+            var userId = GetUserIdFromClaims()?.ToString() ?? "system";
+
+            // For development: use default company ID if not available from claims
+            if (companyId == 0)
+            {
+                companyId = 1; // Development default company ID
+                _logger.LogWarning("Using development default company ID: {CompanyId}", companyId);
+            }
+
+            // Validate request
+            if (request.ExpenseData == null)
+            {
+                return BadRequest(new { message = "נתוני ההוצאה נדרשים" });
+            }
+
+            if (request.ExpenseData.TotalAmount == null || request.ExpenseData.TotalAmount <= 0)
+            {
+                return BadRequest(new { message = "סכום ההוצאה נדרש וחייב להיות חיובי" });
+            }
+
+            _logger.LogInformation("Creating expense from scanned data for company {CompanyId}", companyId);
+
+            var expenseId = await _documentScanService.CreateExpenseFromScannedDataAsync(
+                request, companyId, userId);
+
+            _logger.LogInformation("Created expense {ExpenseId} from scanned data for company {CompanyId}", 
+                expenseId, companyId);
+
+            return Ok(new { 
+                expenseId, 
+                message = "ההוצאה נוצרה בהצלחה מהמסמך הסרוק",
+                success = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating expense from scanned data");
+            return StatusCode(500, new { message = "שגיאה ביצירת ההוצאה מהמסמך הסרוק" });
+        }
+    }
+
+    /// <summary>
+    /// Store document file for future reference
+    /// </summary>
+    /// <param name="request">Document storage request</param>
+    /// <returns>Document URL</returns>
+    [HttpPost("store-document")]
+    [AllowAnonymous] // Allow anonymous access for development
+    public async Task<ActionResult<object>> StoreDocument([FromBody] DocumentScanRequest request)
+    {
+        try
+        {
+            var companyId = GetCompanyIdFromClaims();
+
+            // For development: use default company ID if not available from claims
+            if (companyId == 0)
+            {
+                companyId = 1; // Development default company ID
+                _logger.LogWarning("Using development default company ID: {CompanyId}", companyId);
+            }
+
+            // Validate request
+            if (string.IsNullOrEmpty(request.FileData))
+            {
+                return BadRequest(new { message = "נתוני הקובץ נדרשים" });
+            }
+
+            if (string.IsNullOrEmpty(request.FileName))
+            {
+                return BadRequest(new { message = "שם הקובץ נדרש" });
+            }
+
+            if (string.IsNullOrEmpty(request.ContentType))
+            {
+                return BadRequest(new { message = "סוג הקובץ נדרש" });
+            }
+
+            _logger.LogInformation("Storing document for company {CompanyId}, file: {FileName}", 
+                companyId, request.FileName);
+
+            var documentUrl = await _documentScanService.StoreDocumentAsync(
+                request.FileData, 
+                request.FileName, 
+                request.ContentType, 
+                companyId);
+
+            _logger.LogInformation("Document stored successfully for company {CompanyId}: {DocumentUrl}", 
+                companyId, documentUrl);
+
+            return Ok(new { 
+                documentUrl, 
+                message = "המסמך נשמר בהצלחה",
+                success = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error storing document");
+            return StatusCode(500, new { message = "שגיאה בשמירת המסמך" });
         }
     }
 

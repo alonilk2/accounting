@@ -13,7 +13,9 @@ import {
   MenuItem,
   Select,
   FormControl,
-  InputLabel
+  InputLabel,
+  ThemeProvider,
+  createTheme
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -40,6 +42,22 @@ const CustomerStatementGenerator: React.FC = () => {
 
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Create a light theme for print preview
+  const printTheme = createTheme({
+    palette: {
+      mode: 'light',
+      background: {
+        default: '#ffffff',
+        paper: '#ffffff',
+      },
+      text: {
+        primary: '#000000',
+        secondary: '#666666',
+      },
+      divider: '#e0e0e0',
+    },
+  });
+
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: statement ? `כרטסת לקוח - ${statement.customer.name} - ${format(new Date(statement.fromDate), 'dd/MM/yyyy', { locale: he })} - ${format(new Date(statement.toDate), 'dd/MM/yyyy', { locale: he })}` : 'כרטסת לקוח',
@@ -54,6 +72,19 @@ const CustomerStatementGenerator: React.FC = () => {
           direction: rtl;
           font-family: 'Arial', sans-serif;
         }
+        .print-content {
+          width: 100% !important;
+          max-width: none !important;
+          overflow: visible !important;
+        }
+        .print-content table {
+          border-collapse: collapse !important;
+          page-break-inside: avoid;
+        }
+        .print-content .MuiPaper-root {
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
       }
     `,
   });
@@ -66,7 +97,7 @@ const CustomerStatementGenerator: React.FC = () => {
   const loadCustomers = async () => {
     try {
       setLoadingCustomers(true);
-      const customerList = await customersAPI.getAll();
+      const customerList = await customersAPI.getCustomers();
       setCustomers(customerList);
     } catch (error) {
       console.error('Error loading customers:', error);
@@ -228,15 +259,27 @@ const CustomerStatementGenerator: React.FC = () => {
 
         {/* Statement Preview */}
         {statement && (
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
+          <Card sx={{ borderRadius: '12px', overflow: 'hidden' }}>
+            <CardContent sx={{ p: 0 }}>
+              <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #eee', m: 0 }}>
                 תצוגה מקדימה - כרטסת לקוח
               </Typography>
               
               {/* Print Area */}
-              <Box ref={printRef} className="print-content">
-                <CustomerStatementPrint statement={statement} />
+              <Box 
+                ref={printRef} 
+                className="print-content"
+                sx={{
+                  width: '100%',
+                  maxWidth: '100%',
+                  overflow: 'auto',
+                  backgroundColor: 'white',
+                  borderRadius: 0
+                }}
+              >
+                <ThemeProvider theme={printTheme}>
+                  <CustomerStatementPrint statement={statement} />
+                </ThemeProvider>
               </Box>
             </CardContent>
           </Card>

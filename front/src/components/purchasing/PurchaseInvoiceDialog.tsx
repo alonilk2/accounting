@@ -123,7 +123,7 @@ export const PurchaseInvoiceDialog: React.FC<PurchaseInvoiceDialogProps> = ({
 
   const fetchSuppliers = async () => {
     try {
-      const data = await suppliersAPI.getAll();
+      const data = await suppliersAPI.getActive();
       setSuppliers(data);
     } catch (err) {
       console.error("Error fetching suppliers:", err);
@@ -132,8 +132,8 @@ export const PurchaseInvoiceDialog: React.FC<PurchaseInvoiceDialogProps> = ({
 
   const fetchItems = async () => {
     try {
-      const data = await itemsAPI.getAll();
-      setItems(data);
+      const response = await itemsAPI.getAll({ isActive: true });
+      setItems(response.data || []);
     } catch (err) {
       console.error("Error fetching items:", err);
     }

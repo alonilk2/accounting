@@ -130,13 +130,14 @@ const TaxInvoiceReceiptCreateDialog: React.FC<TaxInvoiceReceiptCreateDialogProps
       setLoading(true);
       
       // Load customers and items in parallel
-      const [customersData, itemsData] = await Promise.all([
+      const [customersData, itemsResponse] = await Promise.all([
         customersApi.getCustomers(),
         itemsAPI.getAll({ isActive: true })
       ]);
       
       setCustomers(customersData);
-      setItems(itemsData);
+      // CRITICAL: Extract .data property from PaginatedResponse
+      setItems(itemsResponse.data || []);
     } catch (err) {
       console.error('Error loading data:', err);
       setError('שגיאה בטעינת הנתונים');
@@ -173,7 +174,7 @@ const TaxInvoiceReceiptCreateDialog: React.FC<TaxInvoiceReceiptCreateDialogProps
   };
 
   const handleAddItemToLines = () => {
-    const selectedItem = items.find(item => item.id === selectedItemId);
+    const selectedItem = items?.find(item => item.id === selectedItemId);
     if (!selectedItem) return;
 
     const vatRate = 17; // Default Israeli VAT rate
@@ -424,9 +425,9 @@ const TaxInvoiceReceiptCreateDialog: React.FC<TaxInvoiceReceiptCreateDialogProps
           <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} alignItems="end">
             <Grid size={{ xs: 4, sm: 8, md: 4 }}>
               <Autocomplete
-                options={items}
+                options={items || []}
                 getOptionLabel={(option) => `${option.name} (${option.sku})`}
-                value={items.find(item => item.id === selectedItemId) || null}
+                value={items?.find(item => item.id === selectedItemId) || null}
                 onChange={(_, newValue) => handleItemSelect(newValue)}
                 renderInput={(params) => (
                   <TextField

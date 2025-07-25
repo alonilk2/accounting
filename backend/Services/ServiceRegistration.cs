@@ -47,6 +47,7 @@ public static class ServiceRegistration
         // Accounting services
         services.AddScoped<IChartOfAccountsService, ChartOfAccountsService>();
         services.AddScoped<IJournalEntryService, JournalEntryService>();
+        services.AddScoped<IExpenseService, ExpenseService>();
         
         // Print services
         services.AddScoped<IPrintService, PrintService>();
@@ -58,6 +59,8 @@ public static class ServiceRegistration
         services.AddScoped<IAIAssistantService, AIAssistantService>();
         // AI Services - Azure OpenAI with Managed Identity
         services.AddScoped<IOpenAIService, OpenAIService>();
+        // Document scanning service with Azure Form Recognizer
+        services.AddScoped<IDocumentScanService, DocumentScanService>();
         // AI Function Services for function calling
         services.AddScoped<ICustomerFunctionService, CustomerFunctionService>();
         services.AddScoped<IInvoiceFunctionService, InvoiceFunctionService>();

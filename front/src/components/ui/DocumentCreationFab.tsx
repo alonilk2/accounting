@@ -28,6 +28,7 @@ import InvoiceCreateDialog from '../invoices/InvoiceCreateDialog';
 import { PurchaseInvoiceDialog } from '../purchasing/PurchaseInvoiceDialog';
 import TaxInvoiceReceiptCreateDialog from '../taxInvoiceReceipts/TaxInvoiceReceiptCreateDialog';
 import CreateQuoteDialog from '../quotes/CreateQuoteDialog';
+import ReceiptCreateDialog from '../receipts/ReceiptCreateDialog';
 import { useNavigate } from 'react-router-dom';
 
 const DocumentCreationFab: React.FC = () => {
@@ -43,6 +44,7 @@ const DocumentCreationFab: React.FC = () => {
   const [showPurchaseInvoiceDialog, setShowPurchaseInvoiceDialog] = useState(false);
   const [showTaxInvoiceReceiptDialog, setShowTaxInvoiceReceiptDialog] = useState(false);
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   
   const open = Boolean(anchorEl);
 
@@ -99,7 +101,7 @@ const DocumentCreationFab: React.FC = () => {
       icon: <ReceiptPaymentIcon />,
       name: language === 'he' ? 'קבלה' : 'Receipt',
       onClick: () => {
-        navigate('/sales'); // Navigate to sales page where receipts can be managed
+        setShowReceiptDialog(true);
         handleClose();
       },
     },
@@ -142,21 +144,52 @@ const DocumentCreationFab: React.FC = () => {
             sx={{
               width: 64,
               height: 64,
-              background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-              color: 'white',
-              boxShadow: '0 8px 32px rgba(25, 118, 210, 0.4)',
-              border: '3px solid',
-              borderColor: theme.palette.background.paper,
+              // Glass effect background
+              background: theme.palette.mode === 'dark' 
+                ? 'rgba(25, 118, 210, 0.15)'
+                : 'rgba(25, 118, 210, 0.1)',
+              backdropFilter: 'blur(20px)',
+              border: `1px solid ${theme.palette.mode === 'dark' 
+                ? 'rgba(25, 118, 210, 0.3)' 
+                : 'rgba(25, 118, 210, 0.2)'}`,
+              color: theme.palette.mode === 'dark' ? '#42a5f5' : '#1976d2',
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 8px 32px rgba(25, 118, 210, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                : '0 8px 32px rgba(25, 118, 210, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
-                background: 'linear-gradient(135deg, #42a5f5 0%, #1976d2 100%)',
+                background: theme.palette.mode === 'dark' 
+                  ? 'rgba(25, 118, 210, 0.25)'
+                  : 'rgba(25, 118, 210, 0.2)',
                 transform: 'translateY(-4px) scale(1.05)',
-                boxShadow: '0 12px 40px rgba(25, 118, 210, 0.5)',
+                boxShadow: theme.palette.mode === 'dark'
+                  ? '0 12px 40px rgba(25, 118, 210, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+                  : '0 12px 40px rgba(25, 118, 210, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1)',
+                border: `1px solid ${theme.palette.mode === 'dark' 
+                  ? 'rgba(25, 118, 210, 0.5)' 
+                  : 'rgba(25, 118, 210, 0.4)'}`,
               },
               '&:active': {
                 transform: 'translateY(-2px) scale(1.02)',
               },
+              // Glass shine effect
               '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: theme.palette.mode === 'dark' 
+                  ? 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, transparent 100%)'
+                  : 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                borderRadius: 'inherit',
+                pointerEvents: 'none',
+                opacity: 0.7,
+                transition: 'opacity 0.3s ease',
+              },
+              // Additional glow on hover
+              '&:hover::after': {
                 content: '""',
                 position: 'absolute',
                 top: -2,
@@ -166,11 +199,8 @@ const DocumentCreationFab: React.FC = () => {
                 background: 'linear-gradient(135deg, #1976d2, #42a5f5)',
                 borderRadius: 'inherit',
                 zIndex: -1,
-                opacity: 0,
-                transition: 'opacity 0.3s ease',
-              },
-              '&:hover::before': {
-                opacity: 0.3,
+                opacity: 0.1,
+                filter: 'blur(4px)',
               },
             }}
           >
@@ -181,10 +211,13 @@ const DocumentCreationFab: React.FC = () => {
             variant="caption" 
             sx={{ 
               fontWeight: 600, 
-              color: theme.palette.primary.main,
+              color: theme.palette.mode === 'dark' ? '#42a5f5' : '#1976d2',
               textAlign: 'center',
               fontSize: '0.75rem',
               lineHeight: 1,
+              textShadow: theme.palette.mode === 'dark' 
+                ? '0 1px 2px rgba(0,0,0,0.5)'
+                : '0 1px 2px rgba(255,255,255,0.8)',
             }}
           >
             {language === 'he' ? 'צור מסמך' : 'Create'}
@@ -211,10 +244,17 @@ const DocumentCreationFab: React.FC = () => {
               mb: 1, // margin bottom במקום margin top
               borderRadius: 3,
               minWidth: 220,
-              background: alpha(theme.palette.background.paper, 0.98),
+              // Glass effect for menu
+              background: theme.palette.mode === 'dark' 
+                ? 'rgba(18, 18, 18, 0.8)'
+                : 'rgba(255, 255, 255, 0.8)',
               backdropFilter: 'blur(20px)',
-              border: `2px solid ${alpha(theme.palette.primary.main, 0.15)}`,
-              boxShadow: `0 12px 48px ${alpha(theme.palette.primary.main, 0.2)}`,
+              border: `1px solid ${theme.palette.mode === 'dark' 
+                ? 'rgba(255, 255, 255, 0.1)' 
+                : 'rgba(0, 0, 0, 0.1)'}`,
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 12px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                : '0 12px 48px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
               '&:after': { // after במקום before כדי שיהיה למטה
                 content: '""',
                 display: 'block',
@@ -224,9 +264,14 @@ const DocumentCreationFab: React.FC = () => {
                 transform: 'translateX(-50%) translateY(50%) rotate(45deg)',
                 width: 10,
                 height: 10,
-                bgcolor: 'background.paper',
+                bgcolor: theme.palette.mode === 'dark' 
+                  ? 'rgba(18, 18, 18, 0.8)'
+                  : 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(20px)',
                 zIndex: 0,
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+                border: `1px solid ${theme.palette.mode === 'dark' 
+                  ? 'rgba(255, 255, 255, 0.1)' 
+                  : 'rgba(0, 0, 0, 0.1)'}`,
               },
             },
           }}
@@ -306,6 +351,12 @@ const DocumentCreationFab: React.FC = () => {
         open={showTaxInvoiceReceiptDialog}
         onClose={() => setShowTaxInvoiceReceiptDialog(false)}
         onSuccess={() => setShowTaxInvoiceReceiptDialog(false)}
+      />
+
+      <ReceiptCreateDialog
+        open={showReceiptDialog}
+        onClose={() => setShowReceiptDialog(false)}
+        onSuccess={() => setShowReceiptDialog(false)}
       />
     </>
   );

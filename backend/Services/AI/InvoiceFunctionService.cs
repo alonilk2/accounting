@@ -675,9 +675,9 @@ public class InvoiceFunctionService : IInvoiceFunctionService
                 .Where(i => i.CompanyId == companyId && !i.IsDeleted)
                 .Where(i => 
                     i.InvoiceNumber.Contains(searchTerm) ||
-                    i.Customer.Name.Contains(searchTerm) ||
+                    (i.Customer != null && i.Customer.Name.Contains(searchTerm)) ||
                     (i.Notes != null && i.Notes.Contains(searchTerm)) ||
-                    i.CustomerTaxId.Contains(searchTerm))
+                    (!string.IsNullOrEmpty(i.CustomerTaxId) && i.CustomerTaxId.Contains(searchTerm)))
                 .OrderByDescending(i => i.InvoiceDate)
                 .Take(50)
                 .Select(i => new

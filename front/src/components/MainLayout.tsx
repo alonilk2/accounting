@@ -20,6 +20,7 @@ import {
 import {
   Dashboard,
   People,
+  Home,
   Business,
   Inventory,
   ShoppingCart,
@@ -38,6 +39,7 @@ import {
   Assignment,
   LocalShipping,
   CorporateFare,
+  Payment,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, useUIStore } from '../stores';
@@ -70,6 +72,7 @@ interface NavItem {
 }
 
 const navigationItems: NavItem[] = [
+  { text: 'Home Page', textHe: 'עמוד ראשי', icon: <Home />, path: '/home' },
   { text: 'Dashboard', textHe: 'לוח בקרה', icon: <Dashboard />, path: '/', isAI: true },
   { text: 'AI Assistant', textHe: 'עוזר AI', icon: <SmartToy />, path: '/ai-assistant', section: 'AI Analytics', isAI: true, badge: 'AI' },
   { text: 'AI Insights', textHe: 'תובנות AI', icon: <Insights />, path: '/ai-insights', section: 'AI Analytics', isAI: true, badge: 'AI' },
@@ -82,6 +85,7 @@ const navigationItems: NavItem[] = [
   { text: 'Suppliers', textHe: 'ספקים', icon: <Business />, path: '/suppliers', section: 'Purchasing' },
   { text: 'Purchase Orders', textHe: 'הזמנות רכש', icon: <ShoppingCart />, path: '/purchases', section: 'Purchasing' },
   { text: 'Purchase Invoices', textHe: 'חשבוניות רכש', icon: <AccountBalance />, path: '/purchase-invoices', section: 'Purchasing' },
+  { text: 'Expenses', textHe: 'הוצאות', icon: <Payment />, path: '/expenses', section: 'Purchasing' },
   { text: 'Inventory', textHe: 'מלאי', icon: <Inventory />, path: '/inventory', section: 'Inventory' },
   { text: 'Chart of Accounts', textHe: 'תרשים חשבונות', icon: <AccountBalance />, path: '/accounts', section: 'Accounting' },
   { text: 'Reports', textHe: 'דוחות', icon: <BarChart />, path: '/reports', section: 'Reports' },
@@ -470,7 +474,31 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   );
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      height: '100vh',
+      position: 'relative',
+      backgroundImage: theme.palette.mode === 'dark' 
+        ? 'url(/images/background.png)' 
+        : 'url(/images/background-light.png)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
+      '&::before': {
+        content: '""',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: theme.palette.mode === 'dark' 
+          ? 'rgba(0, 0, 0, 0.3)' 
+          : 'rgba(255, 255, 255, 0.1)',
+        zIndex: 1,
+        pointerEvents: 'none'
+      }
+    }}>
       {/* Profile Menu */}
       <Menu
         anchorEl={anchorEl}
@@ -571,7 +599,12 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
       {/* Navigation Drawer */}
       <Box
         component="nav"
-        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        sx={{ 
+          width: { md: drawerWidth }, 
+          flexShrink: { md: 0 },
+          position: 'relative',
+          zIndex: 5
+        }}
       >
         <Drawer
           variant={isMobile ? 'temporary' : 'persistent'}
@@ -607,23 +640,28 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         sx={{
           flexGrow: 1,
           width: '100%',
+          position: 'relative',
+          zIndex: 2,
           transition: theme.transitions.create(['width', 'margin'], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
-          background: theme.palette.mode === 'dark' 
-            ? `linear-gradient(135deg, ${theme.palette.background.default}, ${theme.palette.background.paper})`
-            : `linear-gradient(135deg, #f8fafc, #f1f5f9)`,
+          background: 'transparent', // Remove background so global background shows
           minHeight: '100vh',
+          [theme.breakpoints.down('md')]: {
+            width: '100%',
+            marginLeft: 0,
+            marginRight: 0,
+          },
         }}
       >
         <Box sx={{ 
-          px: { xs: 1, sm: 2, md: 3, lg: 5, xl: 7 }, // רווחים רספונסיביים מימין ומשמאל
-          py: 1.5, 
+          px: location.pathname === '/home' ? 0 : { xs: 1, sm: 2, md: 3, lg: 5, xl: 7 }, // No padding for home page
+          py: location.pathname === '/home' ? 0 : 1.5, // No padding for home page
           height: '100vh', // שינוי ל-100vh כי אין יותר AppBar
           overflow: 'auto',
           position: 'relative',
-          '&::before': {
+          '&::before': location.pathname === '/home' ? {} : {
             content: '""',
             position: 'absolute',
             top: 0,
@@ -637,11 +675,35 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
             zIndex: 0,
           },
         }}>
+          
           <Box sx={{ 
             position: 'relative', 
             zIndex: 1,
             maxWidth: '1600px', // הגבלת רוחב מקסימלי לקריאות טובה יותר
             mx: 'auto', // מרכוז התוכן
+            // Glass container effect for all pages except home
+            ...(location.pathname !== '/home' && {
+              background: theme.palette.mode === 'dark' 
+                ? 'rgba(18, 18, 18, 0.7)'
+                : 'rgba(255, 255, 255, 0.7)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: 4,
+              border: `1px solid ${theme.palette.mode === 'dark' 
+                ? 'rgba(255, 255, 255, 0.1)' 
+                : 'rgba(0, 0, 0, 0.1)'}`,
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                : '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+              p: { xs: 2, sm: 3, md: 4 },
+              my: 2,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                boxShadow: theme.palette.mode === 'dark'
+                  ? '0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+                  : '0 12px 40px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 1)',
+                transform: 'translateY(-2px)',
+              },
+            }),
           }}>
             {children}
           </Box>

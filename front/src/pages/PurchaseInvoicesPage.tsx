@@ -78,7 +78,7 @@ const PurchaseInvoicesPage: React.FC = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const data = await suppliersAPI.getAll();
+      const data = await suppliersAPI.getActive();
       setSuppliers(data);
     } catch (err) {
       console.error('Error fetching suppliers:', err);

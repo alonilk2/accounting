@@ -6,6 +6,7 @@ import { useAuthStore } from './stores';
 // Import page components
 import {
   Dashboard,
+  HomePage,
   Customers,
   SalesDocumentsPage,
   SalesOrdersPage,
@@ -23,6 +24,7 @@ import {
   AIAssistantPage,
 } from './pages';
 import Quotes from './pages/Quotes';
+import ExpensesPage from './pages/Expenses';
 
 function App() {
   const { isAuthenticated } = useAuthStore();
@@ -46,6 +48,7 @@ function App() {
         <MainLayout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/home" element={<HomePage />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/quotes" element={<Quotes />} />
             <Route path="/sales-documents" element={<SalesDocumentsPage />} />
@@ -55,6 +58,7 @@ function App() {
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/purchases" element={<Purchases />} />
             <Route path="/purchase-invoices" element={<PurchaseInvoicesPage />} />
+            <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/accounts" element={<ChartOfAccounts />} />
             <Route path="/reports" element={<Reports />} />

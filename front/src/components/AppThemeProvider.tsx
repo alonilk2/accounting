@@ -67,14 +67,18 @@ const createAppTheme = (mode: 'light' | 'dark', language: 'en' | 'he') => {
         mode,
         ...customColors,
         background: {
-          default: mode === 'light' ? '#f8fafc' : '#0f172a',
-          paper: mode === 'light' ? '#ffffff' : '#1e293b',
+          default: mode === 'light' 
+            ? 'rgba(248, 250, 252, 0.1)' // Nearly transparent light background
+            : 'rgba(15, 23, 42, 0.1)', // Nearly transparent dark background
+          paper: mode === 'light' 
+            ? 'rgba(255, 255, 255, 0.85)' // Semi-transparent white with glass effect
+            : 'rgba(30, 41, 59, 0.85)', // Semi-transparent dark with glass effect
         },
         text: {
           primary: mode === 'light' ? '#1f2937' : '#f9fafb',
           secondary: mode === 'light' ? '#6b7280' : '#9ca3af',
         },
-        divider: mode === 'light' ? '#e5e7eb' : '#374151',
+        divider: mode === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)',
       },
       typography: {
         fontFamily: [
@@ -154,10 +158,34 @@ const createAppTheme = (mode: 'light' | 'dark', language: 'en' | 'he') => {
           styleOverrides: {
             body: {
               direction: isRTL ? 'rtl' : 'ltr',
-              background: mode === 'light' 
-                ? 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
-                : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+              // Modern glass background with image and overlay
+              backgroundImage: `
+                url(/images/background.png),
+                ${mode === 'light' 
+                  ? 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
+                  : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
+                }
+              `,
+              backgroundSize: 'cover, cover',
+              backgroundPosition: 'center, center',
+              backgroundRepeat: 'no-repeat, no-repeat',
+              backgroundAttachment: 'fixed, fixed',
               minHeight: '100vh',
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: mode === 'light' 
+                  ? 'rgba(248, 250, 252, 0.3)' // Light overlay for better readability
+                  : 'rgba(15, 23, 42, 0.4)', // Dark overlay for better readability
+                backdropFilter: 'blur(1px)',
+                zIndex: -1,
+                pointerEvents: 'none',
+              },
             },
             '*': {
               boxSizing: 'border-box',

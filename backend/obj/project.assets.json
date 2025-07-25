@@ -2,6 +2,23 @@
   "version": 3,
   "targets": {
     "net8.0": {
+      "Azure.AI.FormRecognizer/4.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Azure.Core": "1.34.0",
+          "System.Text.Json": "4.7.2"
+        },
+        "compile": {
+          "lib/netstandard2.0/Azure.AI.FormRecognizer.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/Azure.AI.FormRecognizer.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "Azure.AI.OpenAI/2.1.0": {
         "type": "package",
         "dependencies": {
@@ -70,6 +87,40 @@
         },
         "runtime": {
           "lib/net8.0/Azure.Security.KeyVault.Secrets.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Azure.Storage.Blobs/12.21.2": {
+        "type": "package",
+        "dependencies": {
+          "Azure.Storage.Common": "12.20.1",
+          "System.Text.Json": "4.7.2"
+        },
+        "compile": {
+          "lib/net6.0/Azure.Storage.Blobs.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/Azure.Storage.Blobs.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Azure.Storage.Common/12.20.1": {
+        "type": "package",
+        "dependencies": {
+          "Azure.Core": "1.41.0",
+          "System.IO.Hashing": "6.0.0"
+        },
+        "compile": {
+          "lib/net6.0/Azure.Storage.Common.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/Azure.Storage.Common.dll": {
             "related": ".xml"
           }
         }
@@ -1450,6 +1501,22 @@
           }
         }
       },
+      "System.IO.Hashing/6.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/System.IO.Hashing.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/System.IO.Hashing.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/netcoreapp3.1/_._": {}
+        }
+      },
       "System.IO.Pipelines/6.0.3": {
         "type": "package",
         "compile": {
@@ -1776,6 +1843,22 @@
     }
   },
   "libraries": {
+    "Azure.AI.FormRecognizer/4.1.0": {
+      "sha512": "R9mEeYFa2+EcCu5dOGOFG07nbELHY/2o6JtgJoxNTo2wtsonLnLwcKzX/sxOnYhpib4TJEBTUX0/ea0lL130Iw==",
+      "type": "package",
+      "path": "azure.ai.formrecognizer/4.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "CHANGELOG.md",
+        "README.md",
+        "azure.ai.formrecognizer.4.1.0.nupkg.sha512",
+        "azure.ai.formrecognizer.nuspec",
+        "azureicon.png",
+        "lib/netstandard2.0/Azure.AI.FormRecognizer.dll",
+        "lib/netstandard2.0/Azure.AI.FormRecognizer.xml"
+      ]
+    },
     "Azure.AI.OpenAI/2.1.0": {
       "sha512": "doixr3tcsIcdzbzF9NxKt+6U0NKj6aPeOCPYONPsWjyf3gxVndVJAdjPcVdqeR/3vcRHXRgGnGlv+iXx5jMA4g==",
       "type": "package",
@@ -1848,6 +1931,44 @@
         "lib/net8.0/Azure.Security.KeyVault.Secrets.xml",
         "lib/netstandard2.0/Azure.Security.KeyVault.Secrets.dll",
         "lib/netstandard2.0/Azure.Security.KeyVault.Secrets.xml"
+      ]
+    },
+    "Azure.Storage.Blobs/12.21.2": {
+      "sha512": "2J+sMgNbj2DJ+ydRSqYYADDd2AajFLfPzLGxASOxcoGx4iVxyF6jscHw2IY+8QyMPWA09wN3lCtYJ5S4zIsJkA==",
+      "type": "package",
+      "path": "azure.storage.blobs/12.21.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "CHANGELOG.md",
+        "README.md",
+        "azure.storage.blobs.12.21.2.nupkg.sha512",
+        "azure.storage.blobs.nuspec",
+        "azureicon.png",
+        "lib/net6.0/Azure.Storage.Blobs.dll",
+        "lib/net6.0/Azure.Storage.Blobs.xml",
+        "lib/netstandard2.0/Azure.Storage.Blobs.dll",
+        "lib/netstandard2.0/Azure.Storage.Blobs.xml",
+        "lib/netstandard2.1/Azure.Storage.Blobs.dll",
+        "lib/netstandard2.1/Azure.Storage.Blobs.xml"
+      ]
+    },
+    "Azure.Storage.Common/12.20.1": {
+      "sha512": "KKBFnc4WZ6m9HgsKgwfO1cIxd154b8cAnP3uWhuelvFkzxqBXQQgIsHF0n3DYBG2AoTJCZDXwJpKuVC7CsKJWg==",
+      "type": "package",
+      "path": "azure.storage.common/12.20.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "CHANGELOG.md",
+        "README.md",
+        "azure.storage.common.12.20.1.nupkg.sha512",
+        "azure.storage.common.nuspec",
+        "azureicon.png",
+        "lib/net6.0/Azure.Storage.Common.dll",
+        "lib/net6.0/Azure.Storage.Common.xml",
+        "lib/netstandard2.0/Azure.Storage.Common.dll",
+        "lib/netstandard2.0/Azure.Storage.Common.xml"
       ]
     },
     "Humanizer.Core/2.14.1": {
@@ -4069,6 +4190,29 @@
         "system.identitymodel.tokens.jwt.nuspec"
       ]
     },
+    "System.IO.Hashing/6.0.0": {
+      "sha512": "Rfm2jYCaUeGysFEZjDe7j1R4x6Z6BzumS/vUT5a1AA/AWJuGX71PoGB0RmpyX3VmrGqVnAwtfMn39OHR8Y/5+g==",
+      "type": "package",
+      "path": "system.io.hashing/6.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/netcoreapp2.0/System.IO.Hashing.targets",
+        "buildTransitive/netcoreapp3.1/_._",
+        "lib/net461/System.IO.Hashing.dll",
+        "lib/net461/System.IO.Hashing.xml",
+        "lib/net6.0/System.IO.Hashing.dll",
+        "lib/net6.0/System.IO.Hashing.xml",
+        "lib/netstandard2.0/System.IO.Hashing.dll",
+        "lib/netstandard2.0/System.IO.Hashing.xml",
+        "system.io.hashing.6.0.0.nupkg.sha512",
+        "system.io.hashing.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
+    },
     "System.IO.Pipelines/6.0.3": {
       "sha512": "ryTgF+iFkpGZY1vRQhfCzX0xTdlV3pyaTTqRu2ETbEv+HlV7O6y7hyQURnghNIXvctl5DuZ//Dpks6HdL/Txgw==",
       "type": "package",
@@ -4691,9 +4835,11 @@
   },
   "projectFileDependencyGroups": {
     "net8.0": [
+      "Azure.AI.FormRecognizer >= 4.1.0",
       "Azure.AI.OpenAI >= 2.1.0",
       "Azure.Identity >= 1.13.1",
       "Azure.Security.KeyVault.Secrets >= 4.8.0",
+      "Azure.Storage.Blobs >= 12.21.2",
       "Microsoft.AspNetCore.Authentication.JwtBearer >= 8.0.8",
       "Microsoft.AspNetCore.Identity.EntityFrameworkCore >= 8.0.8",
       "Microsoft.EntityFrameworkCore.Design >= 8.0.8",
@@ -4753,6 +4899,10 @@
       "net8.0": {
         "targetAlias": "net8.0",
         "dependencies": {
+          "Azure.AI.FormRecognizer": {
+            "target": "Package",
+            "version": "[4.1.0, )"
+          },
           "Azure.AI.OpenAI": {
             "target": "Package",
             "version": "[2.1.0, )"
@@ -4764,6 +4914,10 @@
           "Azure.Security.KeyVault.Secrets": {
             "target": "Package",
             "version": "[4.8.0, )"
+          },
+          "Azure.Storage.Blobs": {
+            "target": "Package",
+            "version": "[12.21.2, )"
           },
           "Microsoft.AspNetCore.Authentication.JwtBearer": {
             "target": "Package",

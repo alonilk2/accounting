@@ -306,3 +306,7 @@ c:\Users\aloni\botaccount\backend\obj\Debug\net8.0\refint\backend.dll
 c:\Users\aloni\botaccount\backend\obj\Debug\net8.0\backend.pdb
 c:\Users\aloni\botaccount\backend\obj\Debug\net8.0\backend.genruntimeconfig.cache
 c:\Users\aloni\botaccount\backend\obj\Debug\net8.0\ref\backend.dll
+C:\Users\aloni\botaccount\backend\bin\Debug\net8.0\Azure.AI.FormRecognizer.dll
+C:\Users\aloni\botaccount\backend\bin\Debug\net8.0\Azure.Storage.Blobs.dll
+C:\Users\aloni\botaccount\backend\bin\Debug\net8.0\Azure.Storage.Common.dll
+C:\Users\aloni\botaccount\backend\bin\Debug\net8.0\System.IO.Hashing.dll

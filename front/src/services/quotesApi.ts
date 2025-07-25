@@ -2,6 +2,7 @@
 import type { AxiosResponse } from 'axios';
 import api from './api';
 import type { Quote, QuoteStatus } from '../types/entities';
+import type { PaginatedResponse } from '../types/pagination';
 
 // DTOs for Quote operations
 export interface CreateQuoteRequest {
@@ -177,13 +178,33 @@ export class QuotesApi {
         if (filters.searchTerm) params.append('searchTerm', filters.searchTerm);
       }
 
-      const response: AxiosResponse<QuoteResponse[]> = await api.get(
+      const response: AxiosResponse<PaginatedResponse<QuoteResponse>> = await api.get(
         `${this.baseUrl}?${params.toString()}`
       );
 
-      return response.data.map(mapQuoteResponseToEntity);
+      return response.data.data.map(mapQuoteResponseToEntity);
     } catch (error) {
       console.error('Error fetching quotes:', error);
+      
+      // Enhanced error handling with more specific messages
+      if (error instanceof Error) {
+        if (error.message.includes('Network Error') || error.message.includes('ECONNREFUSED')) {
+          throw new Error('לא ניתן להתחבר לשרת. אנא בדוק שהשרת רץ.');
+        }
+        if (error.message.includes('401')) {
+          throw new Error('שגיאת הרשאה. אנא התחבר מחדש.');
+        }
+        if (error.message.includes('403')) {
+          throw new Error('אין לך הרשאה לצפות בהצעות מחיר.');
+        }
+        if (error.message.includes('404')) {
+          throw new Error('שירות הצעות המחיר לא נמצא.');
+        }
+        if (error.message.includes('500')) {
+          throw new Error('שגיאת שרת פנימית. אנא נסה שוב מאוחר יותר.');
+        }
+      }
+      
       throw new Error('שגיאה בטעינת הצעות המחיר');
     }
   }

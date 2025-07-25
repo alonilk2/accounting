@@ -750,21 +750,51 @@ export const AIAssistantFab: React.FC = () => {
         sx={{
           width: 64,
           height: 64,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.4)',
-          border: '3px solid',
-          borderColor: theme.palette.background.paper,
+          // Glass effect background
+          background: theme.palette.mode === 'dark' 
+            ? 'rgba(102, 126, 234, 0.15)'
+            : 'rgba(102, 126, 234, 0.1)',
+          backdropFilter: 'blur(20px)',
+          border: `1px solid ${theme.palette.mode === 'dark' 
+            ? 'rgba(102, 126, 234, 0.3)' 
+            : 'rgba(102, 126, 234, 0.2)'}`,
+          color: theme.palette.mode === 'dark' ? '#667eea' : '#5a67d8',
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 8px 32px rgba(102, 126, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+            : '0 8px 32px rgba(102, 126, 234, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           '&:hover': {
-            background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+            background: theme.palette.mode === 'dark' 
+              ? 'rgba(102, 126, 234, 0.25)'
+              : 'rgba(102, 126, 234, 0.2)',
             transform: 'translateY(-4px) scale(1.05)',
-            boxShadow: '0 12px 40px rgba(102, 126, 234, 0.5)',
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 12px 40px rgba(102, 126, 234, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+              : '0 12px 40px rgba(102, 126, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1)',
+            border: `1px solid ${theme.palette.mode === 'dark' 
+              ? 'rgba(102, 126, 234, 0.5)' 
+              : 'rgba(102, 126, 234, 0.4)'}`,
           },
           '&:active': {
             transform: 'translateY(-2px) scale(1.02)',
           },
+          // Glass shine effect
           '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: theme.palette.mode === 'dark' 
+              ? 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, transparent 100%)'
+              : 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+            borderRadius: 'inherit',
+            pointerEvents: 'none',
+            opacity: 0.7,
+          },
+          // Additional glow on hover
+          '&:hover::after': {
             content: '""',
             position: 'absolute',
             top: -2,
@@ -774,26 +804,31 @@ export const AIAssistantFab: React.FC = () => {
             background: 'linear-gradient(135deg, #667eea, #764ba2)',
             borderRadius: 'inherit',
             zIndex: -1,
-            opacity: 0,
-            transition: 'opacity 0.3s ease',
-          },
-          '&:hover::before': {
-            opacity: 0.3,
+            opacity: 0.1,
+            filter: 'blur(4px)',
           },
         }}
         title={isHebrew ? (isOpen ? "סגור עוזר חכם" : "פתח עוזר חכם") : (isOpen ? "Close AI Assistant" : "Open AI Assistant")}
       >
-        <ChatIcon sx={{ fontSize: 28 }} />
+        <ChatIcon sx={{ 
+          fontSize: 28,
+          filter: theme.palette.mode === 'dark' 
+            ? 'drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3))'
+            : 'drop-shadow(0 1px 2px rgba(102, 126, 234, 0.2))',
+        }} />
       </Fab>
       
       <Typography 
         variant="caption" 
         sx={{ 
           fontWeight: 600, 
-          color: '#667eea',
+          color: theme.palette.mode === 'dark' ? '#667eea' : '#5a67d8',
           textAlign: 'center',
           fontSize: '0.75rem',
           lineHeight: 1,
+          textShadow: theme.palette.mode === 'dark' 
+            ? '0 1px 2px rgba(0,0,0,0.5)'
+            : '0 1px 2px rgba(255,255,255,0.8)',
         }}
       >
         {isHebrew ? (isOpen ? 'סגור צ\'ט' : 'עוזר חכם') : (isOpen ? 'Close Chat' : 'AI Assistant')}

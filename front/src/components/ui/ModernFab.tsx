@@ -76,13 +76,43 @@ const StyledModernFab = styled(Fab, {
     case 'primary':
       return {
         ...baseStyles,
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-        color: theme.palette.primary.contrastText,
-        boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.4)}`,
+        // Glass effect background
+        background: theme.palette.mode === 'dark' 
+          ? `rgba(25, 118, 210, 0.15)`
+          : `rgba(25, 118, 210, 0.1)`,
+        backdropFilter: 'blur(20px)',
+        border: `1px solid ${theme.palette.mode === 'dark' 
+          ? 'rgba(25, 118, 210, 0.3)' 
+          : 'rgba(25, 118, 210, 0.2)'}`,
+        color: theme.palette.mode === 'dark' ? '#42a5f5' : '#1976d2',
+        boxShadow: theme.palette.mode === 'dark'
+          ? '0 8px 32px rgba(25, 118, 210, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          : '0 8px 32px rgba(25, 118, 210, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: theme.palette.mode === 'dark' 
+            ? 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, transparent 100%)'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+          borderRadius: 'inherit',
+          pointerEvents: 'none',
+          opacity: 0.7,
+        },
         '&:hover': {
           ...baseStyles['&:hover'],
-          background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
-          boxShadow: `0 12px 40px ${alpha(theme.palette.primary.main, 0.5)}`,
+          background: theme.palette.mode === 'dark' 
+            ? `rgba(25, 118, 210, 0.25)`
+            : `rgba(25, 118, 210, 0.2)`,
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 12px 40px rgba(25, 118, 210, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+            : '0 12px 40px rgba(25, 118, 210, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1)',
+          border: `1px solid ${theme.palette.mode === 'dark' 
+            ? 'rgba(25, 118, 210, 0.5)' 
+            : 'rgba(25, 118, 210, 0.4)'}`,
         },
         ...glowStyles,
         ...pulseStyles,
@@ -91,9 +121,32 @@ const StyledModernFab = styled(Fab, {
     case 'ai':
       return {
         ...baseStyles,
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-        color: '#fff',
-        boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.4)}`,
+        // Glass effect background for AI
+        background: theme.palette.mode === 'dark' 
+          ? 'rgba(102, 126, 234, 0.15)'
+          : 'rgba(102, 126, 234, 0.1)',
+        backdropFilter: 'blur(20px)',
+        border: `1px solid ${theme.palette.mode === 'dark' 
+          ? 'rgba(102, 126, 234, 0.3)' 
+          : 'rgba(102, 126, 234, 0.2)'}`,
+        color: theme.palette.mode === 'dark' ? '#667eea' : '#5a67d8',
+        boxShadow: theme.palette.mode === 'dark'
+          ? '0 8px 32px rgba(102, 126, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          : '0 8px 32px rgba(102, 126, 234, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: theme.palette.mode === 'dark' 
+            ? 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, transparent 100%)'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+          borderRadius: 'inherit',
+          pointerEvents: 'none',
+          opacity: 0.7,
+        },
         '&::after': {
           content: '""',
           position: 'absolute',
@@ -107,8 +160,15 @@ const StyledModernFab = styled(Fab, {
         },
         '&:hover': {
           ...baseStyles['&:hover'],
-          background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
-          boxShadow: `0 12px 50px ${alpha(theme.palette.primary.main, 0.6)}`,
+          background: theme.palette.mode === 'dark' 
+            ? 'rgba(102, 126, 234, 0.25)'
+            : 'rgba(102, 126, 234, 0.2)',
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 12px 50px rgba(102, 126, 234, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+            : '0 12px 50px rgba(102, 126, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1)',
+          border: `1px solid ${theme.palette.mode === 'dark' 
+            ? 'rgba(102, 126, 234, 0.5)' 
+            : 'rgba(102, 126, 234, 0.4)'}`,
         },
         '@keyframes shimmer': {
           '0%': { transform: 'translateX(-100%) translateY(-100%)' },
@@ -121,13 +181,43 @@ const StyledModernFab = styled(Fab, {
     case 'secondary':
       return {
         ...baseStyles,
-        background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`,
-        color: theme.palette.secondary.contrastText,
-        boxShadow: `0 8px 32px ${alpha(theme.palette.secondary.main, 0.4)}`,
+        // Glass effect background for secondary
+        background: theme.palette.mode === 'dark' 
+          ? `rgba(156, 39, 176, 0.15)`
+          : `rgba(156, 39, 176, 0.1)`,
+        backdropFilter: 'blur(20px)',
+        border: `1px solid ${theme.palette.mode === 'dark' 
+          ? 'rgba(156, 39, 176, 0.3)' 
+          : 'rgba(156, 39, 176, 0.2)'}`,
+        color: theme.palette.mode === 'dark' ? '#e1bee7' : '#7b1fa2',
+        boxShadow: theme.palette.mode === 'dark'
+          ? '0 8px 32px rgba(156, 39, 176, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          : '0 8px 32px rgba(156, 39, 176, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: theme.palette.mode === 'dark' 
+            ? 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, transparent 100%)'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+          borderRadius: 'inherit',
+          pointerEvents: 'none',
+          opacity: 0.7,
+        },
         '&:hover': {
           ...baseStyles['&:hover'],
-          background: `linear-gradient(135deg, ${theme.palette.secondary.dark}, ${theme.palette.secondary.main})`,
-          boxShadow: `0 12px 40px ${alpha(theme.palette.secondary.main, 0.5)}`,
+          background: theme.palette.mode === 'dark' 
+            ? `rgba(156, 39, 176, 0.25)`
+            : `rgba(156, 39, 176, 0.2)`,
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 12px 40px rgba(156, 39, 176, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+            : '0 12px 40px rgba(156, 39, 176, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1)',
+          border: `1px solid ${theme.palette.mode === 'dark' 
+            ? 'rgba(156, 39, 176, 0.5)' 
+            : 'rgba(156, 39, 176, 0.4)'}`,
         },
         ...glowStyles,
         ...pulseStyles,

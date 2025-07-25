@@ -446,7 +446,7 @@ public class QuoteService : BaseService<Quote>, IQuoteService
     /// <summary>
     /// Calculate quote totals from lines
     /// </summary>
-    public async Task<decimal[]> CalculateQuoteTotalsAsync(List<CreateQuoteLineRequest> lines, CancellationToken cancellationToken = default)
+    public Task<decimal[]> CalculateQuoteTotalsAsync(List<CreateQuoteLineRequest> lines, CancellationToken cancellationToken = default)
     {
         decimal subtotal = 0;
         decimal totalDiscount = 0;
@@ -466,7 +466,7 @@ public class QuoteService : BaseService<Quote>, IQuoteService
 
         var total = subtotal + totalTax;
 
-        return new[] { subtotal, totalDiscount, totalTax, total };
+        return Task.FromResult(new[] { subtotal, totalDiscount, totalTax, total });
     }
 
     /// <summary>

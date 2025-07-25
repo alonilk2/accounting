@@ -103,12 +103,12 @@ export default function InvoiceCreateDialog({
 
   const loadInitialData = async () => {
     try {
-      const [customersData, itemsData] = await Promise.all([
-        customersAPI.getAll(),
-        itemsAPI.getAll(),
+      const [customersData, itemsResponse] = await Promise.all([
+        customersAPI.getCustomers(),
+        itemsAPI.getAll({ isActive: true }),
       ]);
       setCustomers(customersData);
-      setItems(itemsData);
+      setItems(itemsResponse.data || []);
     } catch (err) {
       console.error("Failed to load initial data:", err);
       setError("שגיאה בטעינת נתונים");
