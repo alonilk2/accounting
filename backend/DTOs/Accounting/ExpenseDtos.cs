@@ -14,6 +14,7 @@ public class ExpenseDto
     public DateTime ExpenseDate { get; set; }
     public int? SupplierId { get; set; }
     public string? SupplierName { get; set; }
+    public string? SupplierTaxId { get; set; }
     public ExpenseCategory Category { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
@@ -57,6 +58,9 @@ public class CreateExpenseDto
 
     [MaxLength(200)]
     public string? SupplierName { get; set; }
+
+    [MaxLength(20)]
+    public string? SupplierTaxId { get; set; }
 
     [Required]
     public ExpenseCategory Category { get; set; }
@@ -112,6 +116,9 @@ public class UpdateExpenseDto
 
     [MaxLength(200)]
     public string? SupplierName { get; set; }
+
+    [MaxLength(20)]
+    public string? SupplierTaxId { get; set; }
 
     public ExpenseCategory Category { get; set; }
 

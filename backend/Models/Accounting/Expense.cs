@@ -71,6 +71,12 @@ public class Expense : TenantEntity
     public string? SupplierName { get; set; }
 
     /// <summary>
+    /// Supplier tax ID (ח.פ) for Israeli compliance
+    /// </summary>
+    [MaxLength(20)]
+    public string? SupplierTaxId { get; set; }
+
+    /// <summary>
     /// Expense category for reporting
     /// </summary>
     [Required]
