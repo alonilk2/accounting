@@ -1,0 +1,29 @@
+@baseUrl = http://localhost:5121/api
+
+### Test Invoice Search - All Invoices
+GET {{baseUrl}}/invoices
+Content-Type: application/json
+
+### Test Invoice Search - With Status Filter
+GET {{baseUrl}}/invoices?status=Sent
+Content-Type: application/json
+
+### Test Invoice Search - With Search Term
+GET {{baseUrl}}/invoices?search=test
+Content-Type: application/json
+
+### Test Invoice Search - With Hebrew Search Term
+GET {{baseUrl}}/invoices?search=חשבונית
+Content-Type: application/json
+
+### Test Invoice Search - With Invoice Number
+GET {{baseUrl}}/invoices?search=INV
+Content-Type: application/json
+
+### Test Invoice Search - Combined (Status + Search)
+GET {{baseUrl}}/invoices?status=Sent&search=test
+Content-Type: application/json
+
+### Get Single Invoice by ID
+GET {{baseUrl}}/invoices/1
+Content-Type: application/json

@@ -601,7 +601,8 @@ export const invoicesAPI = {
     customerId?: number;
     page?: number;
     pageSize?: number;
-  }): Promise<Invoice[]> => {
+    search?: string;
+  }): Promise<PaginatedResponse<Invoice>> => {
     const searchParams = new URLSearchParams();
     if (params?.status) searchParams.append("status", params.status);
     if (params?.customerId)
@@ -609,15 +610,23 @@ export const invoicesAPI = {
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.pageSize)
       searchParams.append("pageSize", params.pageSize.toString());
+    if (params?.search) searchParams.append("search", params.search);
 
-    const response = await api.get(`/invoices?${searchParams.toString()}`);
-    return response.data.map((invoice: Invoice) => ({
+    const response = await api.get<PaginatedResponse<Invoice>>(`/invoices?${searchParams.toString()}`);
+    
+    // Transform dates in the paginated data
+    const transformedData = response.data.data.map((invoice: Invoice) => ({
       ...invoice,
       invoiceDate: new Date(invoice.invoiceDate),
       dueDate: invoice.dueDate ? new Date(invoice.dueDate) : undefined,
       createdAt: new Date(invoice.createdAt),
       updatedAt: new Date(invoice.updatedAt),
     }));
+
+    return {
+      ...response.data,
+      data: transformedData
+    };
   },
 
   getById: async (id: number): Promise<Invoice> => {

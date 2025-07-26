@@ -5,13 +5,15 @@ using backend.Models.Core;
 namespace backend.Models.Sales;
 
 /// <summary>
-/// Customer payment receipts for invoices
-/// Represents actual payments received against invoices
+/// Customer payment receipts for invoices or standalone receipts
+/// Represents actual payments received against invoices or independent payments
 /// </summary>
 public class Receipt : TenantEntity
 {
-    [Required]
-    public int InvoiceId { get; set; }
+    /// <summary>
+    /// Invoice ID - null for standalone receipts
+    /// </summary>
+    public int? InvoiceId { get; set; }
 
     /// <summary>
     /// Receipt number (sequential format: REC-YYYY-NNNN)
@@ -49,6 +51,25 @@ public class Receipt : TenantEntity
     [Required]
     [MaxLength(3)]
     public string Currency { get; set; } = "ILS";
+
+    // Fields for standalone receipts (when InvoiceId is null)
+    /// <summary>
+    /// Customer name for standalone receipts
+    /// </summary>
+    [MaxLength(200)]
+    public string? CustomerName { get; set; }
+
+    /// <summary>
+    /// Customer tax ID for standalone receipts
+    /// </summary>
+    [MaxLength(20)]
+    public string? CustomerTaxId { get; set; }
+
+    /// <summary>
+    /// Description of the payment for standalone receipts
+    /// </summary>
+    [MaxLength(500)]
+    public string? Description { get; set; }
 
     // Navigation properties
     public virtual Invoice Invoice { get; set; } = null!;

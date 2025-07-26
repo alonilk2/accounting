@@ -5,6 +5,7 @@ using backend.Models.Sales;
 using backend.Models.Core;
 using backend.Services.Sales;
 using backend.DTOs.Sales;
+using backend.DTOs.Shared;
 
 namespace backend.Controllers;
 
@@ -25,16 +26,53 @@ public class InvoicesController : ControllerBase
 
     // GET: api/invoices
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<InvoiceDto>>> GetInvoices()
+    public async Task<ActionResult<PaginatedResponse<InvoiceDto>>> GetInvoices(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        [FromQuery] string? search = null,
+        [FromQuery] InvoiceStatus? status = null,
+        [FromQuery] int? customerId = null)
     {
         try
         {
-            var invoices = await _context.Invoices
+            _logger.LogInformation($"GetInvoices called with: page={page}, pageSize={pageSize}, search='{search}', status={status}, customerId={customerId}");
+            
+            var query = _context.Invoices
                 .Include(i => i.Customer)
                 .Include(i => i.SalesOrder)
                 .Include(i => i.Lines)
                     .ThenInclude(l => l.Item)
+                .Where(i => !i.IsDeleted);
+
+            // Apply filters
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchLower = search.ToLower();
+                query = query.Where(i => 
+                    (i.InvoiceNumber != null && i.InvoiceNumber.ToLower().Contains(searchLower)) ||
+                    (i.Customer != null && i.Customer.Name != null && i.Customer.Name.ToLower().Contains(searchLower)) ||
+                    (i.Notes != null && i.Notes.ToLower().Contains(searchLower)));
+            }
+
+            if (status.HasValue)
+            {
+                query = query.Where(i => i.Status == status.Value);
+            }
+
+            if (customerId.HasValue)
+            {
+                query = query.Where(i => i.CustomerId == customerId.Value);
+            }
+
+            // Get total count for pagination
+            var totalCount = await query.CountAsync();
+            _logger.LogInformation($"Total invoices found after filters: {totalCount}");
+
+            // Apply pagination and ordering
+            var invoices = await query
                 .OrderByDescending(i => i.InvoiceDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(i => new InvoiceDto
                 {
                     Id = i.Id,
@@ -76,7 +114,9 @@ public class InvoicesController : ControllerBase
                 })
                 .ToListAsync();
 
-            return Ok(invoices);
+            var paginatedResponse = PaginatedResponse<InvoiceDto>.Create(invoices, page, pageSize, totalCount);
+
+            return Ok(paginatedResponse);
         }
         catch (Exception ex)
         {

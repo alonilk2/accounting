@@ -382,7 +382,7 @@ namespace backend.Migrations
                     b.HasIndex("CompanyId", "ExpenseNumber")
                         .IsUnique();
 
-                    b.ToTable("Expenses");
+                    b.ToTable("Expenses", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Accounting.JournalEntry", b =>
@@ -562,9 +562,6 @@ namespace backend.Migrations
                     b.Property<string>("Address")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("BackgroundImage")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("City")
                         .HasMaxLength(100)
@@ -2066,7 +2063,7 @@ namespace backend.Migrations
                     b.HasIndex("CompanyId", "DeliveryNoteNumber")
                         .IsUnique();
 
-                    b.ToTable("DeliveryNotes");
+                    b.ToTable("DeliveryNotes", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Sales.DeliveryNoteLine", b =>
@@ -2166,7 +2163,7 @@ namespace backend.Migrations
 
                     b.HasIndex("SalesOrderLineId");
 
-                    b.ToTable("DeliveryNoteLines");
+                    b.ToTable("DeliveryNoteLines", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Sales.Invoice", b =>
@@ -2452,7 +2449,7 @@ namespace backend.Migrations
                     b.HasIndex("CompanyId", "QuoteNumber")
                         .IsUnique();
 
-                    b.ToTable("Quotes");
+                    b.ToTable("Quotes", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Sales.QuoteLine", b =>
@@ -2530,7 +2527,7 @@ namespace backend.Migrations
 
                     b.HasIndex("QuoteId");
 
-                    b.ToTable("QuoteLines");
+                    b.ToTable("QuoteLines", (string)null);
                 });
 
             modelBuilder.Entity("backend.Models.Sales.Receipt", b =>
@@ -2559,7 +2556,19 @@ namespace backend.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("nvarchar(3)");
 
-                    b.Property<int>("InvoiceId")
+                    b.Property<string>("CustomerName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CustomerTaxId")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("InvoiceId")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
@@ -3731,8 +3740,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Sales.Invoice", "Invoice")
                         .WithMany("Receipts")
                         .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Company");
 
