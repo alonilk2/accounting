@@ -10,7 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination,
   Paper,
   IconButton,
   Dialog,
@@ -43,7 +42,8 @@ import {
   Print as PrintIcon,
   Email as EmailIcon,
   LocalShipping as ShippingIcon,
-  Receipt as ReceiptIcon
+  Receipt as ReceiptIcon,
+  Assignment as AssignmentIcon
 } from '@mui/icons-material';
 import { useUIStore } from '../stores';
 import { salesAPI } from '../services/api';
@@ -55,7 +55,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const Sales = () => {
   const { language } = useUIStore();
   const location = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // unused
   
   // States
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>([]);
@@ -67,14 +67,17 @@ const Sales = () => {
   const [statusFilter, setStatusFilter] = useState<SalesOrderStatus | 'All'>('All');
   
   // Pagination states
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  // const [page, setPage] = useState(0); // unused
+  // const [rowsPerPage, setRowsPerPage] = useState(10); // unused
 
   // Dialog states
   const [openDialog, setOpenDialog] = useState(false);
   const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<SalesOrder | null>(null);
+  // const [createDialogOpen, setCreateDialogOpen] = useState(false); // unused
+  // const [createDocumentType, setCreateDocumentType] = useState(...); // unused
+  // const [speedDialOpen, setSpeedDialOpen] = useState(false); // unused
   
   // Menu state
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
