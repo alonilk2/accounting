@@ -14,11 +14,14 @@ const mockUser: User = {
 };
 
 const mockCompany: Company = {
-  id: 'company-1',
+  id: 1,
   name: 'Test Company',
   israelTaxId: '123456789',
   address: 'Test Address',
   currency: 'ILS',
+  fiscalYearStartMonth: 1,
+  timeZone: 'Asia/Jerusalem',
+  isActive: true,
   createdAt: new Date(),
   updatedAt: new Date(),
 };

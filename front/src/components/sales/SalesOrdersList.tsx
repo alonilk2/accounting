@@ -58,8 +58,9 @@ interface SalesOrdersListProps {
 // Status colors mapping
 const getStatusColor = (status: SalesOrderStatus): 'default' | 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success' => {
   switch (status) {
-    case 'Quote': return 'info';
+    case 'Draft': return 'info';
     case 'Confirmed': return 'primary';
+    case 'PartiallyShipped': return 'warning';
     case 'Shipped': return 'warning';
     case 'Completed': return 'success';
     case 'Cancelled': return 'error';
@@ -70,8 +71,9 @@ const getStatusColor = (status: SalesOrderStatus): 'default' | 'primary' | 'seco
 // Status labels
 const getStatusLabel = (status: SalesOrderStatus, isHebrew: boolean): string => {
   const labels = {
-    Quote: isHebrew ? 'הצעת מחיר' : 'Quote',
+    Draft: isHebrew ? 'טיוטה' : 'Draft',
     Confirmed: isHebrew ? 'מאושר' : 'Confirmed',
+    PartiallyShipped: isHebrew ? 'נשלח חלקית' : 'Partially Shipped',
     Shipped: isHebrew ? 'נשלח' : 'Shipped',
     Completed: isHebrew ? 'הושלם' : 'Completed',
     Cancelled: isHebrew ? 'בוטל' : 'Cancelled'
@@ -236,7 +238,7 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
 
         {/* Filters */}
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               label={isHebrew ? 'חיפוש' : 'Search'}
               value={searchTerm}
@@ -248,7 +250,7 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
               size="small"
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>{isHebrew ? 'סטטוס' : 'Status'}</InputLabel>
               <Select
@@ -259,7 +261,7 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
                 <MenuItem value="">
                   {isHebrew ? 'כל הסטטוסים' : 'All Statuses'}
                 </MenuItem>
-                <MenuItem value="Quote">{getStatusLabel('Quote', isHebrew)}</MenuItem>
+                <MenuItem value="Draft">{getStatusLabel('Draft', isHebrew)}</MenuItem>
                 <MenuItem value="Confirmed">{getStatusLabel('Confirmed', isHebrew)}</MenuItem>
                 <MenuItem value="Shipped">{getStatusLabel('Shipped', isHebrew)}</MenuItem>
                 <MenuItem value="Completed">{getStatusLabel('Completed', isHebrew)}</MenuItem>
@@ -267,7 +269,7 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>{isHebrew ? 'לקוח' : 'Customer'}</InputLabel>
               <Select
@@ -286,7 +288,7 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid size={{ xs: 12, md: 2 }}>
             <Button
               variant="outlined"
               startIcon={<FilterIcon />}
@@ -309,7 +311,7 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
 
       {/* Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
@@ -321,7 +323,7 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
@@ -333,7 +335,7 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
@@ -345,14 +347,14 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
                 {isHebrew ? 'הצעות מחיר' : 'Quotes'}
               </Typography>
               <Typography variant="h4" component="div">
-                {filteredOrders.filter(o => o.status === 'Quote').length}
+                {filteredOrders.filter(o => o.status === 'Draft').length}
               </Typography>
             </CardContent>
           </Card>
@@ -420,8 +422,8 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" color={order.dueDate && order.dueDate < new Date() ? 'error' : 'textPrimary'}>
-                        {order.dueDate ? format(order.dueDate, 'dd/MM/yyyy', { 
+                      <Typography variant="body2" color="textPrimary">
+                        {order.requiredDate ? format(order.requiredDate, 'dd/MM/yyyy', { 
                           locale: isHebrew ? he : undefined 
                         }) : '-'}
                       </Typography>

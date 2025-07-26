@@ -36,16 +36,19 @@ describe('Entity Types', () => {
   describe('Company interface', () => {
     it('should have all required properties', () => {
       const company: Company = {
-        id: 'company-1',
+        id: 1,
         name: 'Test Company Ltd',
         israelTaxId: '123456789',
         address: '123 Test St, Tel Aviv',
         currency: 'ILS',
+        fiscalYearStartMonth: 1,
+        timeZone: 'Asia/Jerusalem',
+        isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
-      expect(company.id).toBe('company-1');
+      expect(company.id).toBe(1);
       expect(company.name).toBe('Test Company Ltd');
       expect(company.israelTaxId).toBe('123456789');
       expect(company.address).toBe('123 Test St, Tel Aviv');
@@ -54,11 +57,14 @@ describe('Entity Types', () => {
 
     it('should allow optional properties', () => {
       const company: Company = {
-        id: 'company-1',
+        id: 1,
         name: 'Test Company Ltd',
         israelTaxId: '123456789',
         address: '123 Test St, Tel Aviv',
         currency: 'ILS',
+        fiscalYearStartMonth: 1,
+        timeZone: 'Asia/Jerusalem',
+        isActive: true,
         phone: '+972-123-456789',
         email: 'info@testcompany.co.il',
         website: 'https://testcompany.co.il',
@@ -100,11 +106,19 @@ describe('Entity Types', () => {
         sku: 'SKU-001',
         name: 'Test Item',
         unit: 'piece',
-        cost: 10.50,
-        price: 15.75,
+        costPrice: 10.50,
+        sellPrice: 15.75,
         currentStockQty: 100,
         reorderPoint: 10,
+        maxStockLevel: 500,
+        itemType: 'Product',
+        isInventoryTracked: true,
         isActive: true,
+        isSellable: true,
+        isPurchasable: true,
+        // Backward compatibility aliases
+        cost: 10.50,
+        price: 15.75,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -121,7 +135,7 @@ describe('Entity Types', () => {
   describe('SalesOrder interface', () => {
     it('should have valid status values', () => {
       const validStatuses: SalesOrder['status'][] = [
-        'Quote',
+        'Draft',
         'Confirmed', 
         'Shipped',
         'Completed',
@@ -136,7 +150,6 @@ describe('Entity Types', () => {
           customerName: 'Test Customer',
           orderNumber: 'SO-001',
           orderDate: new Date(),
-          dueDate: new Date(),
           status,
           subtotalAmount: 90,
           taxAmount: 10,

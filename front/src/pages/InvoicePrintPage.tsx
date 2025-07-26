@@ -53,11 +53,14 @@ const InvoicePrintPage: React.FC = () => {
       } else {
         // Fallback company data
         setCompany({
-          id: '1',
+          id: 1,
           name: 'החברה שלי',
           israelTaxId: '123456789',
           address: 'כתובת החברה',
           currency: 'ILS',
+          fiscalYearStartMonth: 1,
+          timeZone: 'Asia/Jerusalem',
+          isActive: true,
           phone: '03-1234567',
           email: 'info@company.co.il',
           website: 'www.company.co.il',
