@@ -9,18 +9,16 @@ using backend.DTOs.Shared;
 
 namespace backend.Controllers;
 
-[ApiController]
 [Route("api/[controller]")]
-public class InvoicesController : ControllerBase
+public class InvoicesController : BaseApiController
 {
     private readonly AccountingDbContext _context;
-    private readonly ILogger<InvoicesController> _logger;
     private readonly IInvoiceService _invoiceService;
 
     public InvoicesController(AccountingDbContext context, ILogger<InvoicesController> logger, IInvoiceService invoiceService)
+        : base(logger)
     {
         _context = context;
-        _logger = logger;
         _invoiceService = invoiceService;
     }
 
@@ -36,6 +34,8 @@ public class InvoicesController : ControllerBase
         try
         {
             _logger.LogInformation($"GetInvoices called with: page={page}, pageSize={pageSize}, search='{search}', status={status}, customerId={customerId}");
+            
+            var (validPage, validPageSize) = ValidatePagination(page, pageSize);
             
             var query = _context.Invoices
                 .Include(i => i.Customer)
@@ -71,8 +71,8 @@ public class InvoicesController : ControllerBase
             // Apply pagination and ordering
             var invoices = await query
                 .OrderByDescending(i => i.InvoiceDate)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+                .Skip((validPage - 1) * validPageSize)
+                .Take(validPageSize)
                 .Select(i => new InvoiceDto
                 {
                     Id = i.Id,
@@ -114,14 +114,13 @@ public class InvoicesController : ControllerBase
                 })
                 .ToListAsync();
 
-            var paginatedResponse = PaginatedResponse<InvoiceDto>.Create(invoices, page, pageSize, totalCount);
+            var paginatedResponse = PaginatedResponse<InvoiceDto>.Create(invoices, validPage, validPageSize, totalCount);
 
-            return Ok(paginatedResponse);
+            return SuccessResponse(paginatedResponse);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving invoices");
-            return StatusCode(500, "Internal server error");
+            return HandleException(ex, "retrieving invoices");
         }
     }
 
@@ -180,15 +179,14 @@ public class InvoicesController : ControllerBase
 
             if (invoice == null)
             {
-                return NotFound();
+                return ErrorResponse($"Invoice with ID {id} not found", 404);
             }
 
-            return Ok(invoice);
+            return SuccessResponse(invoice);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving invoice {InvoiceId}", id);
-            return StatusCode(500, "Internal server error");
+            return HandleException(ex, $"retrieving invoice {id}");
         }
     }
 
@@ -202,11 +200,11 @@ public class InvoicesController : ControllerBase
             var customer = await _context.Customers.FindAsync(request.CustomerId);
             if (customer == null)
             {
-                return BadRequest("Customer not found");
+                return ErrorResponse("Customer not found", 400);
             }
 
             // Get company ID (assuming from user context)
-            var companyId = 1; // TODO: Get from authenticated user context
+            var companyId = GetCurrentCompanyId(); // Use the base controller method
 
             // Generate invoice number
             var year = DateTime.Now.Year;
@@ -279,17 +277,16 @@ public class InvoicesController : ControllerBase
 
             // Return DTO instead of entity
             var result = await GetInvoice(invoice.Id);
-            if (result.Result is OkObjectResult okResult && okResult.Value is InvoiceDto dto)
+            if (result.Result is OkObjectResult okResult && okResult.Value is ApiResponse<InvoiceDto> apiResponse && apiResponse.Data != null)
             {
-                return CreatedAtAction(nameof(GetInvoice), new { id = invoice.Id }, dto);
+                return CreatedAtAction(nameof(GetInvoice), new { id = invoice.Id }, apiResponse.Data);
             }
 
-            return StatusCode(500, "Error retrieving created invoice");
+            return ErrorResponse("Error retrieving created invoice", 500);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating invoice");
-            return StatusCode(500, "Internal server error");
+            return HandleException(ex, "creating invoice");
         }
     }
 
@@ -305,7 +302,7 @@ public class InvoicesController : ControllerBase
 
             if (invoice == null)
             {
-                return NotFound();
+                return ErrorResponse($"Invoice with ID {id} not found", 404);
             }
 
             // Update invoice properties
@@ -319,8 +316,7 @@ public class InvoicesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating invoice {InvoiceId}", id);
-            return StatusCode(500, "Internal server error");
+            return HandleException(ex, $"updating invoice {id}");
         }
     }
 
@@ -333,7 +329,7 @@ public class InvoicesController : ControllerBase
             var invoice = await _context.Invoices.FindAsync(id);
             if (invoice == null)
             {
-                return NotFound();
+                return ErrorResponse($"Invoice with ID {id} not found", 404);
             }
 
             // Soft delete
@@ -346,8 +342,7 @@ public class InvoicesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting invoice {InvoiceId}", id);
-            return StatusCode(500, "Internal server error");
+            return HandleException(ex, $"deleting invoice {id}");
         }
     }
 
@@ -365,7 +360,7 @@ public class InvoicesController : ControllerBase
 
             if (salesOrder == null)
             {
-                return NotFound("Sales order not found");
+                return ErrorResponse("Sales order not found", 404);
             }
 
             // Create invoice from sales order
@@ -429,17 +424,16 @@ public class InvoicesController : ControllerBase
 
             // Return DTO instead of entity
             var result = await GetInvoice(invoice.Id);
-            if (result.Result is OkObjectResult okResult && okResult.Value is InvoiceDto dto)
+            if (result.Result is OkObjectResult okResult && okResult.Value is ApiResponse<InvoiceDto> apiResponse && apiResponse.Data != null)
             {
-                return CreatedAtAction(nameof(GetInvoice), new { id = invoice.Id }, dto);
+                return CreatedAtAction(nameof(GetInvoice), new { id = invoice.Id }, apiResponse.Data);
             }
 
-            return StatusCode(500, "Error retrieving created invoice");
+            return ErrorResponse("Error retrieving created invoice", 500);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating invoice from sales order {SalesOrderId}", salesOrderId);
-            return StatusCode(500, "Internal server error");
+            return HandleException(ex, $"creating invoice from sales order {salesOrderId}");
         }
     }
 
@@ -449,7 +443,7 @@ public class InvoicesController : ControllerBase
     {
         try
         {
-            var currentCompanyId = 1; // TODO: Get from authenticated user
+            var currentCompanyId = GetCurrentCompanyId(); // Use base controller method
 
             // Verify invoice exists and belongs to current company
             var invoice = await _context.Invoices
@@ -458,7 +452,7 @@ public class InvoicesController : ControllerBase
 
             if (invoice == null)
             {
-                return NotFound($"Invoice with ID {id} not found");
+                return ErrorResponse($"Invoice with ID {id} not found", 404);
             }
 
             // Get all receipts for this invoice
@@ -480,12 +474,11 @@ public class InvoicesController : ControllerBase
                 CreatedAt = receipt.CreatedAt
             }).ToList();
 
-            return Ok(receiptDtos);
+            return SuccessResponse(receiptDtos.AsEnumerable());
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving receipts for invoice {InvoiceId}", id);
-            return StatusCode(500, "Internal server error");
+            return HandleException(ex, $"retrieving receipts for invoice {id}");
         }
     }
 
@@ -495,8 +488,8 @@ public class InvoicesController : ControllerBase
     {
         try
         {
-            var currentCompanyId = 1; // TODO: Get from authenticated user
-            var userId = "system"; // TODO: Get from authenticated user
+            var currentCompanyId = GetCurrentCompanyId(); // Use base controller method
+            var userId = GetCurrentUserId(); // Use base controller method
 
             _logger.LogInformation("Processing payment of {Amount:C} for invoice {InvoiceId}", 
                 request.Amount, id);
@@ -508,7 +501,7 @@ public class InvoicesController : ControllerBase
 
             if (invoice == null)
             {
-                return NotFound($"Invoice with ID {id} not found");
+                return ErrorResponse($"Invoice with ID {id} not found", 404);
             }
 
             var receipt = await _invoiceService.ProcessPaymentAsync(
@@ -535,12 +528,11 @@ public class InvoicesController : ControllerBase
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "Invalid operation processing payment for invoice {InvoiceId}", id);
-            return BadRequest(ex.Message);
+            return ErrorResponse(ex.Message, 400);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing payment for invoice {InvoiceId}", id);
-            return StatusCode(500, "Internal server error");
+            return HandleException(ex, $"processing payment for invoice {id}");
         }
     }
 }

@@ -12,20 +12,17 @@ namespace backend.Controllers;
 /// <summary>
 /// API controller for company management operations
 /// </summary>
-[ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class CompanyController : ControllerBase
+public class CompanyController : BaseApiController
 {
     private readonly ICompanyService _companyService;
-    private readonly ILogger<CompanyController> _logger;
 
     public CompanyController(
         ICompanyService companyService,
-        ILogger<CompanyController> logger)
+        ILogger<CompanyController> logger) : base(logger)
     {
         _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -44,7 +41,7 @@ public class CompanyController : ControllerBase
             var company = await _companyService.GetByIdAsync(id, id);
             if (company == null)
             {
-                return NotFound($"Company with ID {id} not found");
+                return ErrorResponse($"Company with ID {id} not found", 404);
             }
 
             var companyDto = new CompanyDto
@@ -69,12 +66,11 @@ public class CompanyController : ControllerBase
                 UpdatedAt = company.UpdatedAt
             };
 
-            return Ok(companyDto);
+            return SuccessResponse(companyDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting company {CompanyId}", id);
-            return StatusCode(500, "Internal server error");
+            return HandleException(ex, $"getting company {id}");
         }
     }
 

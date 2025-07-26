@@ -11,23 +11,20 @@ namespace backend.Controllers;
 /// <summary>
 /// API controller for sales order management operations
 /// </summary>
-[ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class SalesController : ControllerBase
+public class SalesController : BaseApiController
 {
     private readonly ISalesOrderService _salesOrderService;
     private readonly AccountingDbContext _context;
-    private readonly ILogger<SalesController> _logger;
 
     public SalesController(
         ISalesOrderService salesOrderService,
         AccountingDbContext context,
-        ILogger<SalesController> logger)
+        ILogger<SalesController> logger) : base(logger)
     {
         _salesOrderService = salesOrderService ?? throw new ArgumentNullException(nameof(salesOrderService));
         _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -120,12 +117,11 @@ public class SalesController : ControllerBase
                 })
                 .ToListAsync();
 
-            return Ok(salesOrders);
+            return SuccessResponse(salesOrders.AsEnumerable());
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving sales orders for company {CompanyId}", companyId);
-            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
+            return HandleException(ex, $"retrieving sales orders for company {companyId}");
         }
     }
 
@@ -195,15 +191,14 @@ public class SalesController : ControllerBase
 
             if (salesOrder == null)
             {
-                return NotFound($"Sales order {id} not found");
+                return ErrorResponse($"Sales order {id} not found", 404);
             }
 
-            return Ok(salesOrder);
+            return SuccessResponse(salesOrder);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving sales order {OrderId}", id);
-            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error");
+            return HandleException(ex, $"retrieving sales order {id}");
         }
     }
 

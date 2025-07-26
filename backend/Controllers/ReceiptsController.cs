@@ -9,13 +9,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace backend.Controllers;
 
-[ApiController]
 [Route("api/[controller]")]
-public class ReceiptsController : ControllerBase
+public class ReceiptsController : BaseApiController
 {
     private readonly AccountingDbContext _context;
 
-    public ReceiptsController(AccountingDbContext context)
+    public ReceiptsController(AccountingDbContext context, ILogger<ReceiptsController> logger) : base(logger)
     {
         _context = context;
     }
@@ -68,7 +67,7 @@ public class ReceiptsController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(new PaginatedResponse<ReceiptListDto>
+        return SuccessResponse(new PaginatedResponse<ReceiptListDto>
         {
             Data = receipts,
             TotalCount = totalCount,
@@ -103,7 +102,7 @@ public class ReceiptsController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(receipts);
+        return SuccessResponse(receipts);
     }
 
     /// <summary>
@@ -120,7 +119,7 @@ public class ReceiptsController : ControllerBase
 
         if (receipt == null)
         {
-            return NotFound();
+            return ErrorResponse("Receipt not found", 404);
         }
 
         var receiptDto = new ReceiptDto
@@ -141,7 +140,7 @@ public class ReceiptsController : ControllerBase
             Description = receipt.Description
         };
 
-        return Ok(receiptDto);
+        return SuccessResponse(receiptDto);
     }
 
     /// <summary>
@@ -275,7 +274,7 @@ public class ReceiptsController : ControllerBase
 
         if (receipt == null)
         {
-            return NotFound();
+            return ErrorResponse("Receipt not found", 404);
         }
 
         // Soft delete the receipt
