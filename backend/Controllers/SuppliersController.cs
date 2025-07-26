@@ -12,23 +12,20 @@ namespace backend.Controllers;
 /// <summary>
 /// API controller for supplier management operations
 /// </summary>
-[ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class SuppliersController : ControllerBase
+public class SuppliersController : BaseApiController
 {
     private readonly ISupplierService _supplierService;
     private readonly AccountingDbContext _context;
-    private readonly ILogger<SuppliersController> _logger;
 
     public SuppliersController(
         ISupplierService supplierService,
         AccountingDbContext context,
-        ILogger<SuppliersController> logger)
+        ILogger<SuppliersController> logger) : base(logger)
     {
         _supplierService = supplierService ?? throw new ArgumentNullException(nameof(supplierService));
         _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -52,20 +49,19 @@ public class SuppliersController : ControllerBase
         [FromQuery] int pageSize = 25,
         CancellationToken cancellationToken = default)
     {
-        // Use company ID from query parameter or fallback to a default
-        var currentCompanyId = companyId ?? 1; // TODO: Get from authenticated user context
-        
         try
         {
+            var currentCompanyId = GetCurrentCompanyId(companyId);
+            var (validPage, validPageSize) = ValidatePagination(page, pageSize);
+            
             var result = await _supplierService.GetSuppliersAsync(
-                currentCompanyId, searchTerm, isActive, page, pageSize, cancellationToken);
+                currentCompanyId, searchTerm, isActive, validPage, validPageSize, cancellationToken);
 
-            return Ok(result);
+            return SuccessResponse(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while retrieving suppliers for company {CompanyId}", currentCompanyId);
-            return StatusCode(500, "An error occurred while processing your request");
+            return HandleException(ex, "retrieving suppliers");
         }
     }
 
@@ -83,12 +79,12 @@ public class SuppliersController : ControllerBase
     {
         try
         {
-            var currentCompanyId = companyId ?? 1; // TODO: Get from authenticated user context
+            var currentCompanyId = GetCurrentCompanyId(companyId);
 
             var supplier = await _supplierService.GetByIdAsync(id, currentCompanyId);
             if (supplier == null)
             {
-                return NotFound($"Supplier with ID {id} not found");
+                return ErrorResponse($"Supplier with ID {id} not found", 404);
             }
 
             var supplierDto = new SupplierDto
@@ -113,12 +109,11 @@ public class SuppliersController : ControllerBase
                 UpdatedAt = supplier.UpdatedAt
             };
 
-            return Ok(supplierDto);
+            return SuccessResponse(supplierDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while retrieving supplier {SupplierId}", id);
-            return StatusCode(500, "An error occurred while processing your request");
+            return HandleException(ex, $"retrieving supplier {id}");
         }
     }
 
@@ -140,8 +135,8 @@ public class SuppliersController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var currentCompanyId = request.CompanyId ?? 1; // TODO: Get from authenticated user context
-            var userId = "system"; // TODO: Get from authenticated user context
+            var currentCompanyId = GetCurrentCompanyId(request.CompanyId);
+            var userId = GetCurrentUserId();
 
             var supplier = new Supplier
             {
@@ -195,8 +190,7 @@ public class SuppliersController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while creating supplier");
-            return StatusCode(500, "An error occurred while processing your request");
+            return HandleException(ex, "creating supplier");
         }
     }
 
@@ -220,13 +214,13 @@ public class SuppliersController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var currentCompanyId = request.CompanyId ?? 1; // TODO: Get from authenticated user context
-            var userId = "system"; // TODO: Get from authenticated user context
+            var currentCompanyId = GetCurrentCompanyId(request.CompanyId);
+            var userId = GetCurrentUserId();
 
             var existingSupplier = await _supplierService.GetByIdAsync(id, currentCompanyId);
             if (existingSupplier == null)
             {
-                return NotFound($"Supplier with ID {id} not found");
+                return ErrorResponse($"Supplier with ID {id} not found", 404);
             }
 
             // Update supplier properties
@@ -271,12 +265,11 @@ public class SuppliersController : ControllerBase
                 UpdatedAt = updatedSupplier.UpdatedAt
             };
 
-            return Ok(supplierDto);
+            return SuccessResponse(supplierDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while updating supplier {SupplierId}", id);
-            return StatusCode(500, "An error occurred while processing your request");
+            return HandleException(ex, $"updating supplier {id}");
         }
     }
 
@@ -295,13 +288,13 @@ public class SuppliersController : ControllerBase
     {
         try
         {
-            var currentCompanyId = companyId ?? 1; // TODO: Get from authenticated user context
-            var userId = "system"; // TODO: Get from authenticated user context
+            var currentCompanyId = GetCurrentCompanyId(companyId);
+            var userId = GetCurrentUserId();
 
             var supplier = await _supplierService.GetByIdAsync(id, currentCompanyId);
             if (supplier == null)
             {
-                return NotFound($"Supplier with ID {id} not found");
+                return ErrorResponse($"Supplier with ID {id} not found", 404);
             }
 
             await _supplierService.DeleteAsync(id, currentCompanyId, userId);
@@ -310,8 +303,7 @@ public class SuppliersController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while deleting supplier {SupplierId}", id);
-            return StatusCode(500, "An error occurred while processing your request");
+            return HandleException(ex, $"deleting supplier {id}");
         }
     }
 
@@ -329,12 +321,12 @@ public class SuppliersController : ControllerBase
     {
         try
         {
-            var currentCompanyId = companyId ?? 1; // TODO: Get from authenticated user context
+            var currentCompanyId = GetCurrentCompanyId(companyId);
 
             var supplier = await _supplierService.GetByIdAsync(id, currentCompanyId);
             if (supplier == null)
             {
-                return NotFound($"Supplier with ID {id} not found");
+                return ErrorResponse($"Supplier with ID {id} not found", 404);
             }
 
             var purchaseOrders = await _context.PurchaseOrders
@@ -355,138 +347,11 @@ public class SuppliersController : ControllerBase
                 })
                 .ToListAsync();
 
-            return Ok(purchaseOrders);
+            return SuccessResponse((IEnumerable<object>)purchaseOrders);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while retrieving purchase orders for supplier {SupplierId}", id);
-            return StatusCode(500, "An error occurred while processing your request");
+            return HandleException(ex, $"retrieving purchase orders for supplier {id}");
         }
     }
-}
-
-// DTOs for API responses
-public class SupplierDto
-{
-    public int Id { get; set; }
-    public int CompanyId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Address { get; set; }
-    public string? Contact { get; set; }
-    public string? Phone { get; set; }
-    public string? Email { get; set; }
-    public string? Website { get; set; }
-    public string? TaxId { get; set; }
-    public string? VatNumber { get; set; }
-    public int PaymentTermsDays { get; set; }
-    public bool IsActive { get; set; }
-    public string? BankName { get; set; }
-    public string? BankAccount { get; set; }
-    public string? BankBranch { get; set; }
-    public string? Notes { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
-}
-
-// Request DTOs
-/// <summary>
-/// Request model for creating a new supplier
-/// </summary>
-public class CreateSupplierRequest
-{
-    public int? CompanyId { get; set; } // Optional, will be set from auth context
-
-    [Required]
-    [MaxLength(100)]
-    public string Name { get; set; } = string.Empty;
-
-    [MaxLength(500)]
-    public string? Address { get; set; }
-
-    [MaxLength(100)]
-    public string? Contact { get; set; }
-
-    [MaxLength(20)]
-    public string? Phone { get; set; }
-
-    [MaxLength(100)]
-    [EmailAddress]
-    public string? Email { get; set; }
-
-    [MaxLength(200)]
-    public string? Website { get; set; }
-
-    [MaxLength(15)]
-    public string? TaxId { get; set; }
-
-    [MaxLength(15)]
-    public string? VatNumber { get; set; }
-
-    [Range(0, 365)]
-    public int PaymentTermsDays { get; set; } = 30;
-
-    public bool IsActive { get; set; } = true;
-
-    [MaxLength(50)]
-    public string? BankName { get; set; }
-
-    [MaxLength(20)]
-    public string? BankAccount { get; set; }
-
-    [MaxLength(10)]
-    public string? BankBranch { get; set; }
-
-    [MaxLength(1000)]
-    public string? Notes { get; set; }
-}
-
-/// <summary>
-/// Request model for updating an existing supplier
-/// </summary>
-public class UpdateSupplierRequest
-{
-    public int? CompanyId { get; set; } // Optional, will be set from auth context
-
-    [Required]
-    [MaxLength(100)]
-    public string Name { get; set; } = string.Empty;
-
-    [MaxLength(500)]
-    public string? Address { get; set; }
-
-    [MaxLength(100)]
-    public string? Contact { get; set; }
-
-    [MaxLength(20)]
-    public string? Phone { get; set; }
-
-    [MaxLength(100)]
-    [EmailAddress]
-    public string? Email { get; set; }
-
-    [MaxLength(200)]
-    public string? Website { get; set; }
-
-    [MaxLength(15)]
-    public string? TaxId { get; set; }
-
-    [MaxLength(15)]
-    public string? VatNumber { get; set; }
-
-    [Range(0, 365)]
-    public int PaymentTermsDays { get; set; } = 30;
-
-    public bool IsActive { get; set; } = true;
-
-    [MaxLength(50)]
-    public string? BankName { get; set; }
-
-    [MaxLength(20)]
-    public string? BankAccount { get; set; }
-
-    [MaxLength(10)]
-    public string? BankBranch { get; set; }
-
-    [MaxLength(1000)]
-    public string? Notes { get; set; }
 }
