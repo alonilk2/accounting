@@ -115,7 +115,6 @@ public class ExpenseService : BaseService<Expense>, IExpenseService
             ExpenseDate = createDto.ExpenseDate,
             SupplierId = createDto.SupplierId,
             SupplierName = createDto.SupplierName,
-            SupplierTaxId = createDto.SupplierTaxId,
             Category = createDto.Category,
             Description = createDto.Description,
             DescriptionHebrew = createDto.DescriptionHebrew,
@@ -160,7 +159,6 @@ public class ExpenseService : BaseService<Expense>, IExpenseService
         expense.ExpenseDate = updateDto.ExpenseDate;
         expense.SupplierId = updateDto.SupplierId;
         expense.SupplierName = updateDto.SupplierName;
-        expense.SupplierTaxId = updateDto.SupplierTaxId;
         expense.Category = updateDto.Category;
         expense.Description = updateDto.Description;
         expense.DescriptionHebrew = updateDto.DescriptionHebrew;
@@ -549,7 +547,6 @@ public class ExpenseService : BaseService<Expense>, IExpenseService
             ExpenseDate = expense.ExpenseDate,
             SupplierId = expense.SupplierId,
             SupplierName = expense.SupplierName ?? expense.Supplier?.Name,
-            SupplierTaxId = expense.SupplierTaxId,
             Category = expense.Category,
             CategoryName = GetCategoryNameHebrew(expense.Category),
             Description = expense.Description,

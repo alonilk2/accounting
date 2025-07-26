@@ -12,6 +12,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Autocomplete,
   Box,
   Alert,
   FormControlLabel,
@@ -97,6 +98,7 @@ const ExpenseCreateDialog: React.FC<ExpenseCreateDialogProps> = ({
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [createNewSupplier, setCreateNewSupplier] = useState(true);
 
@@ -140,7 +142,6 @@ const ExpenseCreateDialog: React.FC<ExpenseCreateDialogProps> = ({
           receiptNumber: scannedData.documentNumber || '',
           supplierId: scannedData.supplier?.supplierId,
           supplierName: scannedData.supplier?.name,
-          supplierTaxId: scannedData.supplier?.taxId || '',
         });
         
         setCreateNewSupplier(scannedData.supplier?.isNewSupplier || false);
@@ -163,12 +164,7 @@ const ExpenseCreateDialog: React.FC<ExpenseCreateDialogProps> = ({
       if (initialSupplierId) {
         const supplier = suppliers.find(s => s.id === initialSupplierId);
         if (supplier) {
-          setFormData(prev => ({
-            ...prev,
-            supplierId: supplier.id,
-            supplierName: supplier.name,
-            supplierTaxId: supplier.taxId || '',
-          }));
+          setSelectedSupplier(supplier);
         }
       }
       
@@ -176,12 +172,7 @@ const ExpenseCreateDialog: React.FC<ExpenseCreateDialogProps> = ({
       if (isReviewMode && scanResult?.extractedData?.supplier?.supplierId) {
         const supplier = suppliers.find(s => s.id === scanResult.extractedData?.supplier?.supplierId);
         if (supplier) {
-          setFormData(prev => ({
-            ...prev,
-            supplierId: supplier.id,
-            supplierName: supplier.name,
-            supplierTaxId: supplier.taxId || '',
-          }));
+          setSelectedSupplier(supplier);
         }
       }
     }
@@ -192,6 +183,16 @@ const ExpenseCreateDialog: React.FC<ExpenseCreateDialogProps> = ({
     setFormData(prev => ({
       ...prev,
       [field]: value,
+    }));
+  };
+
+  // Handle supplier selection
+  const handleSupplierChange = (supplier: Supplier | null) => {
+    setSelectedSupplier(supplier);
+    setFormData(prev => ({
+      ...prev,
+      supplierId: supplier?.id,
+      supplierName: supplier?.name,
     }));
   };
 
@@ -276,6 +277,7 @@ const ExpenseCreateDialog: React.FC<ExpenseCreateDialogProps> = ({
   const handleClose = () => {
     if (!loading) {
       setFormData(DEFAULT_FORM_DATA);
+      setSelectedSupplier(null);
       setError('');
       onClose();
     }
@@ -298,7 +300,6 @@ const ExpenseCreateDialog: React.FC<ExpenseCreateDialogProps> = ({
     amounts: language === 'he' ? 'סכומים' : 'Amounts',
     date: language === 'he' ? 'תאריך' : 'Date',
     supplier: language === 'he' ? 'ספק' : 'Supplier',
-    supplierTaxId: language === 'he' ? 'ח.פ ספק' : 'Supplier Tax ID',
     category: language === 'he' ? 'קטגוריה' : 'Category',
     description: language === 'he' ? 'תיאור' : 'Description',
     descriptionHebrew: language === 'he' ? 'תיאור בעברית' : 'Hebrew Description',
@@ -501,44 +502,20 @@ const ExpenseCreateDialog: React.FC<ExpenseCreateDialogProps> = ({
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  fullWidth
-                  label={text.supplier}
-                  value={formData.supplierName || ''}
-                  onChange={(e) => {
-                    const supplierName = e.target.value;
-                    handleChange('supplierName', supplierName);
-                    
-                    // Try to find matching supplier from existing list
-                    const matchingSupplier = suppliers.find(s => 
-                      s.name.toLowerCase() === supplierName.toLowerCase()
-                    );
-                    
-                    if (matchingSupplier) {
-                      handleChange('supplierId', matchingSupplier.id);
-                      handleChange('supplierTaxId', matchingSupplier.taxId || '');
-                    } else {
-                      // Clear supplier ID when no match found
-                      setFormData(prev => ({
-                        ...prev,
-                        supplierId: undefined,
-                        supplierTaxId: ''
-                      }));
-                    }
-                  }}
-                  placeholder={text.selectSupplier}
-                  sx={textFieldStyles}
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  fullWidth
-                  label={text.supplierTaxId}
-                  value={formData.supplierTaxId || ''}
-                  onChange={(e) => handleChange('supplierTaxId', e.target.value)}
-                  placeholder={language === 'he' ? 'מספר עוסק מורשה / ח.פ' : 'Business license / Tax ID'}
-                  sx={textFieldStyles}
+                <Autocomplete
+                  options={suppliers}
+                  getOptionLabel={(option) => option.name}
+                  value={selectedSupplier}
+                  onChange={(_, newValue) => handleSupplierChange(newValue)}
+                  disabled={mode === 'review'} // Disable in review mode as supplier is from scan
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={text.supplier}
+                      placeholder={text.selectSupplier}
+                      sx={textFieldStyles}
+                    />
+                  )}
                 />
               </Grid>
 

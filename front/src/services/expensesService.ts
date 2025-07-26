@@ -37,7 +37,6 @@ export interface Expense {
   expenseDate: string;
   supplierId?: number;
   supplierName?: string;
-  supplierTaxId?: string;
   category: ExpenseCategory;
   categoryName: string;
   description: string;
@@ -73,7 +72,6 @@ export interface CreateExpenseRequest {
   expenseDate: string;
   supplierId?: number;
   supplierName?: string;
-  supplierTaxId?: string;
   category: ExpenseCategory;
   description: string;
   descriptionHebrew?: string;
@@ -95,7 +93,6 @@ export interface UpdateExpenseRequest {
   expenseDate: string;
   supplierId?: number;
   supplierName?: string;
-  supplierTaxId?: string;
   category: ExpenseCategory;
   description: string;
   descriptionHebrew?: string;
