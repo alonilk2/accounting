@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\aloni\\botaccount\\backend\\backend.csproj": {}
+    "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj": {}
   },
   "projects": {
-    "C:\\Users\\aloni\\botaccount\\backend\\backend.csproj": {
+    "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
+        "projectUniqueName": "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
         "projectName": "backend",
-        "projectPath": "C:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
+        "projectPath": "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
         "packagesPath": "C:\\Users\\aloni\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\aloni\\botaccount\\backend\\obj\\",
+        "outputPath": "c:\\Users\\aloni\\botaccount\\backend\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

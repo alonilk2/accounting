@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "JJzZsvuagWI=",
+  "dgSpecHash": "RMFt4wSMSBw=",
   "success": true,
-  "projectFilePath": "C:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
+  "projectFilePath": "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\aloni\\.nuget\\packages\\azure.ai.formrecognizer\\4.1.0\\azure.ai.formrecognizer.4.1.0.nupkg.sha512",
     "C:\\Users\\aloni\\.nuget\\packages\\azure.ai.openai\\2.1.0\\azure.ai.openai.2.1.0.nupkg.sha512",

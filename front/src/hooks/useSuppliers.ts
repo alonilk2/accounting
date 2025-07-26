@@ -15,8 +15,9 @@ export const useSuppliers = () => {
       setLoading(true);
       setError(null);
       const response = await suppliersAPI.getAll(params);
-      setSuppliers(response.data);
-      setTotalCount(response.totalCount);
+      // Response is PaginatedResponse<Supplier> with data array and pagination info
+      setSuppliers(response.data || []);
+      setTotalCount(response.totalCount || 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת הספקים');
     } finally {

@@ -277,7 +277,12 @@ export const suppliersAPI = {
     const url = `/suppliers${queryString ? `?${queryString}` : ""}`;
 
     const response = await api.get(url);
-    return response.data;
+    console.log("Suppliers API Response:", response);
+    // Handle nested response structure like customers API
+    return {
+      ...response.data,
+      data: response?.data?.data || [],
+    };
   },
 
   getById: async (id: number, companyId?: number): Promise<Supplier> => {
