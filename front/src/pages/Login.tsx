@@ -42,7 +42,7 @@ const Login = () => {
         
         // Mock user and company data
         const mockUser = {
-          id: 1,
+          id: '1',
           name: 'Demo User',
           email: email,
           roleId: '1',
