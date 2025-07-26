@@ -1,5 +1,10 @@
 /* Print styles */
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   body {
     font-family: 'Arial', sans-serif !important;
     font-size: 12px !important;
@@ -7,6 +12,104 @@
     color: black !important;
     background: white !important;
     direction: rtl !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-content {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    background: white !important;
+    color: black !important;
+    font-family: Arial, sans-serif !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .print-content * {
+    visibility: visible !important;
+    display: revert !important;
+    color: black !important;
+  }
+
+  .print-content .MuiPaper-root {
+    background-color: #f8f9fa !important;
+    box-shadow: none !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+  }
+
+  .print-content .MuiTable-root {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    border: 1px solid #333 !important;
+    margin: 10px 0 !important;
+    background: white !important;
+  }
+
+  .print-content .MuiTableCell-root {
+    border: 1px solid #666 !important;
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    vertical-align: top !important;
+    background: white !important;
+  }
+
+  .print-content .MuiTableHead-root .MuiTableCell-root {
+    background-color: #2c3e50 !important;
+    color: white !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    padding: 10px 8px !important;
+    font-size: 12px !important;
+  }
+
+  .print-content .MuiTableBody-root .MuiTableCell-root {
+    background-color: white !important;
+    color: #333 !important;
+  }
+
+  /* Alternating row colors for better readability */
+  .print-content .MuiTableBody-root .MuiTableRow-root:nth-child(even) .MuiTableCell-root {
+    background-color: #f8f9fa !important;
+  }
+
+  /* Summary/Total rows styling */
+  .print-content .MuiTableCell-root[style*="font-weight: bold"],
+  .print-content .total-row .MuiTableCell-root,
+  .print-content .summary-row .MuiTableCell-root {
+    background-color: #e8f4f8 !important;
+    font-weight: bold !important;
+    border-top: 2px solid #2c3e50 !important;
+  }
+
+  /* Right-align numeric columns */
+  .print-content .MuiTableCell-root.numeric,
+  .print-content .MuiTableCell-root[align="right"] {
+    text-align: right !important;
+    font-family: 'Courier New', monospace !important;
+  }
+
+  /* Company header styling */
+  .print-content .company-header {
+    border-bottom: 3px solid #2c3e50 !important;
+    padding-bottom: 15px !important;
+    margin-bottom: 20px !important;
+  }
+
+  /* Document title styling */
+  .print-content .document-title {
+    font-size: 18px !important;
+    font-weight: bold !important;
+    color: #2c3e50 !important;
+    text-align: center !important;
+    margin: 15px 0 !important;
+    padding: 10px !important;
+    border: 2px solid #2c3e50 !important;
+    background-color: #f8f9fa !important;
   }
 
   /* Hide everything except print content */
@@ -137,4 +240,22 @@
   left: -9999px;
   top: -9999px;
   visibility: hidden;
+}
+
+/* General print button positioning */
+.print-container {
+  position: fixed !important;
+  left: -10000px !important;
+  top: -10000px !important;
+  width: 210mm !important;
+  height: 297mm !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -1000 !important;
+}
+
+.print-ref {
+  width: 100% !important;
+  height: 100% !important;
 }

@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Button, IconButton } from '@mui/material';
 import { Print as PrintIcon } from '@mui/icons-material';
 import { useReactToPrint } from 'react-to-print';
+import '../../styles/print.css';
 
 interface PrintButtonProps {
   variant?: 'text' | 'outlined' | 'contained';
@@ -33,6 +34,8 @@ const PrintButton: React.FC<PrintButtonProps> = ({
       if (onBeforePrint) {
         onBeforePrint();
       }
+      // Wait a bit to ensure content is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
     },
     onAfterPrint,
   });
@@ -62,15 +65,8 @@ const PrintButton: React.FC<PrintButtonProps> = ({
       )}
 
       {/* Hidden printable content */}
-      <div 
-        style={{ 
-          position: 'absolute',
-          left: '-9999px',
-          top: '-9999px',
-          visibility: 'hidden'
-        }}
-      >
-        <div ref={printRef}>
+      <div className="print-container">
+        <div ref={printRef} className="print-ref">
           <PrintableContent className="print-content" />
         </div>
       </div>

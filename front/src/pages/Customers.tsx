@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -210,22 +210,19 @@ const Customers = () => {
     }
   };
 
-  // Handle debounced search
-  const performSearch = useCallback(() => {
-    const newPaginationModel = { page: 0, pageSize: paginationModel.pageSize };
-    if (paginationModel.page !== 0) {
-      setPaginationModel(newPaginationModel);
-    }
+  // Handle debounced search effect - reset to page 1 on search
+  useEffect(() => {
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  }, [debouncedSearchTerm]);
+
+  // Load customers when search term or pagination changes
+  useEffect(() => {
     loadCustomers({
       searchTerm: debouncedSearchTerm,
-      page: 1, // API uses 1-based pagination
-      pageSize: newPaginationModel.pageSize,
+      page: paginationModel.page + 1, // API uses 1-based pagination
+      pageSize: paginationModel.pageSize,
     });
-  }, [debouncedSearchTerm, loadCustomers, paginationModel.pageSize, paginationModel.page]);
-
-  useEffect(() => {
-    performSearch();
-  }, [performSearch]);
+  }, [debouncedSearchTerm, paginationModel.page, paginationModel.pageSize, loadCustomers]);
 
   // Handle search input change (immediate UI update, debounced API call)
   const handleSearchChange = (newSearchTerm: string) => {

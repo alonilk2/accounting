@@ -26,6 +26,11 @@ export const useCustomers = (): UseCustomersResult => {
       setLoading(true);
       setError(null);
       const response = await customersAPI.getAll(filters);
+      
+      // Update state with the new data
+      setCustomers(response.data);
+      setTotalCount(response.totalCount);
+      
       return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load customers';

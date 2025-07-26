@@ -55,7 +55,7 @@ export interface UpdateInvoiceRequest {
 export const invoiceService = {
   // Get all invoices
   async getInvoices(): Promise<Invoice[]> {
-    const response = await api.get('/api/invoices');
+    const response = await api.get('/invoices');
     return response.data.map((invoice: RawInvoice) => ({
       ...invoice,
       invoiceDate: new Date(invoice.invoiceDate),
@@ -68,7 +68,7 @@ export const invoiceService = {
 
   // Get a specific invoice
   async getInvoice(id: number): Promise<Invoice> {
-    const response = await api.get<Invoice>(`/api/invoices/${id}`);
+    const response = await api.get<Invoice>(`/invoices/${id}`);
     return {
       ...response.data,
       invoiceDate: new Date(response.data.invoiceDate),
@@ -80,7 +80,7 @@ export const invoiceService = {
 
   // Create a new invoice
   async createInvoice(invoice: CreateInvoiceRequest): Promise<Invoice> {
-    const response = await api.post<Invoice>('/api/invoices', invoice);
+    const response = await api.post<Invoice>('/invoices', invoice);
     return {
       ...response.data,
       invoiceDate: new Date(response.data.invoiceDate),
@@ -92,17 +92,17 @@ export const invoiceService = {
 
   // Update an invoice
   async updateInvoice(id: number, invoice: UpdateInvoiceRequest): Promise<void> {
-    await api.put(`/api/invoices/${id}`, invoice);
+    await api.put(`/invoices/${id}`, invoice);
   },
 
   // Delete an invoice
   async deleteInvoice(id: number): Promise<void> {
-    await api.delete(`/api/invoices/${id}`);
+    await api.delete(`/invoices/${id}`);
   },
 
   // Create invoice from sales order
   async createInvoiceFromSalesOrder(salesOrderId: number): Promise<Invoice> {
-    const response = await api.post<Invoice>(`/api/invoices/from-sales-order/${salesOrderId}`);
+    const response = await api.post<Invoice>(`/invoices/from-sales-order/${salesOrderId}`);
     return {
       ...response.data,
       invoiceDate: new Date(response.data.invoiceDate),
@@ -114,7 +114,7 @@ export const invoiceService = {
 
   // Get invoices by customer
   async getInvoicesByCustomer(customerId: number): Promise<Invoice[]> {
-    const response = await api.get<Invoice[]>(`/api/invoices?customerId=${customerId}`);
+    const response = await api.get<Invoice[]>(`/invoices?customerId=${customerId}`);
     return response.data.map(invoice => ({
       ...invoice,
       invoiceDate: new Date(invoice.invoiceDate),
@@ -126,7 +126,7 @@ export const invoiceService = {
 
   // Get overdue invoices
   async getOverdueInvoices(): Promise<Invoice[]> {
-    const response = await api.get<Invoice[]>('/api/invoices?status=overdue');
+    const response = await api.get<Invoice[]>('/invoices?status=overdue');
     return response.data.map(invoice => ({
       ...invoice,
       invoiceDate: new Date(invoice.invoiceDate),
@@ -138,7 +138,7 @@ export const invoiceService = {
 
   // Get receipts for an invoice
   async getInvoiceReceipts(invoiceId: number): Promise<Receipt[]> {
-    const response = await api.get(`/api/invoices/${invoiceId}/receipts`);
+    const response = await api.get(`/invoices/${invoiceId}/receipts`);
     return response.data.map((receipt: Receipt) => ({
       ...receipt,
       paymentDate: new Date(receipt.paymentDate),
@@ -153,7 +153,7 @@ export const invoiceService = {
     paymentMethod: string,
     notes?: string
   ): Promise<Receipt> {
-    const response = await api.post(`/api/invoices/${invoiceId}/payment`, {
+    const response = await api.post(`/invoices/${invoiceId}/payment`, {
       amount,
       paymentMethod,
       notes,
@@ -168,7 +168,7 @@ export const invoiceService = {
   // Get invoice by sales order ID
   async getInvoiceBySalesOrder(salesOrderId: number): Promise<Invoice | null> {
     try {
-      const response = await api.get<Invoice[]>(`/api/invoices?salesOrderId=${salesOrderId}`);
+      const response = await api.get<Invoice[]>(`/invoices?salesOrderId=${salesOrderId}`);
       const invoices = response.data;
       if (invoices.length > 0) {
         const invoice = invoices[0];

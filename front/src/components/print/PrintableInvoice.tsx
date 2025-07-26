@@ -110,44 +110,44 @@ const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
       </Box>
 
       {/* Invoice Lines Table */}
-      <TableContainer component={Paper} sx={{ marginBottom: 3, boxShadow: 'none', border: '1px solid #ddd' }}>
-        <Table size="small">
+      <TableContainer component={Paper} sx={{ marginBottom: 3, boxShadow: 'none' }}>
+        <Table size="small" sx={{ border: '1px solid #333' }}>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '11px', padding: '8px' }}>פריט</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '11px', padding: '8px' }} align="center">כמות</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '11px', padding: '8px' }} align="right">מחיר יחידה</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '11px', padding: '8px' }} align="right">הנחה %</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '11px', padding: '8px' }} align="right">מע"מ %</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '11px', padding: '8px' }} align="right">סה"כ</TableCell>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', backgroundColor: '#2c3e50', color: 'white' }}>פריט</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', backgroundColor: '#2c3e50', color: 'white' }}>כמות</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', backgroundColor: '#2c3e50', color: 'white' }}>מחיר יחידה</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', backgroundColor: '#2c3e50', color: 'white' }}>הנחה %</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', backgroundColor: '#2c3e50', color: 'white' }}>מע"מ %</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', backgroundColor: '#2c3e50', color: 'white' }}>סה"כ</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {invoice.lines?.map((line, index) => {
               const lineTotal = calculateLineTotal(line.quantity, line.unitPrice, line.discountPercent);
               return (
-                <TableRow key={index}>
-                  <TableCell sx={{ fontSize: '10px', padding: '6px' }}>
-                    <div>{line.description}</div>
+                <TableRow key={index} sx={{ '&:nth-of-type(even)': { backgroundColor: '#f8f9fa' } }}>
+                  <TableCell sx={{ border: '1px solid #666', verticalAlign: 'top' }}>
+                    <Typography sx={{ fontWeight: 'bold', fontSize: '11px' }}>{line.description}</Typography>
                     {line.itemSku && (
-                      <Box sx={{ fontSize: '9px', color: '#666' }}>
+                      <Box sx={{ fontSize: '9px', color: '#666', marginTop: '2px' }}>
                         קוד: {line.itemSku}
                       </Box>
                     )}
                   </TableCell>
-                  <TableCell sx={{ fontSize: '10px', padding: '6px' }} align="center">
+                  <TableCell sx={{ border: '1px solid #666', textAlign: 'center', fontFamily: 'Courier New, monospace' }}>
                     {line.quantity}
                   </TableCell>
-                  <TableCell sx={{ fontSize: '10px', padding: '6px' }} align="right">
+                  <TableCell sx={{ border: '1px solid #666', textAlign: 'right', fontFamily: 'Courier New, monospace' }}>
                     ₪{line.unitPrice.toFixed(2)}
                   </TableCell>
-                  <TableCell sx={{ fontSize: '10px', padding: '6px' }} align="right">
+                  <TableCell sx={{ border: '1px solid #666', textAlign: 'center', fontFamily: 'Courier New, monospace' }}>
                     {line.discountPercent || 0}%
                   </TableCell>
-                  <TableCell sx={{ fontSize: '10px', padding: '6px' }} align="right">
+                  <TableCell sx={{ border: '1px solid #666', textAlign: 'center', fontFamily: 'Courier New, monospace' }}>
                     {line.taxRate}%
                   </TableCell>
-                  <TableCell sx={{ fontSize: '10px', padding: '6px' }} align="right">
+                  <TableCell sx={{ border: '1px solid #666', textAlign: 'right', fontFamily: 'Courier New, monospace', fontWeight: 'bold' }}>
                     ₪{lineTotal.toFixed(2)}
                   </TableCell>
                 </TableRow>

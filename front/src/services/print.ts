@@ -134,11 +134,19 @@ class PrintService {
     switch (documentType.toLowerCase()) {
       case 'salesorder':
         blob = await this.downloadInvoicePdf(documentId, companyId);
+        filename = `salesorder-${documentId}.pdf`;
+        break;
+      case 'invoice':
+        blob = await this.downloadInvoicePdf(documentId, companyId);
         filename = `invoice-${documentId}.pdf`;
         break;
       case 'receipt':
         blob = await this.downloadReceiptPdf(documentId, companyId);
         filename = `receipt-${documentId}.pdf`;
+        break;
+      case 'possale':
+        blob = await this.downloadReceiptPdf(documentId, companyId);
+        filename = `pos-sale-${documentId}.pdf`;
         break;
       default:
         throw new Error(`Unsupported document type: ${documentType}`);

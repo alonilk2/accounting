@@ -10,13 +10,6 @@ import {
   CardContent,
   Chip,
   IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Grid,
   Divider,
   CircularProgress,
@@ -28,6 +21,8 @@ import {
   Collapse,
   Tooltip,
 } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import type { GridColDef } from "@mui/x-data-grid";
 import {
   Close as CloseIcon,
   Receipt as ReceiptIcon,
@@ -53,6 +48,10 @@ import { he } from "date-fns/locale";
 import { format } from "date-fns";
 import { customersAPI, printService } from "../../services";
 import { ModernButton } from "../ui";
+import { dataGridStyles } from "../../styles/formStyles";
+import PrintButton from "../print/PrintButton";
+import PrintableCustomerDocument from "../print/PrintableCustomerDocument";
+import PrintableIndividualDocument from "../print/PrintableIndividualDocument";
 import type {
   Customer,
   CustomerDocumentsResponse,
@@ -84,7 +83,7 @@ const getDocumentIcon = (documentType: string) => {
 const getDocumentTypeLabel = (documentType: string) => {
   switch (documentType) {
     case "SalesOrder":
-      return "מכירות";
+      return "הזמנה";
     case "Invoice":
       return "חשבונית";
     case "Receipt":
@@ -176,46 +175,12 @@ const CustomerDocumentsDialog: React.FC<CustomerDocumentsDialogProps> = ({
     }
   };
 
-  const handlePrintDocument = async (documentId: number, documentType: string) => {
-    if (!documentsData) return;
-    
-    const document = documentsData.documents.find(
-      doc => doc.id === documentId && doc.documentType === documentType
-    );
-    
-    if (document) {
-      try {
-        // Open print dialog by viewing the document first
-        await printService.viewDocument(documentType, documentId, companyId);
-      } catch (error) {
-        console.error('Error opening document for printing:', error);
-        alert('שגיאה בפתיחת המסמך להדפסה');
-      }
-    }
-  };
-
   const handleDownloadDocument = async (documentId: number, documentType: string) => {
     try {
       await printService.downloadDocument(documentType, documentId, companyId);
     } catch (error) {
       console.error('Error downloading document:', error);
       alert('שגיאה בהורדת המסמך');
-    }
-  };
-
-  const handlePrintAllDocuments = async () => {
-    try {
-      await printService.downloadCustomerReport(
-        customer.id,
-        customer.name,
-        companyId,
-        fromDate || undefined,
-        toDate || undefined,
-        documentType || undefined
-      );
-    } catch (error) {
-      console.error('Error downloading customer report:', error);
-      alert('שגיאה בהורדת דוח כל המסמכים');
     }
   };
 
@@ -332,7 +297,7 @@ const CustomerDocumentsDialog: React.FC<CustomerDocumentsDialogProps> = ({
                           </Typography>
                         </Box>
                         <Typography variant="body2" color="text.secondary">
-                          מכירות
+                          הזמנות
                         </Typography>
                       </CardContent>
                     </Card>
@@ -448,7 +413,7 @@ const CustomerDocumentsDialog: React.FC<CustomerDocumentsDialogProps> = ({
                             onChange={(e) => setDocumentType(e.target.value)}
                           >
                             <MenuItem value="">הכל</MenuItem>
-                            <MenuItem value="SalesOrder">מכירות</MenuItem>
+                            <MenuItem value="SalesOrder">הזמנה</MenuItem>
                             <MenuItem value="Invoice">חשבונית</MenuItem>
                             <MenuItem value="Receipt">קבלה</MenuItem>
                             <MenuItem value="POSSale">מכירת קופה</MenuItem>
@@ -490,18 +455,24 @@ const CustomerDocumentsDialog: React.FC<CustomerDocumentsDialogProps> = ({
                           {formatCurrency(documentsData.totalAmount)}
                         </Typography>
                         <Box sx={{ display: "flex", gap: 1 }}>
-                          <Tooltip title="הדפסת כל המסמכים" arrow>
-                            <IconButton
-                              size="small"
-                              onClick={handlePrintAllDocuments}
-                              sx={{
-                                color: "secondary.main",
-                                "&:hover": { bgcolor: "secondary.50" }
-                              }}
-                            >
-                              <PrintAllIcon />
-                            </IconButton>
-                          </Tooltip>
+                          <PrintButton
+                            iconOnly
+                            size="small"
+                            printableContent={() => (
+                              <PrintableCustomerDocument
+                                customer={customer}
+                                documentsData={documentsData}
+                                fromDate={fromDate}
+                                toDate={toDate}
+                                documentType={documentType}
+                              />
+                            )}
+                            documentTitle={`דוח מסמכי לקוח - ${customer.name}`}
+                          >
+                            <Tooltip title="הדפסת כל המסמכים" arrow>
+                              <PrintAllIcon sx={{ color: "secondary.main" }} />
+                            </Tooltip>
+                          </PrintButton>
                           <Tooltip title="יצוא לאקסל" arrow>
                             <IconButton
                               size="small"
@@ -528,153 +499,176 @@ const CustomerDocumentsDialog: React.FC<CustomerDocumentsDialogProps> = ({
                         </Typography>
                       </Box>
                     ) : (
-                      <TableContainer
-                        component={Paper}
-                        sx={{ borderRadius: "8px" }}
-                      >
-                        <Table>
-                          <TableHead>
-                            <TableRow sx={{ bgcolor: "primary.50" }}>
-                              <TableCell>
-                                <strong>סוג</strong>
-                              </TableCell>
-                              <TableCell>
-                                <strong>מספר מסמך</strong>
-                              </TableCell>
-                              <TableCell>
-                                <strong>תאריך</strong>
-                              </TableCell>
-                              <TableCell>
-                                <strong>סכום</strong>
-                              </TableCell>
-                              <TableCell>
-                                <strong>סטטוס</strong>
-                              </TableCell>
-                              <TableCell>
-                                <strong>תיאור</strong>
-                              </TableCell>
-                              <TableCell align="center">
-                                <strong>פעולות</strong>
-                              </TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {documentsData.documents.map((document) => (
-                              <TableRow
-                                key={`${document.documentType}-${document.id}`}
-                                hover
-                                sx={{ "&:hover": { bgcolor: "action.hover" } }}
-                              >
-                                <TableCell>
-                                  <Box
-                                    sx={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 1,
-                                    }}
-                                  >
-                                    {getDocumentIcon(document.documentType)}
-                                    <Typography variant="body2">
-                                      {getDocumentTypeLabel(
-                                        document.documentType
-                                      )}
-                                    </Typography>
-                                  </Box>
-                                </TableCell>
-                                <TableCell>
-                                  <Typography
-                                    variant="body2"
-                                    fontWeight="medium"
-                                  >
-                                    {document.documentNumber}
+                      <Box sx={{ height: 600, width: '100%' }}>
+                        <DataGrid
+                          rows={documentsData.documents.map((doc, index) => ({
+                            id: `${doc.documentType}-${doc.id}`,
+                            uniqueId: index,
+                            documentType: doc.documentType,
+                            documentId: doc.id,
+                            documentNumber: doc.documentNumber,
+                            documentDate: doc.documentDate,
+                            totalAmount: doc.totalAmount,
+                            status: doc.status,
+                            description: doc.description || "-",
+                          }))}
+                          columns={[
+                            {
+                              field: "documentType",
+                              headerName: "סוג",
+                              width: 150,
+                              renderCell: (params) => (
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                  }}
+                                >
+                                  {getDocumentIcon(params.value)}
+                                  <Typography variant="body2">
+                                    {getDocumentTypeLabel(params.value)}
                                   </Typography>
-                                </TableCell>
-                                <TableCell>
-                                  <Box
-                                    sx={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 1,
-                                    }}
-                                  >
-                                    <CalendarIcon
-                                      fontSize="small"
-                                      color="action"
-                                    />
-                                    <Typography variant="body2">
-                                      {formatDate(document.documentDate)}
-                                    </Typography>
-                                  </Box>
-                                </TableCell>
-                                <TableCell>
-                                  <Typography
-                                    variant="body2"
-                                    fontWeight="medium"
-                                  >
-                                    {formatCurrency(document.totalAmount)}
+                                </Box>
+                              ),
+                            },
+                            {
+                              field: "documentNumber",
+                              headerName: "מספר מסמך",
+                              width: 150,
+                              renderCell: (params) => (
+                                <Typography variant="body2" fontWeight="medium">
+                                  {params.value}
+                                </Typography>
+                              ),
+                            },
+                            {
+                              field: "documentDate",
+                              headerName: "תאריך",
+                              width: 150,
+                              renderCell: (params) => (
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                  }}
+                                >
+                                  <CalendarIcon fontSize="small" color="action" />
+                                  <Typography variant="body2">
+                                    {formatDate(params.value)}
                                   </Typography>
-                                </TableCell>
-                                <TableCell>
-                                  <Chip
-                                    label={document.status}
-                                    color={getStatusColor(document.status)}
+                                </Box>
+                              ),
+                            },
+                            {
+                              field: "totalAmount",
+                              headerName: "סכום",
+                              width: 150,
+                              renderCell: (params) => (
+                                <Typography variant="body2" fontWeight="medium">
+                                  {formatCurrency(params.value)}
+                                </Typography>
+                              ),
+                            },
+                            {
+                              field: "status",
+                              headerName: "סטטוס",
+                              width: 130,
+                              renderCell: (params) => (
+                                <Chip
+                                  label={params.value}
+                                  color={getStatusColor(params.value)}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              ),
+                            },
+                            {
+                              field: "description",
+                              headerName: "תיאור",
+                              width: 200,
+                              flex: 1,
+                              renderCell: (params) => (
+                                <Typography variant="body2" color="text.secondary">
+                                  {params.value}
+                                </Typography>
+                              ),
+                            },
+                            {
+                              field: "actions",
+                              type: "actions",
+                              headerName: "פעולות",
+                              width: 180,
+                              renderCell: (params) => (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <Tooltip title="צפייה במסמך" arrow>
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => handleViewDocument(params.row.documentId, params.row.documentType)}
+                                      sx={{ color: "primary.main" }}
+                                    >
+                                      <ViewIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  
+                                  <PrintButton
+                                    iconOnly
                                     size="small"
-                                    variant="outlined"
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Typography
-                                    variant="body2"
-                                    color="text.secondary"
+                                    printableContent={() => (
+                                      <PrintableIndividualDocument
+                                        document={{
+                                          id: params.row.documentId,
+                                          documentType: params.row.documentType,
+                                          documentNumber: params.row.documentNumber,
+                                          documentDate: params.row.documentDate,
+                                          totalAmount: params.row.totalAmount,
+                                          status: params.row.status,
+                                          description: params.row.description === "-" ? undefined : params.row.description,
+                                        }}
+                                        customer={customer}
+                                        companyId={companyId}
+                                      />
+                                    )}
+                                    documentTitle={`${getDocumentTypeLabel(params.row.documentType)} ${params.row.documentNumber}`}
                                   >
-                                    {document.description || "-"}
-                                  </Typography>
-                                </TableCell>
-                                <TableCell align="center">
-                                  <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center" }}>
-                                    <Tooltip title="צפייה במסמך" arrow>
-                                      <IconButton
-                                        size="small"
-                                        onClick={() => handleViewDocument(document.id, document.documentType)}
-                                        sx={{ 
-                                          color: "primary.main",
-                                          "&:hover": { bgcolor: "primary.50" }
-                                        }}
-                                      >
-                                        <ViewIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
                                     <Tooltip title="הדפסת מסמך" arrow>
-                                      <IconButton
-                                        size="small"
-                                        onClick={() => handlePrintDocument(document.id, document.documentType)}
-                                        sx={{ 
-                                          color: "secondary.main",
-                                          "&:hover": { bgcolor: "secondary.50" }
-                                        }}
-                                      >
-                                        <PrintIcon fontSize="small" />
-                                      </IconButton>
+                                      <PrintIcon sx={{ color: "secondary.main" }} fontSize="small" />
                                     </Tooltip>
-                                    <Tooltip title="הורדת מסמך כ-PDF" arrow>
-                                      <IconButton
-                                        size="small"
-                                        onClick={() => handleDownloadDocument(document.id, document.documentType)}
-                                        sx={{ 
-                                          color: "success.main",
-                                          "&:hover": { bgcolor: "success.50" }
-                                        }}
-                                      >
-                                        <DownloadIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                  </Box>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
+                                  </PrintButton>
+
+                                  <Tooltip title="הורדת מסמך כ-PDF" arrow>
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => handleDownloadDocument(params.row.documentId, params.row.documentType)}
+                                      sx={{ color: "success.main" }}
+                                    >
+                                      <DownloadIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Box>
+                              ),
+                            },
+                          ] as GridColDef[]}
+                          sx={dataGridStyles}
+                          disableRowSelectionOnClick
+                          hideFooter={documentsData.documents.length <= 25}
+                          initialState={{
+                            pagination: {
+                              paginationModel: { pageSize: 25 },
+                            },
+                          }}
+                          pageSizeOptions={[25, 50, 100]}
+                          getRowId={(row) => row.id}
+                          localeText={{
+                            noRowsLabel: "לא נמצאו מסמכים",
+                            footerRowSelected: (count) =>
+                              count !== 1
+                                ? `${count.toLocaleString()} שורות נבחרו`
+                                : `שורה אחת נבחרה`,
+                          }}
+                        />
+                      </Box>
                     )}
                   </CardContent>
                 </Card>

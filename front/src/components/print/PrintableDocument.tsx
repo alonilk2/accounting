@@ -45,54 +45,54 @@ const PrintableDocument: React.FC<PrintableDocumentProps> = ({
       }}
     >
       {/* Header */}
-      <Box sx={{ marginBottom: 3 }}>
+      <Box sx={{ marginBottom: 3 }} className="company-header">
         {headerInfo && (
           <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
             <Box>
               {headerInfo.companyName && (
-                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: '16px' }}>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: '16px', color: '#2c3e50' }}>
                   {headerInfo.companyName}
                 </Typography>
               )}
               {headerInfo.companyAddress && (
-                <Typography variant="body2" sx={{ fontSize: '11px' }}>
+                <Typography variant="body2" sx={{ fontSize: '11px', color: '#666' }}>
                   {headerInfo.companyAddress}
                 </Typography>
               )}
               {headerInfo.companyTaxId && (
-                <Typography variant="body2" sx={{ fontSize: '11px' }}>
+                <Typography variant="body2" sx={{ fontSize: '11px', color: '#666' }}>
                   ח.פ: {headerInfo.companyTaxId}
                 </Typography>
               )}
               {headerInfo.companyPhone && (
-                <Typography variant="body2" sx={{ fontSize: '11px' }}>
+                <Typography variant="body2" sx={{ fontSize: '11px', color: '#666' }}>
                   טלפון: {headerInfo.companyPhone}
                 </Typography>
               )}
               {headerInfo.companyEmail && (
-                <Typography variant="body2" sx={{ fontSize: '11px' }}>
+                <Typography variant="body2" sx={{ fontSize: '11px', color: '#666' }}>
                   דוא"ל: {headerInfo.companyEmail}
                 </Typography>
               )}
             </Box>
             <Box sx={{ textAlign: 'right' }}>
-              <Typography variant="h5" component="div" sx={{ fontWeight: 'bold', marginBottom: 1 }}>
+              <Typography variant="h5" component="div" className="document-title">
                 {title}
               </Typography>
               {documentNumber && (
-                <Typography variant="body2" sx={{ fontSize: '11px' }}>
+                <Typography variant="body2" sx={{ fontSize: '12px', fontWeight: 'bold', color: '#2c3e50' }}>
                   מס' מסמך: {documentNumber}
                 </Typography>
               )}
               {documentDate && (
-                <Typography variant="body2" sx={{ fontSize: '11px' }}>
+                <Typography variant="body2" sx={{ fontSize: '12px', fontWeight: 'bold', color: '#2c3e50' }}>
                   תאריך: {documentDate.toLocaleDateString('he-IL')}
                 </Typography>
               )}
             </Box>
           </Box>
         )}
-        <Divider sx={{ borderColor: 'black', borderWidth: 1 }} />
+        <Divider sx={{ borderColor: '#2c3e50', borderWidth: 2, mt: 2 }} />
       </Box>
 
       {/* Content */}
