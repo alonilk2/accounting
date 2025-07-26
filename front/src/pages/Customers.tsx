@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -28,6 +28,7 @@ import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useUIStore } from '../stores';
 import { useCustomers } from '../hooks/useCustomers';
+import { useDebounce } from '../hooks/useDebounce';
 import type { Customer } from '../types/entities';
 import CustomerDocumentsDialog from '../components/customers/CustomerDocumentsDialog';
 import { textFieldStyles, dialogStyles, paperStyles, buttonStyles } from '../styles/formStyles';
@@ -47,6 +48,7 @@ const Customers = () => {
   } = useCustomers();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500); // 500ms debounce delay
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,
@@ -208,23 +210,33 @@ const Customers = () => {
     }
   };
 
-  // Handle search with debouncing
-  const handleSearch = (newSearchTerm: string) => {
-    setSearchTerm(newSearchTerm);
-    const newPaginationModel = { ...paginationModel, page: 0 };
-    setPaginationModel(newPaginationModel);
+  // Handle debounced search
+  const performSearch = useCallback(() => {
+    const newPaginationModel = { page: 0, pageSize: paginationModel.pageSize };
+    if (paginationModel.page !== 0) {
+      setPaginationModel(newPaginationModel);
+    }
     loadCustomers({
-      searchTerm: newSearchTerm,
-      page: newPaginationModel.page + 1, // API uses 1-based pagination
+      searchTerm: debouncedSearchTerm,
+      page: 1, // API uses 1-based pagination
       pageSize: newPaginationModel.pageSize,
     });
+  }, [debouncedSearchTerm, loadCustomers, paginationModel.pageSize, paginationModel.page]);
+
+  useEffect(() => {
+    performSearch();
+  }, [performSearch]);
+
+  // Handle search input change (immediate UI update, debounced API call)
+  const handleSearchChange = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
   };
 
   // Handle pagination changes
   const handlePaginationChange = (newPaginationModel: { page: number; pageSize: number }) => {
     setPaginationModel(newPaginationModel);
     loadCustomers({
-      searchTerm,
+      searchTerm: debouncedSearchTerm,
       page: newPaginationModel.page + 1, // API uses 1-based pagination
       pageSize: newPaginationModel.pageSize,
     });
@@ -233,7 +245,7 @@ const Customers = () => {
   // Handle refresh
   const handleRefresh = () => {
     loadCustomers({
-      searchTerm,
+      searchTerm: debouncedSearchTerm,
       page: paginationModel.page + 1,
       pageSize: paginationModel.pageSize,
     });
@@ -432,7 +444,7 @@ const Customers = () => {
             variant="outlined"
             placeholder={language === 'he' ? 'חיפוש לקוחות...' : 'Search customers...'}
             value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
