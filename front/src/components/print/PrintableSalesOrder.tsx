@@ -58,8 +58,9 @@ const PrintableSalesOrder: React.FC<PrintableSalesOrderProps> = ({
 
   const getDocumentTitle = () => {
     switch (salesOrder.status) {
-      case 'Quote': return 'הצעת מחיר';
+      case 'Draft': return 'טיוטת הזמנה';
       case 'Confirmed': return 'אישור הזמנה';
+      case 'PartiallyShipped': return 'משלוח חלקי';
       case 'Shipped': return 'תעודת משלוח';
       case 'Completed': return 'הזמנה הושלמה';
       default: return 'הזמנה';
@@ -117,18 +118,14 @@ const PrintableSalesOrder: React.FC<PrintableSalesOrderProps> = ({
             <Typography variant="body2" sx={{ fontSize: '11px' }}>
               <strong>תאריך הזמנה:</strong> {salesOrder.orderDate.toLocaleDateString('he-IL')}
             </Typography>
-            {salesOrder.dueDate && (
-              <Typography variant="body2" sx={{ fontSize: '11px' }}>
-                <strong>תאריך יעד:</strong> {salesOrder.dueDate.toLocaleDateString('he-IL')}
-              </Typography>
-            )}
           </Box>
           <Box>
             <Typography variant="body2" sx={{ fontSize: '11px' }}>
               <strong>סטטוס:</strong> {(() => {
                 switch (salesOrder.status) {
-                  case 'Quote': return 'הצעת מחיר';
+                  case 'Draft': return 'טיוטה';
                   case 'Confirmed': return 'הזמנה מאושרת';
+                  case 'PartiallyShipped': return 'נשלחה חלקית';
                   case 'Shipped': return 'נשלחה';
                   case 'Completed': return 'הושלמה';
                   default: return salesOrder.status;

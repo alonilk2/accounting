@@ -13,27 +13,24 @@ namespace backend.Controllers;
 
 /// <summary>
 /// API controller for customer management operations
+/// Uses BaseApiController for standardized error handling and response patterns
 /// </summary>
-[ApiController]
 [Route("api/[controller]")]
-[Produces("application/json")]
-public class CustomersController : ControllerBase
+public class CustomersController : BaseApiController
 {
     private readonly AccountingDbContext _context;
-    private readonly ILogger<CustomersController> _logger;
     private readonly ICustomerDocumentService _customerDocumentService;
     private readonly ICustomerFunctionService _customerFunctionService;
     private readonly ICustomerService _customerService;
 
     public CustomersController(
-        AccountingDbContext context, 
+        AccountingDbContext context,
         ILogger<CustomersController> logger,
         ICustomerDocumentService customerDocumentService,
         ICustomerFunctionService customerFunctionService,
-        ICustomerService customerService)
+        ICustomerService customerService) : base(logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _customerDocumentService = customerDocumentService ?? throw new ArgumentNullException(nameof(customerDocumentService));
         _customerFunctionService = customerFunctionService ?? throw new ArgumentNullException(nameof(customerFunctionService));
         _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
@@ -52,7 +49,7 @@ public class CustomersController : ControllerBase
     [ProducesResponseType<PaginatedResponse<CustomerDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<PaginatedResponse<CustomerDto>>> GetCustomers(
+    public async Task<ActionResult<PaginatedResponse<backend.DTOs.Core.CustomerDto>>> GetCustomers(
         [FromQuery] int? companyId = null,
         [FromQuery] string? searchTerm = null,
         [FromQuery] bool? isActive = null,
@@ -62,22 +59,20 @@ public class CustomersController : ControllerBase
     {
         try
         {
-            // In a real app, companyId would come from authenticated user context
-            var currentCompanyId = companyId ?? 1; // Default for now
+            var currentCompanyId = GetCurrentCompanyId(companyId);
+            var (validPage, validPageSize) = ValidatePagination(page, pageSize);
             
             _logger.LogInformation("Retrieving customers for company {CompanyId}, page {Page}, pageSize {PageSize}", 
-                currentCompanyId, page, pageSize);
+                currentCompanyId, validPage, validPageSize);
 
-            // Use the injected customer service with pagination
             var result = await _customerService.GetCustomersAsync(
-                currentCompanyId, searchTerm, isActive, page, pageSize, cancellationToken);
+                currentCompanyId, searchTerm, isActive, validPage, validPageSize, cancellationToken);
 
-            return Ok(result);
+            return SuccessResponse(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving customers for company {CompanyId}", companyId ?? 1);
-            return StatusCode(500, new { message = "An error occurred while retrieving customers" });
+            return HandleException(ex, "retrieving customers");
         }
     }
 
@@ -85,50 +80,51 @@ public class CustomersController : ControllerBase
     /// Gets a specific customer by ID
     /// </summary>
     /// <param name="id">Customer ID</param>
+    /// <param name="companyId">Company ID for multi-tenant filtering</param>
     /// <returns>Customer details</returns>
     [HttpGet("{id}")]
     [ProducesResponseType<CustomerDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<CustomerDto>> GetCustomer(int id)
+    public async Task<ActionResult<backend.DTOs.Core.CustomerDto>> GetCustomer(int id, [FromQuery] int? companyId = null)
     {
         try
         {
-            _logger.LogInformation("Retrieving customer {CustomerId}", id);
+            var currentCompanyId = GetCurrentCompanyId(companyId);
+            _logger.LogInformation("Retrieving customer {CustomerId} for company {CompanyId}", id, currentCompanyId);
 
-            var customer = await _context.Customers
-                .Where(c => c.Id == id)
-                .Select(c => new CustomerDto
-                {
-                    Id = c.Id,
-                    CompanyId = c.CompanyId,
-                    Name = c.Name,
-                    Address = c.Address ?? string.Empty,
-                    Contact = c.Contact ?? c.Name,
-                    TaxId = c.TaxId,
-                    Email = c.Email,
-                    Phone = c.Phone,
-                    Website = c.Website,
-                    PaymentTerms = c.PaymentTermsDays,
-                    CreditLimit = c.CreditLimit,
-                    IsActive = c.IsActive,
-                    CreatedAt = c.CreatedAt,
-                    UpdatedAt = c.UpdatedAt
-                })
-                .FirstOrDefaultAsync();
+            var customer = await _customerService.GetByIdAsync(id, currentCompanyId);
 
             if (customer == null)
             {
-                _logger.LogWarning("Customer {CustomerId} not found", id);
-                return NotFound(new { message = $"Customer with ID {id} not found" });
+                _logger.LogWarning("Customer {CustomerId} not found for company {CompanyId}", id, currentCompanyId);
+                return ErrorResponse($"Customer with ID {id} not found", 404);
             }
 
-            return Ok(customer);
+            // Convert to DTO
+            var customerDto = new backend.DTOs.Core.CustomerDto
+            {
+                Id = customer.Id,
+                CompanyId = customer.CompanyId,
+                Name = customer.Name,
+                Address = customer.Address ?? string.Empty,
+                Contact = customer.Contact ?? customer.Name,
+                TaxId = customer.TaxId,
+                Email = customer.Email,
+                Phone = customer.Phone,
+                Website = customer.Website,
+                PaymentTerms = customer.PaymentTermsDays,
+                CreditLimit = customer.CreditLimit,
+                IsActive = customer.IsActive,
+                CreatedAt = customer.CreatedAt,
+                UpdatedAt = customer.UpdatedAt
+            };
+
+            return SuccessResponse(customerDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving customer {CustomerId}", id);
-            return StatusCode(500, new { message = "An error occurred while retrieving the customer" });
+            return HandleException(ex, $"retrieving customer {id}");
         }
     }
 

@@ -20,53 +20,122 @@ public static class ServiceRegistration
 {
     /// <summary>
     /// Register all business services in the DI container
+    /// Organized by functional areas for better maintainability
     /// </summary>
     /// <param name="services">Service collection</param>
     /// <param name="configuration">Application configuration</param>
     /// <returns>Service collection for chaining</returns>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Core services
+        // Core business services
+        services.AddCoreServices();
+        
+        // Sales and customer management
+        services.AddSalesServices();
+        
+        // Purchasing and supplier management  
+        services.AddPurchasingServices();
+        
+        // Inventory management
+        services.AddInventoryServices();
+        
+        // Accounting and financial services
+        services.AddAccountingServices();
+        
+        // AI and document processing services
+        services.AddAIServices();
+        
+        // Printing and reporting services
+        services.AddPrintingServices();
+        
+        // Azure services
+        services.AddAzureServices(configuration);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Register core business services
+    /// </summary>
+    private static IServiceCollection AddCoreServices(this IServiceCollection services)
+    {
         services.AddScoped<ICompanyService, CompanyService>();
         services.AddScoped<ICustomerService, backend.Services.Core.CustomerService>();
+        services.AddScoped<ISupplierService, backend.Services.Suppliers.SupplierService>();
         
-        // Sales services
+        return services;
+    }
+
+    /// <summary>
+    /// Register sales and customer management services
+    /// </summary>
+    private static IServiceCollection AddSalesServices(this IServiceCollection services)
+    {
         services.AddScoped<ISalesOrderService, SalesOrderService>();
         services.AddScoped<ICustomerDocumentService, CustomerDocumentService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IQuoteService, QuoteService>();
         services.AddScoped<ITaxInvoiceReceiptService, TaxInvoiceReceiptService>();
         
-        // Purchasing services
+        return services;
+    }
+
+    /// <summary>
+    /// Register purchasing services
+    /// </summary>
+    private static IServiceCollection AddPurchasingServices(this IServiceCollection services)
+    {
         services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
-        services.AddScoped<ISupplierService, backend.Services.Suppliers.SupplierService>();
         
-        // Inventory services
+        return services;
+    }
+
+    /// <summary>
+    /// Register inventory management services
+    /// </summary>
+    private static IServiceCollection AddInventoryServices(this IServiceCollection services)
+    {
         services.AddScoped<IInventoryService, InventoryService>();
         
-        // Accounting services
+        return services;
+    }
+
+    /// <summary>
+    /// Register accounting and financial services
+    /// </summary>
+    private static IServiceCollection AddAccountingServices(this IServiceCollection services)
+    {
         services.AddScoped<IChartOfAccountsService, ChartOfAccountsService>();
         services.AddScoped<IJournalEntryService, JournalEntryService>();
         services.AddScoped<IExpenseService, ExpenseService>();
         
-        // Print services
-        services.AddScoped<IPrintService, PrintService>();
-        
-        // Reports services
-        services.AddScoped<ICustomerStatementService, CustomerStatementService>();
-        
-        // AI Assistant services
+        return services;
+    }
+
+    /// <summary>
+    /// Register AI and document processing services
+    /// </summary>
+    private static IServiceCollection AddAIServices(this IServiceCollection services)
+    {
         services.AddScoped<IAIAssistantService, AIAssistantService>();
-        // AI Services - Azure OpenAI with Managed Identity
         services.AddScoped<IOpenAIService, OpenAIService>();
-        // Document scanning service with Azure Form Recognizer
         services.AddScoped<IDocumentScanService, DocumentScanService>();
-        // AI Function Services for function calling
         services.AddScoped<ICustomerFunctionService, CustomerFunctionService>();
         services.AddScoped<IInvoiceFunctionService, InvoiceFunctionService>();
         
         // Azure Identity and Key Vault
         services.AddScoped<DefaultAzureCredential>();
+        
+        return services;
+    }
+
+    /// <summary>
+    /// Register printing and reporting services
+    /// </summary>
+    private static IServiceCollection AddPrintingServices(this IServiceCollection services)
+    {
+        services.AddScoped<IPrintService, PrintService>();
+        services.AddScoped<ICustomerStatementService, CustomerStatementService>();
         
         return services;
     }

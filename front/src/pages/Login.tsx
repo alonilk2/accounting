@@ -52,11 +52,14 @@ const Login = () => {
         };
 
         const mockCompany = {
-          id: '1',
+          id: 1,
           name: 'Demo Company Ltd.',
           israelTaxId: '123456789',
           address: 'Tel Aviv, Israel',
           currency: 'ILS',
+          fiscalYearStartMonth: 1,
+          timeZone: 'Asia/Jerusalem',
+          isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
         };

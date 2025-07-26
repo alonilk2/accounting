@@ -32,6 +32,8 @@ interface BackendDocumentDto {
   canExportPdf: boolean;
 }
 
+// Removed unused interface - handled by shared pagination types
+/*
 interface BackendPaginatedResponse {
   documents: BackendDocumentDto[];
   totalCount: number;
@@ -40,6 +42,7 @@ interface BackendPaginatedResponse {
   pageSize: number;
   totalPages: number;
 }
+*/
 
 interface BackendMonthlyGroupDto {
   monthKey: string;
@@ -49,11 +52,14 @@ interface BackendMonthlyGroupDto {
   totalAmount: number;
 }
 
+// Removed unused interface - handled by shared pagination types
+/*
 interface BackendSalesDocumentsResponse {
   monthlyGroups: BackendMonthlyGroupDto[];
   totalDocuments: number;
   totalAmount: number;
 }
+*/
 
 class SalesDocumentsService {
   

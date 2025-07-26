@@ -257,9 +257,10 @@ export const PurchaseInvoiceDialog: React.FC<PurchaseInvoiceDialogProps> = ({
   const addLineItem = () => {
     if (!newLineItem.description.trim()) return;
 
-    const subtotal =
-      newLineItem.quantity * newLineItem.unitCost - newLineItem.discountAmount;
-    const taxAmount = subtotal * (newLineItem.taxRate / 100);
+    // Note: subtotal calculation used for validation in future version
+    // const subtotal = newLineItem.quantity * newLineItem.unitCost - newLineItem.discountAmount;
+    // Note: taxAmount calculated but not used in current version
+    // const taxAmount = subtotal * (newLineItem.taxRate / 100);
 
     setLineItems([...lineItems, { ...newLineItem }]);
     setNewLineItem({
@@ -283,7 +284,7 @@ export const PurchaseInvoiceDialog: React.FC<PurchaseInvoiceDialogProps> = ({
         ...newLineItem,
         itemId: item.id,
         description: item.name,
-        unitCost: item.purchasePrice || 0,
+        unitCost: item.costPrice || 0,
         unit: item.unit || "יח'",
       });
     }

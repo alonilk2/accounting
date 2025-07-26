@@ -1,5 +1,5 @@
 import { Box, Typography, Button, Grid, Card, CardContent, Tabs, Tab } from '@mui/material';
-import { Download as DownloadIcon, AccountBox as AccountBoxIcon } from '@mui/icons-material';
+import { Download as DownloadIcon } from '@mui/icons-material';
 import { useState } from 'react';
 import { useUIStore } from '../stores';
 import CustomerStatementGenerator from '../components/reports/CustomerStatementGenerator';

@@ -32,7 +32,8 @@ import {
 import { useUIStore } from '../stores';
 import { useSuppliers } from '../hooks';
 import type { Supplier } from '../types/entities';
-import type { SupplierFilters } from '../types/pagination';
+// Import removed - unused type
+// import type { SupplierFilters } from '../types/pagination';
 import { 
   textFieldStyles, 
   dialogStyles, 
