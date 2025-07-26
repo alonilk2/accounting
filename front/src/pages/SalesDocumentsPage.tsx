@@ -21,8 +21,8 @@ import {
   Snackbar,
   Fab
 } from '@mui/material';
-import type { GridColDef, GridRowParams } from '@mui/x-data-grid';
-import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import {
   Print as PrintIcon,
   PictureAsPdf as PdfIcon,
@@ -323,74 +323,101 @@ const SalesDocumentsPage: React.FC = () => {
     },
     {
       field: 'actions',
-      type: 'actions',
       headerName: 'פעולות',
-      width: 200,
-      getActions: (params: GridRowParams) => {
+      width: 300,
+      renderCell: (params) => {
         const row = params.row as SalesDocument;
-        const actions = [];
-
-        if (row.canPrint) {
-          actions.push(
-            <GridActionsCellItem
-              key="print"
-              icon={<PrintIcon />}
-              label="הדפס"
-              onClick={() => handlePrint(row)}
-              showInMenu
-            />
-          );
-        }
-
-        if (row.canExportPdf) {
-          actions.push(
-            <GridActionsCellItem
-              key="pdf"
-              icon={<PdfIcon />}
-              label="יצא ל-PDF"
-              onClick={() => handleExportPdf(row)}
-              showInMenu
-            />
-          );
-        }
-
-        if (row.canGenerateReceipt) {
-          actions.push(
-            <GridActionsCellItem
-              key="receipt"
-              icon={<ReceiptIcon />}
-              label="צור קבלה"
-              onClick={() => handleGenerateReceipt(row)}
-              showInMenu
-            />
-          );
-        }
-
-        if (row.canEmail) {
-          actions.push(
-            <GridActionsCellItem
-              key="email"
-              icon={<EmailIcon />}
-              label="שלח במייל"
-              onClick={() => handleEmail(row)}
-              showInMenu
-            />
-          );
-        }
-
-        if (row.canCancel) {
-          actions.push(
-            <GridActionsCellItem
-              key="cancel"
-              icon={<CancelIcon />}
-              label="בטל"
-              onClick={() => handleCancel(row)}
-              showInMenu
-            />
-          );
-        }
-
-        return actions;
+        return (
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            {row.canPrint && (
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<PrintIcon />}
+                onClick={() => handlePrint(row)}
+                sx={{
+                  minWidth: 'auto',
+                  px: 1.5,
+                  fontSize: '0.75rem',
+                  borderRadius: 2
+                }}
+              >
+                הדפס
+              </Button>
+            )}
+            
+            {row.canExportPdf && (
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<PdfIcon />}
+                onClick={() => handleExportPdf(row)}
+                sx={{
+                  minWidth: 'auto',
+                  px: 1.5,
+                  fontSize: '0.75rem',
+                  borderRadius: 2
+                }}
+              >
+                PDF
+              </Button>
+            )}
+            
+            {row.canGenerateReceipt && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="success"
+                startIcon={<ReceiptIcon />}
+                onClick={() => handleGenerateReceipt(row)}
+                sx={{
+                  minWidth: 'auto',
+                  px: 1.5,
+                  fontSize: '0.75rem',
+                  borderRadius: 2
+                }}
+              >
+                קבלה
+              </Button>
+            )}
+            
+            {row.canEmail && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="info"
+                startIcon={<EmailIcon />}
+                onClick={() => handleEmail(row)}
+                sx={{
+                  minWidth: 'auto',
+                  px: 1.5,
+                  fontSize: '0.75rem',
+                  borderRadius: 2
+                }}
+              >
+                מייל
+              </Button>
+            )}
+            
+            {row.canCancel && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                startIcon={<CancelIcon />}
+                onClick={() => handleCancel(row)}
+                sx={{
+                  minWidth: 'auto',
+                  px: 1.5,
+                  fontSize: '0.75rem',
+                  borderRadius: 2
+                }}
+              >
+                בטל
+              </Button>
+            )}
+          </Box>
+        );
       }
     }
   ];

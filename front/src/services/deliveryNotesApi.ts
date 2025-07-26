@@ -2,6 +2,7 @@
 
 import api from './api';
 import type { DeliveryNote } from '../types/entities';
+import type { PaginatedResponse } from '../types/pagination';
 
 // Match the server-side DeliveryNoteStatus enum
 export type DeliveryNoteStatus = 'Draft' | 'Prepared' | 'InTransit' | 'Delivered' | 'Returned' | 'Cancelled';
@@ -241,7 +242,7 @@ export class DeliveryNotesApi {
     filters?: DeliveryNoteFilters,
     page: number = 1,
     pageSize: number = 50
-  ): Promise<DeliveryNote[]> {
+  ): Promise<PaginatedResponse<DeliveryNote>> {
     try {
       const params = new URLSearchParams({
         companyId: companyId.toString(),
@@ -269,23 +270,40 @@ export class DeliveryNotesApi {
         params.append('searchTerm', filters.searchTerm);
       }
 
-      const response = await api.get<DeliveryNoteResponse[]>(
+      const response = await api.get<PaginatedResponse<DeliveryNoteResponse>>(
         `${this.baseUrl}?${params.toString()}`
       );
+
+      console.log('API Response received:', response.data);
 
       // Check if response data exists
       if (!response.data) {
         console.warn('No delivery notes data received from server');
-        return [];
+        return {
+          data: [],
+          page: page,
+          pageSize: pageSize,
+          totalCount: 0,
+          totalPages: 0,
+          hasPreviousPage: false,
+          hasNextPage: false
+        };
       }
 
-      // Ensure response data is an array
-      if (!Array.isArray(response.data)) {
-        console.warn('Delivery notes data is not an array:', response.data);
-        return [];
-      }
+      // Map the delivery notes from the paginated response
+      const mappedDeliveryNotes = (response.data.data || []).map(mapDeliveryNoteResponseToEntity);
 
-      return response.data.map(mapDeliveryNoteResponseToEntity);
+      console.log('Mapped delivery notes:', mappedDeliveryNotes);
+
+      return {
+        data: mappedDeliveryNotes,
+        page: response.data.page || page,
+        pageSize: response.data.pageSize || pageSize,
+        totalCount: response.data.totalCount || 0,
+        totalPages: response.data.totalPages || 0,
+        hasPreviousPage: response.data.hasPreviousPage || false,
+        hasNextPage: response.data.hasNextPage || false
+      };
     } catch (error) {
       console.error('Error fetching delivery notes:', error);
       throw error;

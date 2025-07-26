@@ -56,29 +56,31 @@ import { enhancedDataGridStyles } from '../styles/enhancedStyles';
 
 // Helper function to get status label
 const getStatusLabel = (status: string): string => {
-  // Map delivery note statuses to display labels
+  // Map delivery note statuses to display labels (case-insensitive)
+  const normalizedStatus = status.toLowerCase();
   const deliveryStatusLabels: Record<string, string> = {
-    'Draft': 'טיוטה',
-    'Prepared': 'מוכנה למשלוח',
-    'InTransit': 'בדרך',
-    'Delivered': 'נמסרה',
-    'Returned': 'הוחזרה',
-    'Cancelled': 'בוטלה'
+    'draft': 'טיוטה',
+    'prepared': 'מוכנה למשלוח',
+    'intransit': 'בדרך',
+    'delivered': 'נמסרה',
+    'returned': 'הוחזרה',
+    'cancelled': 'בוטלה'
   };
-  return deliveryStatusLabels[status] || status;
+  return deliveryStatusLabels[normalizedStatus] || status;
 };
 
 // Helper function to get status color
 const getStatusColor = (status: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+  const normalizedStatus = status.toLowerCase();
   const deliveryStatusColors: Record<string, 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'> = {
-    'Draft': 'default',
-    'Prepared': 'info',
-    'InTransit': 'warning',
-    'Delivered': 'success',
-    'Returned': 'error',
-    'Cancelled': 'error'
+    'draft': 'default',
+    'prepared': 'info',
+    'intransit': 'warning',
+    'delivered': 'success',
+    'returned': 'error',
+    'cancelled': 'error'
   };
-  return deliveryStatusColors[status] || 'default';
+  return deliveryStatusColors[normalizedStatus] || 'default';
 };
 
 const DeliveryNotesPage: React.FC = () => {
@@ -127,16 +129,16 @@ const DeliveryNotesPage: React.FC = () => {
         searchTerm: searchTerm || undefined
       };
 
-      const data = await deliveryNotesApi.getDeliveryNotes(
+      const response = await deliveryNotesApi.getDeliveryNotes(
         currentCompany?.id || 1,
         filters,
         paginationModel.page + 1,
         paginationModel.pageSize
       );
       
-      setDeliveryNotes(data);
-      // Note: API should return totalCount, for now we use data length
-      setTotalCount(data.length);
+      // Extract data from paginated response
+      setDeliveryNotes(response.data || []);
+      setTotalCount(response.totalCount || 0);
     } catch (err) {
       console.error('Error loading delivery notes:', err);
       setError('שגיאה בטעינת תעודות המשלוח');
@@ -258,19 +260,23 @@ const DeliveryNotesPage: React.FC = () => {
   };
 
   const canEdit = (deliveryNote: DeliveryNote) => {
-    return deliveryNote.status === 'Draft' || deliveryNote.status === 'Prepared';
+    const status = deliveryNote.status.toLowerCase();
+    return status === 'draft' || status === 'prepared';
   };
 
   const canCancel = (deliveryNote: DeliveryNote) => {
-    return deliveryNote.status !== 'Delivered' && deliveryNote.status !== 'Cancelled';
+    const status = deliveryNote.status.toLowerCase();
+    return status !== 'delivered' && status !== 'cancelled';
   };
 
   const canMarkAsDelivered = (deliveryNote: DeliveryNote) => {
-    return deliveryNote.status === 'InTransit';
+    const status = deliveryNote.status.toLowerCase();
+    return status === 'intransit';
   };
 
   const canMarkInTransit = (deliveryNote: DeliveryNote) => {
-    return deliveryNote.status === 'Prepared';
+    const status = deliveryNote.status.toLowerCase();
+    return status === 'prepared';
   };
 
   // Define DataGrid columns

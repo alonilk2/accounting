@@ -27,6 +27,8 @@ import type {
 } from "../types/reports";
 import type {
   PaginatedResponse,
+  BackendApiResponse,
+  PaginatedApiResponse,
   CustomerFilters,
   SupplierFilters,
 } from "../types/pagination";
@@ -103,9 +105,10 @@ export const customersAPI = {
       params.append("isActive", filters.isActive.toString());
 
     const response = await api.get(`/customers?${params.toString()}`);
+    console.log("Customers API Response:", response);
     return {
       ...response.data,
-      data: (response.data?.data || []).map((customer: Customer) => ({
+      data: response?.data?.data?.data.map((customer: Customer) => ({
         ...customer,
         createdAt: new Date(customer.createdAt),
         updatedAt: new Date(customer.updatedAt),

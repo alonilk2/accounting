@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models.Sales;
 using backend.DTOs.Sales;
+using backend.DTOs.Shared;
 using System.ComponentModel.DataAnnotations;
 
 namespace backend.Controllers;
@@ -37,12 +38,12 @@ public class DeliveryNotesController : ControllerBase
     /// <param name="searchTerm">Optional search term</param>
     /// <param name="page">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 50)</param>
-    /// <returns>List of delivery notes</returns>
+    /// <returns>Paginated list of delivery notes</returns>
     [HttpGet]
-    [ProducesResponseType<IEnumerable<DeliveryNoteDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<PaginatedResponse<DeliveryNoteDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<DeliveryNoteDto>>> GetDeliveryNotes(
+    public async Task<ActionResult<PaginatedResponse<DeliveryNoteDto>>> GetDeliveryNotes(
         [FromQuery] int? companyId = null,
         [FromQuery] DeliveryNoteStatus? status = null,
         [FromQuery] int? customerId = null,
@@ -96,6 +97,9 @@ public class DeliveryNotesController : ControllerBase
                     (dn.DriverName != null && dn.DriverName.Contains(searchTerm)) ||
                     (dn.VehiclePlate != null && dn.VehiclePlate.Contains(searchTerm)));
             }
+
+            // Get total count before pagination
+            var totalCount = await query.CountAsync();
 
             var deliveryNotes = await query
                 .OrderByDescending(dn => dn.DeliveryDate)
@@ -156,7 +160,11 @@ public class DeliveryNotesController : ControllerBase
                 })
                 .ToListAsync();
 
-            return Ok(deliveryNotes);
+            // Create paginated response
+            var paginatedResponse = PaginatedResponse<DeliveryNoteDto>.Create(
+                deliveryNotes, page, pageSize, totalCount);
+
+            return Ok(paginatedResponse);
         }
         catch (Exception ex)
         {

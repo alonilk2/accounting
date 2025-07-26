@@ -9,6 +9,17 @@ export interface PaginatedResponse<T> {
   hasNextPage: boolean;
 }
 
+// Backend API Response wrapper (includes timestamp field)
+export interface BackendApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+  timestamp: string;
+}
+
+// Type alias for paginated API responses - this represents the full nested structure
+export type PaginatedApiResponse<T> = BackendApiResponse<PaginatedResponse<T>>;
+
 export interface PaginationRequest {
   page?: number;
   pageSize?: number;
