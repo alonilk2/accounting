@@ -9,6 +9,7 @@ using backend.Models.Inventory;
 using backend.Models.POS;
 using backend.Models.Audit;
 using backend.Models.AI;
+using backend.Models.Tax;
 
 namespace backend.Data;
 
@@ -75,6 +76,9 @@ public class AccountingDbContext : DbContext
     // AI Assistant
     public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
     public DbSet<AIAssistantConfig> AIAssistantConfigs { get; set; } = null!;
+
+    // Tax Reporting
+    public DbSet<Form6111> Form6111Reports { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
