@@ -33,19 +33,17 @@ public class SalesController : BaseApiController
     /// <param name="companyId">Company ID for multi-tenant filtering</param>
     /// <param name="status">Optional status filter</param>
     /// <param name="customerId">Optional customer filter</param>
-    /// <param name="searchTerm">Optional search term for order number, customer name, or notes</param>
     /// <param name="page">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 50)</param>
-    /// <returns>Paginated list of sales orders</returns>
+    /// <returns>List of sales orders</returns>
     [HttpGet("orders")]
-    [ProducesResponseType<PaginatedResponse<SalesOrderDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<IEnumerable<SalesOrderDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<PaginatedResponse<SalesOrderDto>>> GetSalesOrders(
+    public async Task<ActionResult<IEnumerable<SalesOrderDto>>> GetSalesOrders(
         [FromQuery] int? companyId = null,
         [FromQuery] SalesOrderStatus? status = null,
         [FromQuery] int? customerId = null,
-        [FromQuery] string? searchTerm = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
@@ -74,18 +72,6 @@ public class SalesController : BaseApiController
             {
                 query = query.Where(so => so.CustomerId == customerId.Value);
             }
-
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-            {
-                query = query.Where(so => 
-                    so.OrderNumber.Contains(searchTerm) ||
-                    so.Customer.Name.Contains(searchTerm) ||
-                    (so.Notes != null && so.Notes.Contains(searchTerm))
-                );
-            }
-
-            // Get total count for pagination
-            var totalCount = await query.CountAsync();
 
             var salesOrders = await query
                 .OrderByDescending(so => so.OrderDate)
@@ -131,8 +117,7 @@ public class SalesController : BaseApiController
                 })
                 .ToListAsync();
 
-            var paginatedResult = PaginatedResponse<SalesOrderDto>.Create(salesOrders, page, pageSize, totalCount);
-            return SuccessResponse(paginatedResult);
+            return SuccessResponse(salesOrders.AsEnumerable());
         }
         catch (Exception ex)
         {

@@ -67,11 +67,8 @@ export const invoiceService = {
   },
 
   // Get a specific invoice
-  async getInvoice(id: number, companyId?: number): Promise<Invoice> {
-    const params: Record<string, unknown> = {};
-    if (companyId) params.companyId = companyId;
-    
-    const response = await api.get<Invoice>(`/invoices/${id}`, { params });
+  async getInvoice(id: number): Promise<Invoice> {
+    const response = await api.get<Invoice>(`/invoices/${id}`);
     return {
       ...response.data,
       invoiceDate: new Date(response.data.invoiceDate),

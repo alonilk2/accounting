@@ -43,7 +43,6 @@ import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
 import type { SalesOrder, SalesOrderStatus, Customer } from '../../types/entities';
-import type { PaginatedResponse } from '../../types/pagination';
 import salesOrdersApi from '../../services/salesOrdersApi';
 import { customersApi } from '../../services/customersApi';
 import CreateSalesOrderDialog from './CreateSalesOrderDialog';
@@ -98,14 +97,6 @@ export default function SalesOrdersList({
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState(0);
-  const [paginationInfo, setPaginationInfo] = useState({
-    page: 1,
-    pageSize: 25,
-    totalPages: 0,
-    hasNextPage: false,
-    hasPreviousPage: false
-  });
 
   // UI state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -114,6 +105,10 @@ export default function SalesOrdersList({
   const [customerFilter, setCustomerFilter] = useState<number | ''>('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 25,
+  });
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -125,30 +120,19 @@ export default function SalesOrdersList({
     try {
       setLoading(true);
       setError(null);
-      const paginatedResponse = await salesOrdersApi.getSalesOrders({
+      const ordersList = await salesOrdersApi.getSalesOrders({
         companyId,
         status: statusFilter || undefined,
-        customerId: customerFilter || undefined,
-        searchTerm: searchTerm || undefined,
-        page: paginationInfo.page,
-        pageSize: paginationInfo.pageSize
+        customerId: customerFilter || undefined
       });
-      
-      setOrders(paginatedResponse.data);
-      setTotalCount(paginatedResponse.totalCount);
-      setPaginationInfo(prev => ({
-        ...prev,
-        totalPages: paginatedResponse.totalPages,
-        hasNextPage: paginatedResponse.hasNextPage,
-        hasPreviousPage: paginatedResponse.hasPreviousPage
-      }));
+      setOrders(ordersList);
     } catch (err) {
       console.error('Error loading sales orders:', err);
       setError(isHebrew ? 'שגיאה בטעינת רשימת ההזמנות' : 'Error loading sales orders');
     } finally {
       setLoading(false);
     }
-  }, [companyId, statusFilter, customerFilter, searchTerm, paginationInfo.page, paginationInfo.pageSize, isHebrew]);
+  }, [companyId, statusFilter, customerFilter, isHebrew]);
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -163,14 +147,6 @@ export default function SalesOrdersList({
     loadOrders();
     loadCustomers();
   }, [loadOrders, loadCustomers]);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    setPaginationInfo(prev => ({
-      ...prev,
-      page: 1
-    }));
-  }, [statusFilter, customerFilter, searchTerm]);
 
   // Handle external dialog open requests
   useEffect(() => {
@@ -190,12 +166,19 @@ export default function SalesOrdersList({
 
   // Pagination functions
   const handlePaginationChange = (newPaginationModel: { page: number; pageSize: number }) => {
-    setPaginationInfo(prev => ({
-      ...prev,
-      page: newPaginationModel.page + 1, // DataGrid uses 0-based page, API uses 1-based
-      pageSize: newPaginationModel.pageSize
-    }));
+    setPaginationModel(newPaginationModel);
   };
+
+  // Filter orders based on search term
+  const filteredOrders = orders.filter(order => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      order.orderNumber.toLowerCase().includes(search) ||
+      order.customerName.toLowerCase().includes(search) ||
+      (order.notes && order.notes.toLowerCase().includes(search))
+    );
+  });
 
   const handleCreateSuccess = (newOrder: SalesOrder) => {
     setOrders([newOrder, ...orders]);
@@ -414,10 +397,11 @@ export default function SalesOrdersList({
     );
   }
 
-  // Calculate summary stats - Note: These are based on current page, not all orders  
-  const activeOrdersOnPage = orders.filter(o => o.status === 'Confirmed' || o.status === 'Shipped' || o.status === 'PartiallyShipped').length;
-  const totalValueOnPage = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const draftOrdersOnPage = orders.filter(o => o.status === 'Draft').length;
+  // Calculate summary stats - updated for sales order statuses only
+  const totalOrders = filteredOrders.length;
+  const activeOrders = filteredOrders.filter(o => o.status === 'Confirmed' || o.status === 'Shipped' || o.status === 'PartiallyShipped').length;
+  const totalValue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const draftOrders = filteredOrders.filter(o => o.status === 'Draft').length;
 
   return (
     <Box sx={{ 
@@ -526,7 +510,7 @@ export default function SalesOrdersList({
                 {isHebrew ? 'סה״כ הזמנות' : 'Total Orders'}
               </Typography>
               <Typography variant="h4" component="div" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                {totalCount}
+                {totalOrders}
               </Typography>
             </CardContent>
           </Card>
@@ -535,10 +519,10 @@ export default function SalesOrdersList({
           <Card sx={cardStyles}>
             <CardContent>
               <Typography color="textSecondary" gutterBottom sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                {isHebrew ? 'הזמנות פעילות (בעמוד)' : 'Active Orders (on page)'}
+                {isHebrew ? 'הזמנות פעילות' : 'Active Orders'}
               </Typography>
               <Typography variant="h4" component="div" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                {activeOrdersOnPage}
+                {activeOrders}
               </Typography>
             </CardContent>
           </Card>
@@ -547,10 +531,10 @@ export default function SalesOrdersList({
           <Card sx={cardStyles}>
             <CardContent>
               <Typography color="textSecondary" gutterBottom sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                {isHebrew ? 'ערך (בעמוד)' : 'Value (on page)'}
+                {isHebrew ? 'ערך כולל' : 'Total Value'}
               </Typography>
               <Typography variant="h4" component="div" sx={{ fontWeight: 600, color: 'success.main' }}>
-                ₪{totalValueOnPage.toLocaleString()}
+                ₪{totalValue.toLocaleString()}
               </Typography>
             </CardContent>
           </Card>
@@ -559,10 +543,10 @@ export default function SalesOrdersList({
           <Card sx={cardStyles}>
             <CardContent>
               <Typography color="textSecondary" gutterBottom sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                {isHebrew ? 'הזמנות טיוטה (בעמוד)' : 'Draft Orders (on page)'}
+                {isHebrew ? 'הזמנות טיוטה' : 'Draft Orders'}
               </Typography>
               <Typography variant="h4" component="div" sx={{ fontWeight: 600, color: 'warning.main' }}>
-                {draftOrdersOnPage}
+                {draftOrders}
               </Typography>
             </CardContent>
           </Card>
@@ -595,18 +579,15 @@ export default function SalesOrdersList({
         {/* Data Grid */}
         <Box sx={enhancedDataGridStyles}>
           <DataGrid
-            rows={orders}
+            rows={filteredOrders}
             columns={columns}
             loading={loading}
             pagination
-            paginationMode="server"
-            rowCount={totalCount}
-            paginationModel={{
-              page: paginationInfo.page - 1, // DataGrid uses 0-based page, convert from 1-based
-              pageSize: paginationInfo.pageSize
-            }}
+            paginationMode="client"
+            rowCount={filteredOrders.length}
+            paginationModel={paginationModel}
             onPaginationModelChange={handlePaginationChange}
-            pageSizeOptions={[10, 25, 50, 100]}
+            pageSizeOptions={[10, 25, 50]}
             disableRowSelectionOnClick
             localeText={
               isHebrew

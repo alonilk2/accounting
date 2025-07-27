@@ -29,11 +29,8 @@ export class ReceiptsService {
     return response.data;
   }
 
-  async getReceiptById(id: number, companyId?: number): Promise<ReceiptResponse> {
-    const params: Record<string, unknown> = {};
-    if (companyId) params.companyId = companyId;
-    
-    const response = await api.get<ReceiptResponse>(`${this.baseUrl}/${id}`, { params });
+  async getReceiptById(id: number): Promise<ReceiptResponse> {
+    const response = await api.get<ReceiptResponse>(`${this.baseUrl}/${id}`);
     return response.data;
   }
 
