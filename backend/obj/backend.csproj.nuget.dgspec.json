@@ -1,6 +1,7 @@
 {
   "format": 1,
   "restore": {
+<<<<<<< Updated upstream
     "/home/runner/work/accounting/accounting/backend/backend.csproj": {}
   },
   "projects": {
@@ -12,6 +13,19 @@
         "projectPath": "/home/runner/work/accounting/accounting/backend/backend.csproj",
         "packagesPath": "/home/runner/.nuget/packages/",
         "outputPath": "/home/runner/work/accounting/accounting/backend/obj/",
+=======
+    "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj": {}
+  },
+  "projects": {
+    "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
+        "projectName": "backend",
+        "projectPath": "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
+        "packagesPath": "C:\\Users\\aloni\\.nuget\\packages\\",
+        "outputPath": "c:\\Users\\aloni\\botaccount\\backend\\obj\\",
+>>>>>>> Stashed changes
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/runner/.nuget/NuGet/NuGet.Config"

@@ -1,8 +1,14 @@
 {
   "version": 2,
+<<<<<<< Updated upstream
   "dgSpecHash": "t6Y6VAKxP1NuBQjUhYns4Iu8XjRdKaSs2OMcqHMmIKM/vzc82iRT9w6E+YBXsoX9raugG8hy2mrwTj7wji2lpQ==",
   "success": true,
   "projectFilePath": "/home/runner/work/accounting/accounting/backend/backend.csproj",
+=======
+  "dgSpecHash": "RMFt4wSMSBw=",
+  "success": true,
+  "projectFilePath": "c:\\Users\\aloni\\botaccount\\backend\\backend.csproj",
+>>>>>>> Stashed changes
   "expectedPackageFiles": [
     "/home/runner/.nuget/packages/azure.ai.formrecognizer/4.1.0/azure.ai.formrecognizer.4.1.0.nupkg.sha512",
     "/home/runner/.nuget/packages/azure.ai.openai/2.1.0/azure.ai.openai.2.1.0.nupkg.sha512",

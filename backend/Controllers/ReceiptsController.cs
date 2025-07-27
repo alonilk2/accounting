@@ -109,10 +109,12 @@ public class ReceiptsController : BaseApiController
     /// Get a specific receipt
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<ReceiptDto>> GetReceipt(int id, int companyId)
+    public async Task<ActionResult<ReceiptDto>> GetReceipt(int id, [FromQuery] int? companyId = null)
     {
+        var currentCompanyId = companyId ?? 1;
+        
         var receipt = await _context.Receipts
-            .Where(r => r.Id == id && r.CompanyId == companyId && !r.IsDeleted)
+            .Where(r => r.Id == id && r.CompanyId == currentCompanyId && !r.IsDeleted)
             .Include(r => r.Invoice)
                 .ThenInclude(i => i.Customer)
             .FirstOrDefaultAsync();

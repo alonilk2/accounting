@@ -54,7 +54,7 @@ const PrintableIndividualDocument: React.FC<PrintableIndividualDocumentProps> = 
 
         switch (document.documentType) {
           case 'Invoice': {
-            const invoiceData = await invoiceService.getInvoice(document.id);
+            const invoiceData = await invoiceService.getInvoice(document.id, companyId);
             specificDocumentData = { invoice: invoiceData };
             break;
           }
@@ -66,11 +66,11 @@ const PrintableIndividualDocument: React.FC<PrintableIndividualDocumentProps> = 
           }
           
           case 'Receipt': {
-            const receiptData = await receiptsService.getReceiptById(document.id);
+            const receiptData = await receiptsService.getReceiptById(document.id, companyId);
             // Convert ReceiptResponse to Receipt format
             const receipt: Receipt = {
               id: receiptData.id,
-              invoiceId: receiptData.invoiceId,
+              invoiceId: receiptData.invoiceId || 0,
               receiptNumber: receiptData.receiptNumber,
               paymentDate: receiptData.paymentDate,
               amount: receiptData.amount,

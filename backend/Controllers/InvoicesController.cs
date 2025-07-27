@@ -126,16 +126,18 @@ public class InvoicesController : BaseApiController
 
     // GET: api/invoices/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<InvoiceDto>> GetInvoice(int id)
+    public async Task<ActionResult<InvoiceDto>> GetInvoice(int id, [FromQuery] int? companyId = null)
     {
         try
         {
+            var currentCompanyId = companyId ?? 1;
+            
             var invoice = await _context.Invoices
                 .Include(i => i.Customer)
                 .Include(i => i.SalesOrder)
                 .Include(i => i.Lines)
                     .ThenInclude(l => l.Item)
-                .Where(i => i.Id == id)
+                .Where(i => i.Id == id && i.CompanyId == currentCompanyId && !i.IsDeleted)
                 .Select(i => new InvoiceDto
                 {
                     Id = i.Id,

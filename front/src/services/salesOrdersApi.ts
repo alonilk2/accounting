@@ -1,5 +1,6 @@
 // Sales Orders API service - שירות API להזמנות מכירה
 import type { SalesOrder, SalesSummary, SalesOrderStatus } from '../types/entities';
+import type { PaginatedResponse } from '../types/pagination';
 import api from './api';
 
 // Backend response interface
@@ -57,14 +58,15 @@ export interface SalesOrdersFilter {
   customerId?: number;
   page?: number;
   pageSize?: number;
+  searchTerm?: string;
 }
 
 class SalesOrdersApi {
   
   /**
-   * Get all sales orders with filtering
+   * Get all sales orders with filtering and pagination
    */
-  async getSalesOrders(filters: SalesOrdersFilter = {}): Promise<SalesOrder[]> {
+  async getSalesOrders(filters: SalesOrdersFilter = {}): Promise<PaginatedResponse<SalesOrder>> {
     try {
       const params: Record<string, unknown> = {};
       
@@ -73,11 +75,15 @@ class SalesOrdersApi {
       if (filters.customerId) params.customerId = filters.customerId;
       if (filters.page) params.page = filters.page;
       if (filters.pageSize) params.pageSize = filters.pageSize;
+      if (filters.searchTerm) params.searchTerm = filters.searchTerm;
 
       const response = await api.get('/sales/orders', { params });
       
-      // Convert dates from strings to Date objects
-      return response.data.map((order: SalesOrderResponse) => ({
+      // The backend returns a PaginatedResponse wrapped in a success response
+      const paginatedData = response.data.data;
+      
+      // Convert dates from strings to Date objects for the data array
+      const convertedData = paginatedData.data.map((order: SalesOrderResponse) => ({
         ...order,
         orderDate: new Date(order.orderDate),
         dueDate: order.dueDate ? new Date(order.dueDate) : undefined,
@@ -85,6 +91,11 @@ class SalesOrdersApi {
         createdAt: new Date(order.createdAt),
         updatedAt: new Date(order.updatedAt)
       }));
+
+      return {
+        ...paginatedData,
+        data: convertedData
+      };
     } catch (error) {
       console.error('Error fetching sales orders:', error);
       throw error;
@@ -180,7 +191,8 @@ class SalesOrdersApi {
    */
   async getSalesOrdersByCustomer(customerId: number, companyId?: number): Promise<SalesOrder[]> {
     try {
-      return await this.getSalesOrders({ customerId, companyId });
+      const paginatedResponse = await this.getSalesOrders({ customerId, companyId });
+      return paginatedResponse.data;
     } catch (error) {
       console.error(`Error fetching sales orders for customer ${customerId}:`, error);
       throw error;
