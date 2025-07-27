@@ -3,6 +3,7 @@ import { Download as DownloadIcon } from '@mui/icons-material';
 import { useState } from 'react';
 import { useUIStore } from '../stores';
 import CustomerStatementGenerator from '../components/reports/CustomerStatementGenerator';
+import IsraeliTaxReporting from '../components/tax/IsraeliTaxReporting';
 
 const Reports = () => {
   const { language } = useUIStore();
@@ -37,7 +38,11 @@ const Reports = () => {
         <Typography variant="h4" component="h1">
           {language === 'he' ? 'דוחות' : 'Reports'}
         </Typography>
-        <Button variant="contained" startIcon={<DownloadIcon />}>
+        <Button 
+          variant="contained" 
+          startIcon={<DownloadIcon />}
+          onClick={() => setActiveTab(2)}
+        >
           {language === 'he' ? 'ייצוא מבנה אחיד' : 'Export Unified Format'}
         </Button>
       </Box>
@@ -46,6 +51,7 @@ const Reports = () => {
         <Tabs value={activeTab} onChange={handleTabChange} aria-label="report tabs">
           <Tab label={language === 'he' ? 'דוחות כלליים' : 'General Reports'} />
           <Tab label={language === 'he' ? 'כרטסת לקוח' : 'Customer Statement'} />
+          <Tab label={language === 'he' ? 'מבנה אחיד (טופס 6111)' : 'Form 6111 (Tax Reporting)'} />
         </Tabs>
       </Box>
 
@@ -73,6 +79,10 @@ const Reports = () => {
 
       {activeTab === 1 && (
         <CustomerStatementGenerator />
+      )}
+
+      {activeTab === 2 && (
+        <IsraeliTaxReporting />
       )}
     </Box>
   );

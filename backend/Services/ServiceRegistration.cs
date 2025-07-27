@@ -5,6 +5,7 @@ using backend.Services.Purchasing;
 using backend.Services.Suppliers;
 using backend.Services.Inventory;
 using backend.Services.Accounting;
+using backend.Services.Tax;
 using backend.Services.Printing;
 using backend.Services.AI;
 using backend.Services.Reports;
@@ -41,6 +42,9 @@ public static class ServiceRegistration
         
         // Accounting and financial services
         services.AddAccountingServices();
+        
+        // Tax reporting and compliance services
+        services.AddTaxServices();
         
         // AI and document processing services
         services.AddAIServices();
@@ -108,6 +112,16 @@ public static class ServiceRegistration
         services.AddScoped<IChartOfAccountsService, ChartOfAccountsService>();
         services.AddScoped<IJournalEntryService, JournalEntryService>();
         services.AddScoped<IExpenseService, ExpenseService>();
+        
+        return services;
+    }
+
+    /// <summary>
+    /// Register tax reporting and compliance services
+    /// </summary>
+    private static IServiceCollection AddTaxServices(this IServiceCollection services)
+    {
+        services.AddScoped<IIsraeliTaxReportingService, IsraeliTaxReportingService>();
         
         return services;
     }
