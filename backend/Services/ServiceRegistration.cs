@@ -9,6 +9,7 @@ using backend.Services.Tax;
 using backend.Services.Printing;
 using backend.Services.AI;
 using backend.Services.Reports;
+using backend.Services.Compliance;
 using Azure.Identity;
 
 namespace backend.Services;
@@ -45,6 +46,7 @@ public static class ServiceRegistration
         
         // Tax reporting and compliance services
         services.AddTaxServices();
+        services.AddComplianceServices();
         
         // AI and document processing services
         services.AddAIServices();
@@ -193,8 +195,7 @@ public static class ServiceRegistration
     /// <returns>Service collection for chaining</returns>
     public static IServiceCollection AddComplianceServices(this IServiceCollection services)
     {
-        // Add Israeli Tax Authority compliance services
-        // Example: services.AddScoped<ITaxAuthorityExportService, TaxAuthorityExportService>();
+        services.AddScoped<IComplianceExportService, ComplianceExportService>();
         
         return services;
     }

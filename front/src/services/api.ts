@@ -27,8 +27,6 @@ import type {
 } from "../types/reports";
 import type {
   PaginatedResponse,
-  BackendApiResponse,
-  PaginatedApiResponse,
   CustomerFilters,
   SupplierFilters,
 } from "../types/pagination";
@@ -42,13 +40,53 @@ const api = axios.create({
   },
 });
 
+const readRequestContext = (): { companyId?: string; userId?: string } => {
+  try {
+    const persisted = localStorage.getItem("auth-storage");
+    if (!persisted) {
+      return {};
+    }
+
+    const parsed = JSON.parse(persisted) as {
+      state?: {
+        company?: { id?: number | string };
+        user?: { id?: number | string };
+      };
+    };
+
+    const companyId = parsed?.state?.company?.id;
+    const userId = parsed?.state?.user?.id;
+
+    return {
+      companyId:
+        companyId !== undefined && companyId !== null
+          ? String(companyId)
+          : undefined,
+      userId:
+        userId !== undefined && userId !== null ? String(userId) : undefined,
+    };
+  } catch {
+    return {};
+  }
+};
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("auth_token");
+    const requestContext = readRequestContext();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (requestContext.companyId && !config.headers["X-Company-Id"]) {
+      config.headers["X-Company-Id"] = requestContext.companyId;
+    }
+
+    if (requestContext.userId && !config.headers["X-User-Id"]) {
+      config.headers["X-User-Id"] = requestContext.userId;
+    }
+
     return config;
   },
   (error) => {

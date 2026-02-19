@@ -43,7 +43,6 @@ import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
 import type { SalesOrder, SalesOrderStatus, Customer } from '../../types/entities';
-import type { PaginatedResponse } from '../../types/pagination';
 import salesOrdersApi from '../../services/salesOrdersApi';
 import { customersApi } from '../../services/customersApi';
 import CreateSalesOrderDialog from './CreateSalesOrderDialog';

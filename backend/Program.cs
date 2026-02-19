@@ -11,6 +11,9 @@ builder.Services.AddSwaggerGen();
 // Configure database with Azure SQL and multi-tenant support
 builder.Services.ConfigureDatabase(builder.Configuration, builder.Environment);
 
+// Time provider for deterministic timestamp generation in export services
+builder.Services.AddSingleton(TimeProvider.System);
+
 // Register all business services
 builder.Services.AddApplicationServices(builder.Configuration);
 

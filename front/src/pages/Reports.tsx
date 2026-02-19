@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useUIStore } from '../stores';
 import CustomerStatementGenerator from '../components/reports/CustomerStatementGenerator';
 import IsraeliTaxReporting from '../components/tax/IsraeliTaxReporting';
+import UnifiedFormatExport from '../components/tax/UnifiedFormatExport';
 
 const Reports = () => {
   const { language } = useUIStore();
@@ -38,8 +39,8 @@ const Reports = () => {
         <Typography variant="h4" component="h1">
           {language === 'he' ? 'דוחות' : 'Reports'}
         </Typography>
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           startIcon={<DownloadIcon />}
           onClick={() => setActiveTab(2)}
         >
@@ -51,7 +52,8 @@ const Reports = () => {
         <Tabs value={activeTab} onChange={handleTabChange} aria-label="report tabs">
           <Tab label={language === 'he' ? 'דוחות כלליים' : 'General Reports'} />
           <Tab label={language === 'he' ? 'כרטסת לקוח' : 'Customer Statement'} />
-          <Tab label={language === 'he' ? 'מבנה אחיד (טופס 6111)' : 'Form 6111 (Tax Reporting)'} />
+          <Tab label={language === 'he' ? 'ייצוא מבנה אחיד' : 'Unified Format Export'} />
+          <Tab label={language === 'he' ? 'טופס 6111' : 'Form 6111'} />
         </Tabs>
       </Box>
 
@@ -82,6 +84,10 @@ const Reports = () => {
       )}
 
       {activeTab === 2 && (
+        <UnifiedFormatExport />
+      )}
+
+      {activeTab === 3 && (
         <IsraeliTaxReporting />
       )}
     </Box>
@@ -89,3 +95,4 @@ const Reports = () => {
 };
 
 export default Reports;
+

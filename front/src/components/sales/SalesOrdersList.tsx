@@ -114,7 +114,7 @@ export default function SalesOrdersList({ companyId = 1 }: SalesOrdersListProps)
         status: statusFilter || undefined,
         customerId: customerFilter || undefined
       });
-      setOrders(ordersList);
+      setOrders(ordersList.data);
     } catch (err) {
       console.error('Error loading sales orders:', err);
       setError(isHebrew ? 'שגיאה בטעינת רשימת ההזמנות' : 'Error loading sales orders');

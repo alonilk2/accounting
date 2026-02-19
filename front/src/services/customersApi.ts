@@ -1,5 +1,5 @@
 import type { Customer } from '../types/entities';
-import type { PaginatedApiResponse, PaginatedResponse } from '../types/pagination';
+import type { PaginatedApiResponse } from '../types/pagination';
 
 const API_BASE_URL = 'http://localhost:5121/api';
 

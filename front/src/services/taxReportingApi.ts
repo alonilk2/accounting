@@ -1,4 +1,4 @@
-import { api } from './api';
+import api from './api';
 
 // Types for Form 6111 Tax Reporting
 export interface Form6111Request {
@@ -123,7 +123,7 @@ export class TaxReportingApiService {
    * Generate a new Form 6111 report
    */
   async generateForm6111(request: Form6111Request): Promise<Form6111Response> {
-    const response = await api.post('/api/TaxReporting/form6111/generate', request);
+    const response = await api.post('/TaxReporting/form6111/generate', request);
     return response.data;
   }
 
@@ -132,7 +132,7 @@ export class TaxReportingApiService {
    */
   async getForm6111Reports(taxYear?: number): Promise<Form6111Response[]> {
     const params = taxYear ? { taxYear } : {};
-    const response = await api.get('/api/TaxReporting/form6111', { params });
+    const response = await api.get('/TaxReporting/form6111', { params });
     return response.data;
   }
 
@@ -140,7 +140,7 @@ export class TaxReportingApiService {
    * Get a specific Form 6111 report by ID
    */
   async getForm6111ById(form6111Id: number): Promise<Form6111Response> {
-    const response = await api.get(`/api/TaxReporting/form6111/${form6111Id}`);
+    const response = await api.get(`/TaxReporting/form6111/${form6111Id}`);
     return response.data;
   }
 
@@ -148,7 +148,7 @@ export class TaxReportingApiService {
    * Validate a Form 6111 report
    */
   async validateForm6111(form6111Id: number): Promise<Form6111ValidationResult> {
-    const response = await api.post(`/api/TaxReporting/form6111/${form6111Id}/validate`);
+    const response = await api.post(`/TaxReporting/form6111/${form6111Id}/validate`);
     return response.data;
   }
 
@@ -156,7 +156,7 @@ export class TaxReportingApiService {
    * Export a Form 6111 report to file
    */
   async exportForm6111(form6111Id: number, format: string = 'JSON'): Promise<void> {
-    const response = await api.get(`/api/TaxReporting/form6111/${form6111Id}/export`, {
+    const response = await api.get(`/TaxReporting/form6111/${form6111Id}/export`, {
       params: { format },
       responseType: 'blob'
     });
@@ -191,7 +191,7 @@ export class TaxReportingApiService {
     form6111Id: number, 
     request: UpdateForm6111StatusRequest
   ): Promise<Form6111Response> {
-    const response = await api.put(`/api/TaxReporting/form6111/${form6111Id}/status`, request);
+    const response = await api.put(`/TaxReporting/form6111/${form6111Id}/status`, request);
     return response.data;
   }
 
@@ -199,7 +199,7 @@ export class TaxReportingApiService {
    * Calculate Profit & Loss for a specific period
    */
   async calculateProfitLoss(request: ProfitLossCalculationRequest): Promise<Form6111ProfitLoss> {
-    const response = await api.post('/api/TaxReporting/profit-loss/calculate', request);
+    const response = await api.post('/TaxReporting/profit-loss/calculate', request);
     return response.data;
   }
 
@@ -207,7 +207,7 @@ export class TaxReportingApiService {
    * Calculate Balance Sheet as of a specific date
    */
   async calculateBalanceSheet(request: BalanceSheetCalculationRequest): Promise<Form6111BalanceSheet> {
-    const response = await api.post('/api/TaxReporting/balance-sheet/calculate', request);
+    const response = await api.post('/TaxReporting/balance-sheet/calculate', request);
     return response.data;
   }
 
@@ -215,7 +215,7 @@ export class TaxReportingApiService {
    * Get Israeli standard chart of accounts mapping
    */
   async getIsraeliAccountMapping(): Promise<Record<string, string>> {
-    const response = await api.get('/api/TaxReporting/chart-of-accounts/israeli-mapping');
+    const response = await api.get('/TaxReporting/chart-of-accounts/israeli-mapping');
     return response.data;
   }
 }

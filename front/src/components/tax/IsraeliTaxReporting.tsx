@@ -30,7 +30,6 @@ import {
   FileDownload as DownloadIcon,
   Assessment as ReportIcon,
   CheckCircle as ValidateIcon,
-  Description as DocumentIcon,
 } from '@mui/icons-material';
 import { useUIStore } from '../../stores';
 import { taxReportingApi } from '../../services/taxReportingApi';
@@ -60,7 +59,6 @@ const IsraeliTaxReporting: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [reports, setReports] = useState<Form6111Report[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedReport, setSelectedReport] = useState<Form6111Report | null>(null);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -212,7 +210,7 @@ const IsraeliTaxReporting: React.FC = () => {
 
       {/* Reports Overview Cards */}
       <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
@@ -224,7 +222,7 @@ const IsraeliTaxReporting: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
@@ -236,7 +234,7 @@ const IsraeliTaxReporting: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
@@ -248,7 +246,7 @@ const IsraeliTaxReporting: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Typography color="textSecondary" gutterBottom>
@@ -357,7 +355,7 @@ const IsraeliTaxReporting: React.FC = () => {
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label={isHebrew ? 'שנת מס' : 'Tax Year'}
@@ -369,10 +367,10 @@ const IsraeliTaxReporting: React.FC = () => {
                   })}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Box height="56px" />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label={isHebrew ? 'תאריך התחלה' : 'Start Date'}
@@ -385,7 +383,7 @@ const IsraeliTaxReporting: React.FC = () => {
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label={isHebrew ? 'תאריך סיום' : 'End Date'}
@@ -398,7 +396,7 @@ const IsraeliTaxReporting: React.FC = () => {
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   multiline
