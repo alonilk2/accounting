@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Box,
   Card,
@@ -18,6 +18,27 @@ import {
   Language,
 } from '@mui/icons-material';
 import { useAuthStore, useUIStore } from '../stores';
+import type { Company, User } from '../types/entities';
+import {
+  decodeGoogleCredential,
+  isGoogleAuthConfigured,
+  loadGoogleIdentityScript,
+  renderGoogleSignInButton,
+  type GoogleCredentialResponse,
+} from '../auth/googleAuth';
+
+const createMockCompany = (): Company => ({
+  id: 1,
+  name: 'Demo Company Ltd.',
+  israelTaxId: '123456789',
+  address: 'Tel Aviv, Israel',
+  currency: 'ILS',
+  fiscalYearStartMonth: 1,
+  timeZone: 'Asia/Jerusalem',
+  isActive: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -25,6 +46,10 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGoogleReady, setIsGoogleReady] = useState(false);
+
+  const googleButtonContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { login } = useAuthStore();
   const { language, setLanguage } = useUIStore();
@@ -35,31 +60,16 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Mock authentication - In real app, this would call your API
       if (email && password) {
-        // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock user and company data
-        const mockUser = {
+
+        const mockCompany = createMockCompany();
+        const mockUser: User = {
           id: '1',
           name: 'Demo User',
-          email: email,
+          email,
           roleId: '1',
-          companyId: '1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        const mockCompany = {
-          id: 1,
-          name: 'Demo Company Ltd.',
-          israelTaxId: '123456789',
-          address: 'Tel Aviv, Israel',
-          currency: 'ILS',
-          fiscalYearStartMonth: 1,
-          timeZone: 'Asia/Jerusalem',
-          isActive: true,
+          companyId: String(mockCompany.id),
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -74,6 +84,79 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  const handleGoogleSuccess = useCallback((credentialResponse: GoogleCredentialResponse) => {
+    setError('');
+    setIsLoading(true);
+
+    try {
+      if (!credentialResponse.credential) {
+        throw new Error('Missing Google credential');
+      }
+
+      const googlePayload = decodeGoogleCredential(credentialResponse.credential);
+      if (!googlePayload?.email || !googlePayload.sub) {
+        throw new Error('Invalid Google credential payload');
+      }
+
+      const now = new Date();
+      const mockCompany = createMockCompany();
+      const googleUser: User = {
+        id: googlePayload.sub,
+        name: googlePayload.name ?? googlePayload.email.split('@')[0],
+        email: googlePayload.email,
+        roleId: '1',
+        companyId: String(mockCompany.id),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      login(googleUser, mockCompany);
+    } catch {
+      setError(language === 'he' ? 'התחברות עם Google נכשלה' : 'Google sign-in failed');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [language, login]);
+
+  useEffect(() => {
+    if (!isGoogleAuthConfigured || !googleButtonContainerRef.current) {
+      return;
+    }
+
+    let isMounted = true;
+    setIsGoogleLoading(true);
+
+    loadGoogleIdentityScript()
+      .then(() => {
+        if (!isMounted || !googleButtonContainerRef.current) {
+          return;
+        }
+
+        renderGoogleSignInButton(googleButtonContainerRef.current, handleGoogleSuccess);
+        setIsGoogleReady(true);
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        setIsGoogleReady(false);
+        setError(language === 'he' ? 'טעינת Google נכשלה' : 'Failed to load Google sign-in.');
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsGoogleLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+      if (googleButtonContainerRef.current) {
+        googleButtonContainerRef.current.innerHTML = '';
+      }
+    };
+  }, [handleGoogleSuccess, language]);
 
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'he' : 'en');
@@ -92,7 +175,6 @@ const Login = () => {
     >
       <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
-          {/* Header */}
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
             <Typography variant="h4" component="h1" textAlign="center">
               {language === 'he' ? 'התחברות' : 'Login'}
@@ -103,8 +185,8 @@ const Login = () => {
           </Box>
 
           <Typography variant="body1" textAlign="center" color="textSecondary" mb={3}>
-            {language === 'he' 
-              ? 'מערכת הנהלת חשבונות מבוססת AI' 
+            {language === 'he'
+              ? 'מערכת הנהלת חשבונות מבוססת AI'
               : 'AI-First Accounting Platform'
             }
           </Typography>
@@ -115,7 +197,6 @@ const Login = () => {
             </Alert>
           )}
 
-          {/* Login Form */}
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
@@ -164,8 +245,8 @@ const Login = () => {
               disabled={isLoading}
               sx={{ mt: 2, mb: 2 }}
             >
-              {isLoading 
-                ? (language === 'he' ? 'מתחבר...' : 'Signing in...') 
+              {isLoading
+                ? (language === 'he' ? 'מתחבר...' : 'Signing in...')
                 : (language === 'he' ? 'התחבר' : 'Sign In')
               }
             </Button>
@@ -173,7 +254,40 @@ const Login = () => {
 
           <Divider sx={{ my: 2 }} />
 
-          {/* Demo credentials */}
+          {isGoogleAuthConfigured ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2,
+                opacity: isLoading ? 0.6 : 1,
+                pointerEvents: isLoading ? 'none' : 'auto',
+              }}
+            >
+              <Box ref={googleButtonContainerRef} sx={{ minHeight: 44 }} />
+
+              {isGoogleLoading && (
+                <Typography variant="caption" color="textSecondary" sx={{ mt: 1 }}>
+                  {language === 'he' ? 'טוען התחברות Google...' : 'Loading Google sign-in...'}
+                </Typography>
+              )}
+
+              {!isGoogleLoading && !isGoogleReady && (
+                <Alert severity="warning" sx={{ mt: 1, width: '100%' }}>
+                  {language === 'he' ? 'Google לא זמין כרגע.' : 'Google sign-in is currently unavailable.'}
+                </Alert>
+              )}
+            </Box>
+          ) : (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              {language === 'he'
+                ? 'כדי להפעיל התחברות עם Google יש להגדיר VITE_GOOGLE_CLIENT_ID.'
+                : 'Set VITE_GOOGLE_CLIENT_ID to enable Google sign-in.'}
+            </Alert>
+          )}
+
           <Box textAlign="center">
             <Typography variant="body2" color="textSecondary" mb={1}>
               {language === 'he' ? 'נתוני דמו:' : 'Demo credentials:'}

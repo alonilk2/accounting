@@ -382,7 +382,7 @@ namespace backend.Migrations
                     b.HasIndex("CompanyId", "ExpenseNumber")
                         .IsUnique();
 
-                    b.ToTable("Expenses", (string)null);
+                    b.ToTable("Expenses");
                 });
 
             modelBuilder.Entity("backend.Models.Accounting.JournalEntry", b =>
@@ -566,6 +566,30 @@ namespace backend.Migrations
                     b.Property<string>("City")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ComplianceCompanyIdentifier")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("ComplianceLanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)");
+
+                    b.Property<string>("ComplianceSoftwareName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ComplianceSoftwareVendor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ComplianceSoftwareVersion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Country")
                         .HasMaxLength(50)
@@ -2063,7 +2087,7 @@ namespace backend.Migrations
                     b.HasIndex("CompanyId", "DeliveryNoteNumber")
                         .IsUnique();
 
-                    b.ToTable("DeliveryNotes", (string)null);
+                    b.ToTable("DeliveryNotes");
                 });
 
             modelBuilder.Entity("backend.Models.Sales.DeliveryNoteLine", b =>
@@ -2163,7 +2187,7 @@ namespace backend.Migrations
 
                     b.HasIndex("SalesOrderLineId");
 
-                    b.ToTable("DeliveryNoteLines", (string)null);
+                    b.ToTable("DeliveryNoteLines");
                 });
 
             modelBuilder.Entity("backend.Models.Sales.Invoice", b =>
@@ -2449,7 +2473,7 @@ namespace backend.Migrations
                     b.HasIndex("CompanyId", "QuoteNumber")
                         .IsUnique();
 
-                    b.ToTable("Quotes", (string)null);
+                    b.ToTable("Quotes");
                 });
 
             modelBuilder.Entity("backend.Models.Sales.QuoteLine", b =>
@@ -2527,7 +2551,7 @@ namespace backend.Migrations
 
                     b.HasIndex("QuoteId");
 
-                    b.ToTable("QuoteLines", (string)null);
+                    b.ToTable("QuoteLines");
                 });
 
             modelBuilder.Entity("backend.Models.Sales.Receipt", b =>
@@ -3183,6 +3207,82 @@ namespace backend.Migrations
                     b.HasIndex("CompanyId");
 
                     b.ToTable("Suppliers", (string)null);
+                });
+
+            modelBuilder.Entity("backend.Models.Tax.Form6111", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BalanceSheetData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("DataHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GeneratedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PeriodEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("PeriodStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProfitLossData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TaxAdjustmentData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TaxYear")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("Form6111Reports");
                 });
 
             modelBuilder.Entity("backend.Models.AI.ChatMessage", b =>
@@ -3880,6 +3980,17 @@ namespace backend.Migrations
                 {
                     b.HasOne("backend.Models.Core.Company", "Company")
                         .WithMany("Suppliers")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("backend.Models.Tax.Form6111", b =>
+                {
+                    b.HasOne("backend.Models.Core.Company", "Company")
+                        .WithMany()
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

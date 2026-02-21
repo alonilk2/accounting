@@ -10,6 +10,29 @@ const api = axios.create({
   },
 });
 
+interface ApiEnvelope<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+  timestamp?: string;
+}
+
+const isApiEnvelope = <T>(payload: unknown): payload is ApiEnvelope<T> => {
+  if (!payload || typeof payload !== 'object') {
+    return false;
+  }
+
+  return 'success' in payload && 'data' in payload;
+};
+
+const unwrapApiData = <T>(payload: T | ApiEnvelope<T>): T => {
+  if (isApiEnvelope<T>(payload)) {
+    return payload.data;
+  }
+
+  return payload as T;
+};
+
 export interface UpdateCompanyRequest {
   name: string;
   israelTaxId: string;
@@ -90,7 +113,11 @@ export interface CheckFeatureAccessRequest {
 export interface FeatureAccessResponse {
   hasAccess: boolean;
   reason?: string;
+  reasonCode?: string;
   expiresAt?: Date;
+  feature?: string;
+  currentPlan?: string;
+  upgradePath?: string;
 }
 
 export interface CompanySearchCriteria {
@@ -125,7 +152,7 @@ class CompanyApiService {
    */
   async getCompany(id: number): Promise<Company> {
     const response = await api.get(`/company/${id}`);
-    return response.data;
+    return unwrapApiData<Company>(response.data);
   }
 
   /**
@@ -133,7 +160,7 @@ class CompanyApiService {
    */
   async createCompany(data: CreateCompanyRequest): Promise<Company> {
     const response = await api.post('/company', data);
-    return response.data;
+    return unwrapApiData<Company>(response.data);
   }
 
   /**
@@ -143,7 +170,7 @@ class CompanyApiService {
     const response = await api.get('/company', {
       params: { pageNumber, pageSize, searchTerm }
     });
-    return response.data;
+    return unwrapApiData<Company[]>(response.data);
   }
 
   /**
@@ -151,7 +178,7 @@ class CompanyApiService {
    */
   async updateCompany(id: number, data: UpdateCompanyRequest): Promise<Company> {
     const response = await api.put(`/company/${id}`, data);
-    return response.data;
+    return unwrapApiData<Company>(response.data);
   }
 
   /**
@@ -159,7 +186,7 @@ class CompanyApiService {
    */
   async updateCompanySettings(id: number, data: UpdateCompanySettingsRequest): Promise<Company> {
     const response = await api.put(`/company/${id}/settings`, data);
-    return response.data;
+    return unwrapApiData<Company>(response.data);
   }
 
   /**
@@ -167,7 +194,7 @@ class CompanyApiService {
    */
   async updateCompanyActivation(id: number, data: UpdateCompanyActivationRequest): Promise<Company> {
     const response = await api.put(`/company/${id}/activation`, data);
-    return response.data;
+    return unwrapApiData<Company>(response.data);
   }
 
   /**
@@ -175,7 +202,7 @@ class CompanyApiService {
    */
   async getDashboardStats(id: number): Promise<CompanyDashboardStats> {
     const response = await api.get(`/company/${id}/dashboard-stats`);
-    return response.data;
+    return unwrapApiData<CompanyDashboardStats>(response.data);
   }
 
   /**
@@ -183,7 +210,7 @@ class CompanyApiService {
    */
   async getCompanyByTaxId(taxId: string): Promise<Company> {
     const response = await api.get(`/company/by-tax-id/${taxId}`);
-    return response.data;
+    return unwrapApiData<Company>(response.data);
   }
 
   /**
@@ -191,7 +218,7 @@ class CompanyApiService {
    */
   async getCompanySettings(id: number): Promise<CompanySettings> {
     const response = await api.get(`/company/${id}/settings`);
-    return response.data;
+    return unwrapApiData<CompanySettings>(response.data);
   }
 
   /**
@@ -199,7 +226,7 @@ class CompanyApiService {
    */
   async updateCompanySubscription(id: number, data: UpdateSubscriptionRequest): Promise<Company> {
     const response = await api.put(`/company/${id}/subscription`, data);
-    return response.data;
+    return unwrapApiData<Company>(response.data);
   }
 
   /**
@@ -207,7 +234,7 @@ class CompanyApiService {
    */
   async checkFeatureAccess(id: number, data: CheckFeatureAccessRequest): Promise<FeatureAccessResponse> {
     const response = await api.post(`/company/${id}/check-feature-access`, data);
-    return response.data;
+    return unwrapApiData<FeatureAccessResponse>(response.data);
   }
 
   /**
@@ -215,7 +242,7 @@ class CompanyApiService {
    */
   async searchCompanies(criteria: CompanySearchCriteria): Promise<Company[]> {
     const response = await api.post('/company/search', criteria);
-    return response.data;
+    return unwrapApiData<Company[]>(response.data);
   }
 
   /**
@@ -223,7 +250,7 @@ class CompanyApiService {
    */
   async validateTaxId(data: ValidateTaxIdRequest): Promise<TaxIdValidationResponse> {
     const response = await api.post('/company/validate-tax-id', data);
-    return response.data;
+    return unwrapApiData<TaxIdValidationResponse>(response.data);
   }
 }
 

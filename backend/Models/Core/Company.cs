@@ -69,6 +69,41 @@ public class Company : BaseEntity
     public string TimeZone { get; set; } = "Israel Standard Time";
 
     /// <summary>
+    /// Optional override for unified-format company identifier (up to 8 digits).
+    /// When empty, export derives the identifier from IsraelTaxId.
+    /// </summary>
+    [MaxLength(8)]
+    public string? ComplianceCompanyIdentifier { get; set; }
+
+    /// <summary>
+    /// Unified-format export software vendor.
+    /// </summary>
+    [Required]
+    [MaxLength(100)]
+    public string ComplianceSoftwareVendor { get; set; } = "AccountingSaaS";
+
+    /// <summary>
+    /// Unified-format export software name.
+    /// </summary>
+    [Required]
+    [MaxLength(100)]
+    public string ComplianceSoftwareName { get; set; } = "UnifiedFormatExporter";
+
+    /// <summary>
+    /// Unified-format export software version.
+    /// </summary>
+    [Required]
+    [MaxLength(20)]
+    public string ComplianceSoftwareVersion { get; set; } = "1.0.0";
+
+    /// <summary>
+    /// Unified-format export language code.
+    /// </summary>
+    [Required]
+    [MaxLength(2)]
+    public string ComplianceLanguageCode { get; set; } = "HE";
+
+    /// <summary>
     /// Subscription status and billing info
     /// </summary>
     public bool IsActive { get; set; } = true;

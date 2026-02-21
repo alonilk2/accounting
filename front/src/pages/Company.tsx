@@ -39,7 +39,9 @@ import {
   History as HistoryIcon,
 } from "@mui/icons-material";
 import { useCompany } from "../hooks/useCompany";
-import type { UpdateCompanyRequest } from "../services/companyApi";
+import { companyApi, type UpdateCompanyRequest } from "../services/companyApi";
+import { getCompanyIdFromRequestContext } from "../services/api";
+import { useAuthStore } from "../stores";
 
 const CURRENCY_OPTIONS = [
   { value: "ILS", label: "₪ שקל ישראלי" },
@@ -69,6 +71,28 @@ const TIMEZONE_OPTIONS = [
   { value: "Central European Standard Time", label: "CET (אירופה)" },
 ];
 
+const parseCompanyId = (value: unknown): number | null => {
+  const parsedValue = Number(value);
+  if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+    return null;
+  }
+
+  return parsedValue;
+};
+
+const formatDisplayDate = (value: unknown): string => {
+  if (value === undefined || value === null || value === "") {
+    return "-";
+  }
+
+  const parsedDate = new Date(value as string | number | Date);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "-";
+  }
+
+  return parsedDate.toLocaleDateString("he-IL");
+};
+
 const Company = () => {
   const {
     company,
@@ -80,6 +104,7 @@ const Company = () => {
     getDashboardStats,
     validateTaxId,
   } = useCompany();
+  const { setCompany } = useAuthStore();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
@@ -112,6 +137,11 @@ const Company = () => {
     fiscalYearStartMonth: 1,
     timeZone: "Israel Standard Time",
   });
+  const [subscriptionForm, setSubscriptionForm] = useState({
+    subscriptionPlan: "Basic",
+    expiresAt: "",
+  });
+  const [savingSubscription, setSavingSubscription] = useState(false);
 
   // Additional settings state
   const [additionalSettings, setAdditionalSettings] = useState({
@@ -160,8 +190,8 @@ const Company = () => {
     },
   ]);
 
-  // For demo purposes, using company ID 1
-  const currentCompanyId = 1;
+  const currentCompanyId =
+    parseCompanyId(company?.id) ?? getCompanyIdFromRequestContext() ?? 1;
 
   const loadCompanyData = useCallback(async () => {
     await Promise.all([
@@ -189,6 +219,12 @@ const Company = () => {
         currency: company.currency,
         fiscalYearStartMonth: company.fiscalYearStartMonth,
         timeZone: company.timeZone,
+      });
+      setSubscriptionForm({
+        subscriptionPlan: company.subscriptionPlan || "Basic",
+        expiresAt: company.subscriptionExpiresAt
+          ? new Date(company.subscriptionExpiresAt).toISOString().split("T")[0]
+          : "",
       });
     }
   }, [company]);
@@ -221,6 +257,31 @@ const Company = () => {
     value: string | number | boolean
   ) => {
     setAdditionalSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubscriptionChange = (field: "subscriptionPlan" | "expiresAt", value: string) => {
+    setSubscriptionForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveSubscription = async () => {
+    try {
+      setSavingSubscription(true);
+
+      const updatedCompany = await companyApi.updateCompanySubscription(currentCompanyId, {
+        subscriptionPlan: subscriptionForm.subscriptionPlan,
+        expiresAt: subscriptionForm.expiresAt
+          ? new Date(`${subscriptionForm.expiresAt}T00:00:00Z`)
+          : undefined,
+      });
+
+      setCompany(updatedCompany);
+      showSnackbar("Subscription updated successfully");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update subscription";
+      showSnackbar(errorMessage, "error");
+    } finally {
+      setSavingSubscription(false);
+    }
   };
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2345,15 +2406,78 @@ const Company = () => {
 
             <Grid size={{ xs: 4, sm: 4, md: 6 }}>
               <Typography variant="body2" color="text.secondary">
-                נוצרה: {new Date(company.createdAt).toLocaleDateString("he-IL")}
+                נוצרה: {formatDisplayDate(company.createdAt)}
               </Typography>
             </Grid>
 
             <Grid size={{ xs: 4, sm: 4, md: 6 }}>
               <Typography variant="body2" color="text.secondary">
                 עודכנה לאחרונה:{" "}
-                {new Date(company.updatedAt).toLocaleDateString("he-IL")}
+                {formatDisplayDate(company.updatedAt)}
               </Typography>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
+      {/* Subscription Management */}
+      {company && activeTab === 0 && (
+        <Paper
+          sx={{
+            p: 3,
+            mt: 3,
+            backgroundColor: "background.paper",
+            border: (theme) =>
+              `1px solid ${theme.palette.mode === "light" ? "rgba(0,0,0,0.08)" : theme.palette.divider}`,
+            boxShadow: (theme) =>
+              theme.palette.mode === "light" ? "0 2px 12px rgba(0,0,0,0.04)" : "0 4px 20px rgba(0,0,0,0.3)",
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            Subscription Management
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Control plan entitlement for double-entry accounting features.
+          </Typography>
+
+          <Grid container spacing={{ xs: 2, md: 2 }} columns={{ xs: 4, sm: 8, md: 12 }}>
+            <Grid size={{ xs: 4, sm: 4, md: 4 }}>
+              <TextField
+                select
+                fullWidth
+                label="Plan"
+                value={subscriptionForm.subscriptionPlan}
+                onChange={(event) => handleSubscriptionChange("subscriptionPlan", event.target.value)}
+              >
+                <MenuItem value="Basic">Basic</MenuItem>
+                <MenuItem value="Pro">Pro</MenuItem>
+                <MenuItem value="Enterprise">Enterprise</MenuItem>
+              </TextField>
+            </Grid>
+
+            <Grid size={{ xs: 4, sm: 4, md: 4 }}>
+              <TextField
+                fullWidth
+                type="date"
+                label="Expires At"
+                value={subscriptionForm.expiresAt}
+                onChange={(event) => handleSubscriptionChange("expiresAt", event.target.value)}
+                InputLabelProps={{ shrink: true }}
+                helperText="Leave empty for no expiry."
+              />
+            </Grid>
+
+            <Grid size={{ xs: 4, sm: 8, md: 4 }}>
+              <Box sx={{ display: "flex", alignItems: "center", height: "100%", gap: 1 }}>
+                <Button
+                  variant="contained"
+                  startIcon={savingSubscription ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
+                  disabled={savingSubscription}
+                  onClick={handleSaveSubscription}
+                >
+                  Save Subscription
+                </Button>
+              </Box>
             </Grid>
           </Grid>
         </Paper>

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using backend.DTOs.Compliance;
 using backend.Services.Interfaces;
+using backend.Services.Core;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Controllers;
@@ -13,13 +14,16 @@ namespace backend.Controllers;
 public sealed class ComplianceController : ControllerBase
 {
     private readonly IComplianceExportService _complianceExportService;
+    private readonly ICompanyService _companyService;
     private readonly ILogger<ComplianceController> _logger;
 
     public ComplianceController(
         IComplianceExportService complianceExportService,
+        ICompanyService companyService,
         ILogger<ComplianceController> logger)
     {
         _complianceExportService = complianceExportService;
+        _companyService = companyService;
         _logger = logger;
     }
 
@@ -52,6 +56,23 @@ public sealed class ComplianceController : ControllerBase
         if (!TryResolveRequestContext(out var companyId, out var userId, out var failureResult))
         {
             return failureResult!;
+        }
+
+        var evaluation = await _companyService.EvaluateFeatureAccessAsync(
+            companyId,
+            FeatureEntitlements.DoubleEntryAccountingFeature,
+            cancellationToken);
+        if (!evaluation.HasAccess)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                error = "feature_access_denied",
+                reason = evaluation.Reason,
+                reasonCode = evaluation.ReasonCode,
+                feature = evaluation.Feature,
+                currentPlan = evaluation.CurrentPlan,
+                upgradePath = evaluation.UpgradePath
+            });
         }
 
         try

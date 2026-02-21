@@ -79,6 +79,25 @@ describe('Auth Store', () => {
     });
   });
 
+  describe('Company Update Action', () => {
+    it('should update company in-memory without changing authentication state', () => {
+      const { login, setCompany } = useAuthStore.getState();
+      login(mockUser, mockCompany);
+
+      const updatedCompany: Company = {
+        ...mockCompany,
+        subscriptionPlan: 'Pro',
+      };
+
+      setCompany(updatedCompany);
+
+      const state = useAuthStore.getState();
+      expect(state.company).toEqual(updatedCompany);
+      expect(state.isAuthenticated).toBe(true);
+      expect(state.user).toEqual(mockUser);
+    });
+  });
+
   describe('Loading State', () => {
     it('should update loading state', () => {
       const { setLoading } = useAuthStore.getState();

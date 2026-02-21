@@ -1,6 +1,6 @@
 // API service for Delivery Notes - שירות API לתעודות משלוח
 
-import api from './api';
+import api, { getCompanyIdFromRequestContext } from './api';
 import type { DeliveryNote } from '../types/entities';
 import type { PaginatedResponse } from '../types/pagination';
 
@@ -143,6 +143,26 @@ export interface DeliveryNotesListResponse {
   pageSize: number;
 }
 
+const resolveCompanyId = (companyId: number): number | undefined => {
+  if (Number.isFinite(companyId) && companyId > 0) {
+    return companyId;
+  }
+
+  return getCompanyIdFromRequestContext();
+};
+
+const appendCompanyId = (params: URLSearchParams, companyId: number): void => {
+  const resolvedCompanyId = resolveCompanyId(companyId);
+  if (resolvedCompanyId !== undefined) {
+    params.append('companyId', resolvedCompanyId.toString());
+  }
+};
+
+const withQuery = (path: string, params: URLSearchParams): string => {
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+};
+
 // Helper function to convert DeliveryNoteResponse to DeliveryNote entity
 const mapDeliveryNoteResponseToEntity = (response: DeliveryNoteResponse): DeliveryNote => ({
   id: response.id,
@@ -244,11 +264,10 @@ export class DeliveryNotesApi {
     pageSize: number = 50
   ): Promise<PaginatedResponse<DeliveryNote>> {
     try {
-      const params = new URLSearchParams({
-        companyId: companyId.toString(),
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-      });
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
+      params.append('page', page.toString());
+      params.append('pageSize', pageSize.toString());
 
       if (filters?.customerId) {
         params.append('customerId', filters.customerId.toString());
@@ -271,7 +290,7 @@ export class DeliveryNotesApi {
       }
 
       const response = await api.get<PaginatedResponse<DeliveryNoteResponse>>(
-        `${this.baseUrl}?${params.toString()}`
+        withQuery(this.baseUrl, params)
       );
 
       console.log('API Response received:', response.data);
@@ -315,8 +334,11 @@ export class DeliveryNotesApi {
    */
   async getDeliveryNote(id: number, companyId: number): Promise<DeliveryNote> {
     try {
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
+
       const response = await api.get<DeliveryNoteResponse>(
-        `${this.baseUrl}/${id}?companyId=${companyId}`
+        withQuery(`${this.baseUrl}/${id}`, params)
       );
 
       // Check if response data exists
@@ -336,9 +358,15 @@ export class DeliveryNotesApi {
    */
   async createDeliveryNoteFromRequest(request: CreateDeliveryNoteRequest): Promise<DeliveryNote> {
     try {
+      const resolvedCompanyId = resolveCompanyId(request.companyId);
+      const payload: CreateDeliveryNoteRequest = {
+        ...request,
+        companyId: resolvedCompanyId ?? request.companyId,
+      };
+
       const response = await api.post<DeliveryNoteResponse>(
         this.baseUrl,
-        request
+        payload
       );
 
       return mapDeliveryNoteResponseToEntity(response.data);
@@ -353,7 +381,11 @@ export class DeliveryNotesApi {
    */
   async createDeliveryNote(deliveryNote: DeliveryNote): Promise<DeliveryNote> {
     try {
-      const request = mapDeliveryNoteEntityToRequest(deliveryNote);
+      const resolvedCompanyId = resolveCompanyId(deliveryNote.companyId);
+      const request = mapDeliveryNoteEntityToRequest({
+        ...deliveryNote,
+        companyId: resolvedCompanyId ?? deliveryNote.companyId,
+      });
       
       const response = await api.post<DeliveryNoteResponse>(
         this.baseUrl,
@@ -372,9 +404,14 @@ export class DeliveryNotesApi {
    */
   async updateDeliveryNote(id: number, deliveryNote: Partial<DeliveryNote>): Promise<DeliveryNote> {
     try {
+      const resolvedCompanyId =
+        deliveryNote.companyId !== undefined
+          ? resolveCompanyId(deliveryNote.companyId)
+          : undefined;
+
       // Convert partial entity to partial request
       const request: UpdateDeliveryNoteRequest = {
-        companyId: deliveryNote.companyId,
+        companyId: resolvedCompanyId,
         customerId: deliveryNote.customerId,
         salesOrderId: deliveryNote.salesOrderId,
         deliveryDate: deliveryNote.deliveryDate?.toISOString(),
@@ -412,7 +449,9 @@ export class DeliveryNotesApi {
    */
   async deleteDeliveryNote(id: number, companyId: number): Promise<void> {
     try {
-      await api.delete(`${this.baseUrl}/${id}?companyId=${companyId}`);
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
+      await api.delete(withQuery(`${this.baseUrl}/${id}`, params));
     } catch (error) {
       console.error('Error deleting delivery note:', error);
       throw error;
@@ -435,6 +474,9 @@ export class DeliveryNotesApi {
     }
   ): Promise<DeliveryNote> {
     try {
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
+
       const request = {
         status,
         actualDeliveryTime: additionalData?.actualDeliveryTime?.toISOString(),
@@ -445,7 +487,7 @@ export class DeliveryNotesApi {
       };
 
       const response = await api.put<DeliveryNoteResponse>(
-        `${this.baseUrl}/${id}/status?companyId=${companyId}`,
+        withQuery(`${this.baseUrl}/${id}/status`, params),
         request
       );
 
@@ -465,8 +507,11 @@ export class DeliveryNotesApi {
     companyId: number
   ): Promise<DeliveryNote> {
     try {
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
+
       const response = await api.post<DeliveryNoteResponse>(
-        `${this.baseUrl}/from-order/${salesOrderId}?companyId=${companyId}`,
+        withQuery(`${this.baseUrl}/from-order/${salesOrderId}`, params),
         request
       );
 

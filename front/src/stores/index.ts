@@ -14,6 +14,7 @@ interface AuthState {
 interface AuthActions {
   login: (user: User, company: Company) => void;
   logout: () => void;
+  setCompany: (company: Company | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -57,6 +58,10 @@ export const useAuthStore = create<AuthStore>()(
             false,
             'auth/logout'
           );
+        },
+
+        setCompany: (company: Company | null) => {
+          set({ company }, false, 'auth/setCompany');
         },
 
         setLoading: (loading: boolean) => {

@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using backend.Data;
 using backend.Models.Accounting;
+using backend.Models.Audit;
 using backend.Models.Core;
+using backend.Services.Core;
 using backend.Services.Interfaces;
 
 namespace backend.Services.Accounting;
@@ -15,15 +18,22 @@ public class JournalEntryService : IJournalEntryService
 {
     private readonly AccountingDbContext _context;
     private readonly ILogger<JournalEntryService> _logger;
+    private readonly ICompanyService _companyService;
 
-    public JournalEntryService(AccountingDbContext context, ILogger<JournalEntryService> logger)
+    public JournalEntryService(AccountingDbContext context, ILogger<JournalEntryService> logger, ICompanyService companyService)
     {
         _context = context;
         _logger = logger;
+        _companyService = companyService;
     }
 
     public async Task CreateSalesJournalEntriesAsync(int salesOrderId, int companyId, string userId, CancellationToken cancellationToken = default)
     {
+        if (!await ShouldCreateJournalEntriesAsync(companyId, userId, "SalesOrder", salesOrderId, cancellationToken))
+        {
+            return;
+        }
+
         var salesOrder = await _context.SalesOrders
             .Include(so => so.Customer)
             .Include(so => so.Lines)
@@ -150,6 +160,11 @@ public class JournalEntryService : IJournalEntryService
 
     public async Task CreatePaymentReceiptJournalEntriesAsync(int receiptId, int companyId, string userId, CancellationToken cancellationToken = default)
     {
+        if (!await ShouldCreateJournalEntriesAsync(companyId, userId, "Receipt", receiptId, cancellationToken))
+        {
+            return;
+        }
+
         var receipt = await _context.Receipts
             .Include(r => r.Invoice)
             .ThenInclude(i => i.Customer)
@@ -211,6 +226,11 @@ public class JournalEntryService : IJournalEntryService
 
     public async Task CreatePurchaseJournalEntriesAsync(int purchaseOrderId, int companyId, string userId, CancellationToken cancellationToken = default)
     {
+        if (!await ShouldCreateJournalEntriesAsync(companyId, userId, "PurchaseOrder", purchaseOrderId, cancellationToken))
+        {
+            return;
+        }
+
         var purchaseOrder = await _context.PurchaseOrders
             .Include(po => po.Supplier)
             .Include(po => po.Lines)
@@ -294,6 +314,11 @@ public class JournalEntryService : IJournalEntryService
 
     public async Task CreatePaymentMadeJournalEntriesAsync(int paymentId, int companyId, string userId, CancellationToken cancellationToken = default)
     {
+        if (!await ShouldCreateJournalEntriesAsync(companyId, userId, "Payment", paymentId, cancellationToken))
+        {
+            return;
+        }
+
         var payment = await _context.Payments
             .Include(p => p.PurchaseOrder)
             .ThenInclude(po => po.Supplier)
@@ -355,6 +380,11 @@ public class JournalEntryService : IJournalEntryService
 
     public async Task CreateInventoryAdjustmentJournalEntriesAsync(int itemId, decimal quantityChange, decimal valueChange, int companyId, string userId, string reason, CancellationToken cancellationToken = default)
     {
+        if (!await ShouldCreateJournalEntriesAsync(companyId, userId, "InventoryAdjustment", itemId, cancellationToken))
+        {
+            return;
+        }
+
         var item = await _context.Items
             .FirstOrDefaultAsync(i => i.Id == itemId && i.CompanyId == companyId, cancellationToken);
 
@@ -597,6 +627,113 @@ public class JournalEntryService : IJournalEntryService
         };
 
         return await GetAccountByTypeAsync(companyId, accountName, AccountType.Asset, cancellationToken);
+    }
+
+    private async Task<bool> ShouldCreateJournalEntriesAsync(
+        int companyId,
+        string userId,
+        string referenceType,
+        int referenceId,
+        CancellationToken cancellationToken)
+    {
+        var evaluation = await _companyService.EvaluateFeatureAccessAsync(
+            companyId,
+            FeatureEntitlements.DoubleEntryAccountingFeature,
+            cancellationToken);
+
+        if (evaluation.HasAccess)
+        {
+            return true;
+        }
+
+        _logger.LogWarning(
+            "Skipping accounting journal creation due to entitlement denial. CompanyId: {CompanyId}, Feature: {Feature}, CurrentPlan: {CurrentPlan}, ReasonCode: {ReasonCode}, Reason: {Reason}, ReferenceType: {ReferenceType}, ReferenceId: {ReferenceId}",
+            companyId,
+            evaluation.Feature,
+            evaluation.CurrentPlan,
+            evaluation.ReasonCode,
+            evaluation.Reason,
+            referenceType,
+            referenceId);
+
+        await LogAccountingSkippedAuditAsync(companyId, userId, referenceType, referenceId, evaluation, cancellationToken);
+
+        return false;
+    }
+
+    private async Task LogAccountingSkippedAuditAsync(
+        int companyId,
+        string userId,
+        string referenceType,
+        int referenceId,
+        FeatureAccessEvaluation evaluation,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var auditUserId = await ResolveAuditUserIdAsync(userId, cancellationToken);
+            if (!auditUserId.HasValue)
+            {
+                _logger.LogWarning(
+                    "Could not resolve audit user for accounting skip event. CompanyId: {CompanyId}, ReferenceType: {ReferenceType}, ReferenceId: {ReferenceId}",
+                    companyId,
+                    referenceType,
+                    referenceId);
+                return;
+            }
+
+            var auditLog = new AuditLog
+            {
+                CompanyId = companyId,
+                UserId = auditUserId.Value,
+                Action = "ACCOUNTING_SKIPPED",
+                EntityType = referenceType,
+                EntityId = referenceId,
+                Severity = "Warning",
+                Details = $"Accounting journal creation skipped for {referenceType} {referenceId}.",
+                AdditionalData = JsonSerializer.Serialize(new
+                {
+                    feature = evaluation.Feature,
+                    currentPlan = evaluation.CurrentPlan,
+                    reason = evaluation.Reason,
+                    reasonCode = evaluation.ReasonCode,
+                    upgradePath = evaluation.UpgradePath
+                }),
+                CreatedBy = userId,
+                UpdatedBy = userId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _context.AuditLogs.Add(auditLog);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to write ACCOUNTING_SKIPPED audit log. CompanyId: {CompanyId}, ReferenceType: {ReferenceType}, ReferenceId: {ReferenceId}",
+                companyId,
+                referenceType,
+                referenceId);
+        }
+    }
+
+    private async Task<int?> ResolveAuditUserIdAsync(string userId, CancellationToken cancellationToken)
+    {
+        if (int.TryParse(userId, out var parsedUserId))
+        {
+            var exists = await _context.Users.AnyAsync(u => u.Id == parsedUserId && !u.IsDeleted, cancellationToken);
+            if (exists)
+            {
+                return parsedUserId;
+            }
+        }
+
+        return await _context.Users
+            .Where(u => u.Email == "system@accounting.local" && !u.IsDeleted)
+            .Select(u => (int?)u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     /// <summary>

@@ -2,6 +2,16 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Google Authentication
+
+To enable Google sign-in on the login screen:
+
+1. Copy `front/.env.example` to `front/.env`.
+2. Set `VITE_GOOGLE_CLIENT_ID` with your Google OAuth Web Client ID.
+3. Restart the Vite dev server.
+
+If the env var is missing, the login screen still works with demo email/password and shows an info message.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh

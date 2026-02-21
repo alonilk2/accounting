@@ -1,6 +1,6 @@
 // API service for Quotes - שירות API להצעות מחיר
 import type { AxiosResponse } from 'axios';
-import api from './api';
+import api, { getCompanyIdFromRequestContext } from './api';
 import type { Quote, QuoteStatus } from '../types/entities';
 import type { PaginatedResponse } from '../types/pagination';
 
@@ -92,6 +92,26 @@ export interface QuotesListResponse {
   pageSize: number;
 }
 
+const resolveCompanyId = (companyId: number): number | undefined => {
+  if (Number.isFinite(companyId) && companyId > 0) {
+    return companyId;
+  }
+
+  return getCompanyIdFromRequestContext();
+};
+
+const appendCompanyId = (params: URLSearchParams, companyId: number): void => {
+  const resolvedCompanyId = resolveCompanyId(companyId);
+  if (resolvedCompanyId !== undefined) {
+    params.append('companyId', resolvedCompanyId.toString());
+  }
+};
+
+const withQuery = (path: string, params: URLSearchParams): string => {
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+};
+
 // Helper function to convert QuoteResponse to Quote entity
 const mapQuoteResponseToEntity = (response: QuoteResponse): Quote => {
   // Normalize status to match TypeScript enum (capitalize first letter)
@@ -164,11 +184,10 @@ export class QuotesApi {
     pageSize: number = 50
   ): Promise<Quote[]> {
     try {
-      const params = new URLSearchParams({
-        companyId: companyId.toString(),
-        page: page.toString(),
-        pageSize: pageSize.toString()
-      });
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
+      params.append('page', page.toString());
+      params.append('pageSize', pageSize.toString());
 
       if (filters) {
         if (filters.customerId) params.append('customerId', filters.customerId.toString());
@@ -178,9 +197,7 @@ export class QuotesApi {
         if (filters.searchTerm) params.append('searchTerm', filters.searchTerm);
       }
 
-      const response: AxiosResponse<PaginatedResponse<QuoteResponse>> = await api.get(
-        `${this.baseUrl}?${params.toString()}`
-      );
+      const response: AxiosResponse<PaginatedResponse<QuoteResponse>> = await api.get(withQuery(this.baseUrl, params));
 
       return response.data.data.map(mapQuoteResponseToEntity);
     } catch (error) {
@@ -214,8 +231,11 @@ export class QuotesApi {
    */
   async getQuote(id: number, companyId: number): Promise<Quote> {
     try {
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
+
       const response: AxiosResponse<QuoteResponse> = await api.get(
-        `${this.baseUrl}/${id}?companyId=${companyId}`
+        withQuery(`${this.baseUrl}/${id}`, params)
       );
 
       return mapQuoteResponseToEntity(response.data);
@@ -230,8 +250,11 @@ export class QuotesApi {
    */
   async createQuote(request: CreateQuoteRequest, companyId: number): Promise<Quote> {
     try {
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
+
       const response: AxiosResponse<QuoteResponse> = await api.post(
-        `${this.baseUrl}?companyId=${companyId}`,
+        withQuery(this.baseUrl, params),
         request
       );
 
@@ -248,6 +271,8 @@ export class QuotesApi {
   async updateQuote(id: number, quote: Partial<Quote>, companyId: number): Promise<Quote> {
     try {
       const request: UpdateQuoteRequest = {};
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
 
       if (quote.customerId !== undefined) request.customerId = quote.customerId;
       if (quote.agentId !== undefined) request.agentId = quote.agentId;
@@ -271,7 +296,7 @@ export class QuotesApi {
       }
 
       const response: AxiosResponse<QuoteResponse> = await api.put(
-        `${this.baseUrl}/${id}?companyId=${companyId}`,
+        withQuery(`${this.baseUrl}/${id}`, params),
         request
       );
 
@@ -287,7 +312,9 @@ export class QuotesApi {
    */
   async deleteQuote(id: number, companyId: number): Promise<void> {
     try {
-      await api.delete(`${this.baseUrl}/${id}?companyId=${companyId}`);
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
+      await api.delete(withQuery(`${this.baseUrl}/${id}`, params));
     } catch (error) {
       console.error('Error deleting quote:', error);
       throw new Error('שגיאה במחיקת הצעת המחיר');
@@ -303,9 +330,10 @@ export class QuotesApi {
     companyId: number
   ): Promise<Quote> {
     try {
+      const resolvedCompanyId = resolveCompanyId(companyId);
       const response: AxiosResponse<QuoteResponse> = await api.patch(
         `${this.baseUrl}/${id}/status`,
-        { status, companyId }
+        resolvedCompanyId !== undefined ? { status, companyId: resolvedCompanyId } : { status }
       );
 
       return mapQuoteResponseToEntity(response.data);
@@ -320,9 +348,10 @@ export class QuotesApi {
    */
   async convertToSalesOrder(id: number, companyId: number): Promise<{ quoteId: number; salesOrderId: number }> {
     try {
+      const resolvedCompanyId = resolveCompanyId(companyId);
       const response: AxiosResponse<{ quoteId: number; salesOrderId: number }> = await api.post(
         `${this.baseUrl}/${id}/convert-to-order`,
-        { companyId }
+        resolvedCompanyId !== undefined ? { companyId: resolvedCompanyId } : {}
       );
 
       return response.data;
@@ -337,9 +366,10 @@ export class QuotesApi {
    */
   async duplicateQuote(id: number, companyId: number): Promise<Quote> {
     try {
+      const resolvedCompanyId = resolveCompanyId(companyId);
       const response: AxiosResponse<QuoteResponse> = await api.post(
         `${this.baseUrl}/${id}/duplicate`,
-        { companyId }
+        resolvedCompanyId !== undefined ? { companyId: resolvedCompanyId } : {}
       );
 
       return mapQuoteResponseToEntity(response.data);
@@ -354,8 +384,11 @@ export class QuotesApi {
    */
   async generatePdf(id: number, companyId: number): Promise<Blob> {
     try {
+      const params = new URLSearchParams();
+      appendCompanyId(params, companyId);
+
       const response: AxiosResponse<Blob> = await api.get(
-        `${this.baseUrl}/${id}/pdf?companyId=${companyId}`,
+        withQuery(`${this.baseUrl}/${id}/pdf`, params),
         { responseType: 'blob' }
       );
 
@@ -377,8 +410,9 @@ export class QuotesApi {
     body?: string
   ): Promise<void> {
     try {
+      const resolvedCompanyId = resolveCompanyId(companyId);
       await api.post(`${this.baseUrl}/${id}/send-email`, {
-        companyId,
+        ...(resolvedCompanyId !== undefined ? { companyId: resolvedCompanyId } : {}),
         emailTo,
         subject,
         body

@@ -55,6 +55,15 @@ public interface ICompanyService : IBaseService<Company>
     Task<bool> HasFeatureAccessAsync(int companyId, string feature, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Evaluate feature access and include denial metadata.
+    /// </summary>
+    /// <param name="companyId">Company ID</param>
+    /// <param name="feature">Feature name</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Detailed access evaluation result</returns>
+    Task<FeatureAccessEvaluation> EvaluateFeatureAccessAsync(int companyId, string feature, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Update company subscription
     /// </summary>
     /// <param name="companyId">Company ID</param>
@@ -116,6 +125,20 @@ public class CompanyDashboardStats
     public int PendingInvoices { get; set; }
     public int OverdueInvoices { get; set; }
     public DateTime LastUpdated { get; set; }
+}
+
+/// <summary>
+/// Feature access evaluation result.
+/// </summary>
+public class FeatureAccessEvaluation
+{
+    public bool HasAccess { get; set; }
+    public string? Reason { get; set; }
+    public string? ReasonCode { get; set; }
+    public string Feature { get; set; } = string.Empty;
+    public string? CurrentPlan { get; set; }
+    public string UpgradePath { get; set; } = string.Empty;
+    public DateTime? ExpiresAt { get; set; }
 }
 
 /// <summary>

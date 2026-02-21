@@ -190,7 +190,11 @@ public class FeatureAccessResponse
 {
     public bool HasAccess { get; set; }
     public string? Reason { get; set; }
+    public string? ReasonCode { get; set; }
     public DateTime? ExpiresAt { get; set; }
+    public string? Feature { get; set; }
+    public string? CurrentPlan { get; set; }
+    public string? UpgradePath { get; set; }
 }
 
 /// <summary>

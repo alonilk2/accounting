@@ -661,15 +661,17 @@ public class CompanyController : BaseApiController
                 return BadRequest("Feature name is required");
             }
 
-            var hasAccess = await _companyService.HasFeatureAccessAsync(id, request.Feature);
-            var isExpired = await _companyService.IsSubscriptionExpiredAsync(id);
+            var evaluation = await _companyService.EvaluateFeatureAccessAsync(id, request.Feature);
 
             return Ok(new FeatureAccessResponse
             {
-                HasAccess = hasAccess && !isExpired,
-                Reason = !hasAccess ? "Company not found or inactive" : 
-                        isExpired ? "Subscription expired" : null,
-                ExpiresAt = isExpired ? null : (await _companyService.GetByIdAsync(id, id))?.SubscriptionExpiresAt
+                HasAccess = evaluation.HasAccess,
+                Reason = evaluation.Reason,
+                ReasonCode = evaluation.ReasonCode,
+                ExpiresAt = evaluation.ExpiresAt,
+                Feature = evaluation.Feature,
+                CurrentPlan = evaluation.CurrentPlan,
+                UpgradePath = evaluation.UpgradePath
             });
         }
         catch (Exception ex)

@@ -735,7 +735,7 @@ const DeliveryNotesPage: React.FC = () => {
             setCreateDialogOpen(false);
             loadDeliveryNotes(); // Refresh the list
           }}
-          companyId={currentCompany?.id || 0}
+          companyId={currentCompany?.id || 1}
         />
       </Box>
     </LocalizationProvider>

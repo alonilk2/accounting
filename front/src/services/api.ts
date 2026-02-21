@@ -40,6 +40,23 @@ const api = axios.create({
   },
 });
 
+const normalizeContextId = (value: unknown): string | undefined => {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const normalized = String(value).trim();
+  if (
+    normalized.length === 0 ||
+    normalized.toLowerCase() === "undefined" ||
+    normalized.toLowerCase() === "null"
+  ) {
+    return undefined;
+  }
+
+  return normalized;
+};
+
 const readRequestContext = (): { companyId?: string; userId?: string } => {
   try {
     const persisted = localStorage.getItem("auth-storage");
@@ -49,25 +66,43 @@ const readRequestContext = (): { companyId?: string; userId?: string } => {
 
     const parsed = JSON.parse(persisted) as {
       state?: {
-        company?: { id?: number | string };
-        user?: { id?: number | string };
+        company?: { id?: number | string; companyId?: number | string };
+        user?: { id?: number | string; companyId?: number | string };
       };
+      company?: { id?: number | string; companyId?: number | string };
+      user?: { id?: number | string; companyId?: number | string };
     };
 
-    const companyId = parsed?.state?.company?.id;
-    const userId = parsed?.state?.user?.id;
+    const companyId =
+      parsed?.state?.company?.id ??
+      parsed?.state?.company?.companyId ??
+      parsed?.state?.user?.companyId ??
+      parsed?.company?.id ??
+      parsed?.company?.companyId ??
+      parsed?.user?.companyId;
+    const userId = parsed?.state?.user?.id ?? parsed?.user?.id;
 
     return {
-      companyId:
-        companyId !== undefined && companyId !== null
-          ? String(companyId)
-          : undefined,
-      userId:
-        userId !== undefined && userId !== null ? String(userId) : undefined,
+      companyId: normalizeContextId(companyId),
+      userId: normalizeContextId(userId),
     };
   } catch {
     return {};
   }
+};
+
+export const getCompanyIdFromRequestContext = (): number | undefined => {
+  const companyId = readRequestContext().companyId;
+  if (!companyId) {
+    return undefined;
+  }
+
+  const parsedCompanyId = Number(companyId);
+  if (!Number.isFinite(parsedCompanyId) || parsedCompanyId <= 0) {
+    return undefined;
+  }
+
+  return parsedCompanyId;
 };
 
 // Request interceptor to add auth token

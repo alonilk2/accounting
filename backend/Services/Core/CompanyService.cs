@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Text.RegularExpressions;
 using backend.Data;
 using backend.Models.Core;
 using backend.Models.Accounting;
@@ -73,11 +72,8 @@ public class CompanyService : BaseService<Company>, ICompanyService
                 return (false, "Tax ID is required");
             }
 
-            // Clean the tax ID
-            taxId = taxId.Trim().Replace("-", "").Replace(" ", "");
-
             // Israeli tax ID validation (9 digits with check digit algorithm)
-            if (!IsValidIsraeliTaxId(taxId))
+            if (!IsraeliTaxIdValidator.TryNormalizeValid(taxId, out var normalizedTaxId))
             {
                 return (false, "Invalid Israeli Tax ID format or check digit");
             }
@@ -85,7 +81,7 @@ public class CompanyService : BaseService<Company>, ICompanyService
             // Check for duplicates
             var existingCompany = await _context.Companies
                 .AsNoTracking()
-                .Where(c => !c.IsDeleted && c.IsraelTaxId == taxId)
+                .Where(c => !c.IsDeleted && c.IsraelTaxId == normalizedTaxId)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (existingCompany != null && existingCompany.Id != excludeCompanyId)
@@ -220,16 +216,94 @@ public class CompanyService : BaseService<Company>, ICompanyService
     {
         try
         {
-            // For MVP, all features are available to all companies
-            // In future, this could check subscription plans, feature flags, etc.
-            var company = await GetByIdAsync(companyId, companyId, cancellationToken);
-            return company != null && !company.IsDeleted;
+            var evaluation = await EvaluateFeatureAccessAsync(companyId, feature, cancellationToken);
+            return evaluation.HasAccess;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking feature access for company {CompanyId}, feature {Feature}", 
                 companyId, feature);
             return false;
+        }
+    }
+
+    public async Task<FeatureAccessEvaluation> EvaluateFeatureAccessAsync(int companyId, string feature, CancellationToken cancellationToken = default)
+    {
+        var normalizedFeature = FeatureEntitlements.NormalizeFeature(feature);
+        var result = new FeatureAccessEvaluation
+        {
+            HasAccess = false,
+            Feature = normalizedFeature,
+            UpgradePath = FeatureEntitlements.UpgradePath
+        };
+
+        try
+        {
+            if (!FeatureEntitlements.IsSupportedFeature(normalizedFeature))
+            {
+                result.ReasonCode = "unsupported_feature";
+                result.Reason = "Feature is not supported.";
+                return result;
+            }
+
+            var company = await _context.Companies
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == companyId && !c.IsDeleted, cancellationToken);
+
+            if (company == null)
+            {
+                result.ReasonCode = "company_not_found";
+                result.Reason = "Company not found.";
+                return result;
+            }
+
+            var normalizedPlan = FeatureEntitlements.NormalizePlan(company.SubscriptionPlan);
+            result.CurrentPlan = normalizedPlan ?? company.SubscriptionPlan?.Trim();
+            result.ExpiresAt = company.SubscriptionExpiresAt;
+
+            if (!company.IsActive)
+            {
+                result.ReasonCode = "company_inactive";
+                result.Reason = "Company is inactive.";
+                return result;
+            }
+
+            if (company.SubscriptionExpiresAt.HasValue && company.SubscriptionExpiresAt.Value <= DateTime.UtcNow)
+            {
+                result.ReasonCode = "subscription_expired";
+                result.Reason = "Subscription expired.";
+                return result;
+            }
+
+            if (normalizedPlan is null)
+            {
+                result.ReasonCode = string.IsNullOrWhiteSpace(company.SubscriptionPlan)
+                    ? "subscription_plan_missing"
+                    : "subscription_plan_unknown";
+                result.Reason = "Subscription plan is missing or unknown.";
+                return result;
+            }
+
+            if (!FeatureEntitlements.IsPlanEligibleForFeature(normalizedPlan, normalizedFeature))
+            {
+                result.ReasonCode = "plan_not_eligible";
+                result.Reason = "Current plan does not include this feature.";
+                return result;
+            }
+
+            result.HasAccess = true;
+            result.ReasonCode = null;
+            result.Reason = null;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error evaluating feature access for company {CompanyId}, feature {Feature}",
+                companyId, normalizedFeature);
+
+            result.ReasonCode = "evaluation_error";
+            result.Reason = "Unable to evaluate feature access.";
+            return result;
         }
     }
 
@@ -435,48 +509,13 @@ public class CompanyService : BaseService<Company>, ICompanyService
                 return true; // Consider non-existent companies as expired
             }
 
-            return company.SubscriptionExpiresAt.HasValue && company.SubscriptionExpiresAt.Value < DateTime.UtcNow;
+            return company.SubscriptionExpiresAt.HasValue && company.SubscriptionExpiresAt.Value <= DateTime.UtcNow;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking subscription expiry for company {CompanyId}", companyId);
             return true; // Consider error as expired for safety
         }
-    }
-
-    /// <summary>
-    /// Validate Israeli Tax ID using the official check digit algorithm
-    /// </summary>
-    private static bool IsValidIsraeliTaxId(string taxId)
-    {
-        if (string.IsNullOrWhiteSpace(taxId))
-            return false;
-
-        // Remove any non-digit characters
-        taxId = Regex.Replace(taxId, @"\D", "");
-
-        // Must be exactly 9 digits
-        if (taxId.Length != 9)
-            return false;
-
-        // Check digit validation using Israeli algorithm
-        var digits = taxId.Select(c => int.Parse(c.ToString())).ToArray();
-        var sum = 0;
-
-        for (int i = 0; i < 8; i++)
-        {
-            var digit = digits[i];
-            var multiplier = (i % 2) + 1;
-            var product = digit * multiplier;
-            
-            if (product > 9)
-                product = (product / 10) + (product % 10);
-            
-            sum += product;
-        }
-
-        var checkDigit = (10 - (sum % 10)) % 10;
-        return checkDigit == digits[8];
     }
 
     /// <summary>

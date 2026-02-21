@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using backend.DTOs.Tax;
 using backend.Services.Interfaces;
+using backend.Services.Core;
 using backend.Models.Tax;
 
 namespace backend.Controllers;
@@ -15,13 +16,16 @@ namespace backend.Controllers;
 public class TaxReportingController : ControllerBase
 {
     private readonly IIsraeliTaxReportingService _taxReportingService;
+    private readonly ICompanyService _companyService;
     private readonly ILogger<TaxReportingController> _logger;
 
     public TaxReportingController(
         IIsraeliTaxReportingService taxReportingService,
+        ICompanyService companyService,
         ILogger<TaxReportingController> logger)
     {
         _taxReportingService = taxReportingService;
+        _companyService = companyService;
         _logger = logger;
     }
 
@@ -54,6 +58,12 @@ public class TaxReportingController : ControllerBase
                 return BadRequest("שנת מס לא תקינה");
             }
 
+            var deniedResult = await GetFeatureDeniedResultAsync(companyId, HttpContext.RequestAborted);
+            if (deniedResult is not null)
+            {
+                return deniedResult;
+            }
+
             var result = await _taxReportingService.GenerateForm6111Async(request, companyId, userId);
 
             _logger.LogInformation("Generated Form 6111 {Form6111Id} for company {CompanyId}, tax year {TaxYear}", 
@@ -84,6 +94,12 @@ public class TaxReportingController : ControllerBase
     {
         try
         {
+            var deniedResult = await GetFeatureDeniedResultAsync(companyId, HttpContext.RequestAborted);
+            if (deniedResult is not null)
+            {
+                return deniedResult;
+            }
+
             var reports = await _taxReportingService.GetForm6111ReportsAsync(companyId, taxYear);
             return Ok(reports);
         }
@@ -105,6 +121,12 @@ public class TaxReportingController : ControllerBase
     {
         try
         {
+            var deniedResult = await GetFeatureDeniedResultAsync(companyId, HttpContext.RequestAborted);
+            if (deniedResult is not null)
+            {
+                return deniedResult;
+            }
+
             var reports = await _taxReportingService.GetForm6111ReportsAsync(companyId);
             var report = reports.FirstOrDefault(r => r.Id == form6111Id);
 
@@ -133,6 +155,12 @@ public class TaxReportingController : ControllerBase
     {
         try
         {
+            var deniedResult = await GetFeatureDeniedResultAsync(companyId, HttpContext.RequestAborted);
+            if (deniedResult is not null)
+            {
+                return deniedResult;
+            }
+
             var validation = await _taxReportingService.ValidateForm6111Async(form6111Id, companyId);
             return Ok(validation);
         }
@@ -162,6 +190,12 @@ public class TaxReportingController : ControllerBase
             if (!new[] { "JSON", "XML", "TXT" }.Contains(format.ToUpper()))
             {
                 return BadRequest("פורמט לא נתמך. פורמטים זמינים: JSON, XML, TXT");
+            }
+
+            var deniedResult = await GetFeatureDeniedResultAsync(companyId, HttpContext.RequestAborted);
+            if (deniedResult is not null)
+            {
+                return deniedResult;
             }
 
             var export = await _taxReportingService.ExportForm6111Async(form6111Id, companyId, format);
@@ -205,6 +239,12 @@ public class TaxReportingController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            var deniedResult = await GetFeatureDeniedResultAsync(companyId, HttpContext.RequestAborted);
+            if (deniedResult is not null)
+            {
+                return deniedResult;
+            }
+
             var result = await _taxReportingService.UpdateForm6111StatusAsync(
                 form6111Id, companyId, request.Status, userId);
 
@@ -237,6 +277,12 @@ public class TaxReportingController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            var deniedResult = await GetFeatureDeniedResultAsync(companyId, HttpContext.RequestAborted);
+            if (deniedResult is not null)
+            {
+                return deniedResult;
+            }
+
             var result = await _taxReportingService.CalculateProfitLossAsync(
                 companyId, request.StartDate, request.EndDate);
 
@@ -265,6 +311,12 @@ public class TaxReportingController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            var deniedResult = await GetFeatureDeniedResultAsync(companyId, HttpContext.RequestAborted);
+            if (deniedResult is not null)
+            {
+                return deniedResult;
+            }
+
             var result = await _taxReportingService.CalculateBalanceSheetAsync(
                 companyId, request.AsOfDate);
 
@@ -287,6 +339,12 @@ public class TaxReportingController : ControllerBase
     {
         try
         {
+            var deniedResult = await GetFeatureDeniedResultAsync(companyId, HttpContext.RequestAborted);
+            if (deniedResult is not null)
+            {
+                return deniedResult;
+            }
+
             var mapping = await _taxReportingService.GetIsraeliAccountMappingAsync(companyId);
             return Ok(mapping);
         }
@@ -295,6 +353,28 @@ public class TaxReportingController : ControllerBase
             _logger.LogError(ex, "Error getting Israeli account mapping for company {CompanyId}", companyId);
             return StatusCode(500, "שגיאה בקבלת מיפוי חשבונות ישראלי");
         }
+    }
+    private async Task<ObjectResult?> GetFeatureDeniedResultAsync(int companyId, CancellationToken cancellationToken)
+    {
+        var evaluation = await _companyService.EvaluateFeatureAccessAsync(
+            companyId,
+            FeatureEntitlements.DoubleEntryAccountingFeature,
+            cancellationToken);
+
+        if (evaluation.HasAccess)
+        {
+            return null;
+        }
+
+        return StatusCode(StatusCodes.Status403Forbidden, new
+        {
+            error = "feature_access_denied",
+            reason = evaluation.Reason,
+            reasonCode = evaluation.ReasonCode,
+            feature = evaluation.Feature,
+            currentPlan = evaluation.CurrentPlan,
+            upgradePath = evaluation.UpgradePath
+        });
     }
 }
 

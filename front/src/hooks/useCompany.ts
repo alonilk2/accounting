@@ -15,7 +15,7 @@ export interface UseCompanyReturn {
 }
 
 export const useCompany = (): UseCompanyReturn => {
-  const { company } = useAuthStore();
+  const { company, setCompany } = useAuthStore();
   
   const [stats, setStats] = useState<CompanyDashboardStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,8 +26,7 @@ export const useCompany = (): UseCompanyReturn => {
       setLoading(true);
       setError(null);
       const companyData = await companyApi.getCompany(id);
-      // Note: Company data should be updated in the auth store, not locally
-      console.log('Company data loaded:', companyData);
+      setCompany(companyData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'שגיאה בטעינת נתוני החברה';
       setError(errorMessage);
@@ -35,15 +34,14 @@ export const useCompany = (): UseCompanyReturn => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setCompany]);
 
   const updateCompany = useCallback(async (id: number, data: UpdateCompanyRequest): Promise<Company | null> => {
     try {
       setLoading(true);
       setError(null);
       const updatedCompany = await companyApi.updateCompany(id, data);
-      // Note: Company data should be updated in the auth store, not locally
-      console.log('Company updated:', updatedCompany);
+      setCompany(updatedCompany);
       return updatedCompany;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'שגיאה בעדכון נתוני החברה';
@@ -53,7 +51,7 @@ export const useCompany = (): UseCompanyReturn => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setCompany]);
 
   const getDashboardStats = useCallback(async (id: number) => {
     try {

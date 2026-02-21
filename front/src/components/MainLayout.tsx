@@ -45,6 +45,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, useUIStore } from '../stores';
 import { AIAssistant, AIAssistantFab } from './ai';
 import DocumentCreationFab from './ui/DocumentCreationFab';
+import { disableGoogleAutoSelect, isGoogleAuthConfigured } from '../auth/googleAuth';
 
 // Inject global styles for animations
 if (typeof document !== 'undefined') {
@@ -142,6 +143,10 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   };
 
   const handleLogout = () => {
+    if (isGoogleAuthConfigured) {
+      disableGoogleAutoSelect();
+    }
+
     logout();
     handleProfileMenuClose();
     navigate('/login');
